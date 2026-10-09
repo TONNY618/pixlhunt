@@ -26,6 +26,9 @@ public class ActiveCombo
     /// <summary>Приостанавливать выполнение, если пользователь нажимает WASD.</summary>
     public bool PauseIfWasd { get; set; }
 
+    /// <summary>Включено ли комбо (управляется галочкой в UI).</summary>
+    public bool IsEnabled { get; set; } = true;
+
     /// <summary>Время последнего успешного выполнения комбо (для расчёта кулдауна).</summary>
     public DateTime LastExecuted { get; set; } = DateTime.MinValue;
 

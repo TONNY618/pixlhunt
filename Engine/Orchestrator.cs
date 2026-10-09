@@ -26,6 +26,15 @@ public class Orchestrator
     /// <summary>Регистрирует комбо в оркестраторе.</summary>
     public void RegisterCombo(ActiveCombo combo) => Combos.Add(combo);
 
+    /// <summary>Сбрасывает состояние кулдауна у всех комбо.</summary>
+    public void ResetAllStates()
+    {
+        foreach (var combo in Combos)
+        {
+            combo.LastExecuted = DateTime.MinValue;
+        }
+    }
+
     /// <summary>
     /// Обрабатывает один кадр: сортирует комбо по приоритету, проверяет кулдаун и триггеры,
     /// и при срабатывании последовательно выполняет шаги комбо.
@@ -37,7 +46,7 @@ public class Orchestrator
 
         foreach (var combo in ordered)
         {
-            if (!combo.CanExecute())
+            if (!combo.IsEnabled || !combo.CanExecute())
                 continue;
 
             // Проверяем все триггеры: должны вернуть true

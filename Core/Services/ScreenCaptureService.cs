@@ -23,6 +23,9 @@ public static class ScreenCaptureService
     public static bool IsRunning { get; private set; }
     public static int TargetFps { get; set; } = 30; // Настраиваемая частота
 
+    /// <summary>Событие, вызываемое после обновления буфера кадра.</summary>
+    public static event Func<FrameBuffer, Task>? OnFrameCaptured;
+
     public static void Start(int monitorIndex = 0)
     {
         if (IsRunning) return;
@@ -60,6 +63,13 @@ public static class ScreenCaptureService
                     {
                         _buffer.Update(_capturer.Buffer, _capturer.Width, _capturer.Height, _capturer.Stride);
                     }
+                }
+
+                // Уведомляем подписчиков о новом кадре (вне лока, чтобы не блокировать Stop()).
+                var handler = OnFrameCaptured;
+                if (handler != null)
+                {
+                    await handler.Invoke(_buffer).ConfigureAwait(false);
                 }
 
                 // Динамическая пауза под нужный FPS (при 30 FPS = ~33 мс)

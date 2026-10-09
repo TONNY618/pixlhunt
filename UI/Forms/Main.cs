@@ -22,7 +22,8 @@ namespace pxlhunt.FORMS
             InitializeComponent();
 
             // Создаём оркестратор с очередью и диспетчером ввода
-            _orchestrator = new Orchestrator(new SimpleTaskQueue(), new InputDispatcher());
+            var queue = new SimpleTaskQueue();
+            _orchestrator = new Orchestrator(queue, new InputDispatcher(queue));
 
             // Стартуем глобальный захват при запуске программы
             try
