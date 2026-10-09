@@ -45,50 +45,90 @@ public sealed class DxgiScreenCapture : IDisposable
         _outputIndex = outputIndex;
 
         // Освобождаем старые ресурсы, если это повторная инициализация
-        _stagingTexture?.Dispose();
-        _duplication?.Dispose();
-        _context?.Dispose();
-        _device?.Dispose();
+        Cleanup();
 
-        // Создаём D3D11 устройство.
-        D3D11.D3D11CreateDevice(
-            null,
-            DriverType.Hardware,
-            DeviceCreationFlags.BgraSupport,
-            null,
-            out _device,
-            out _context).CheckError();
-
-        using var dxgiDevice = _device!.QueryInterface<IDXGIDevice>();
-        using var adapter = dxgiDevice.GetAdapter();
-        adapter.EnumOutputs((uint)outputIndex, out var output).CheckError();
-        using var _ = output;
-        using var output1 = output.QueryInterface<IDXGIOutput1>();
-
-        var desc = output.Description;
-        _width = desc.DesktopCoordinates.Right - desc.DesktopCoordinates.Left;
-        _height = desc.DesktopCoordinates.Bottom - desc.DesktopCoordinates.Top;
-
-        _duplication = output1.DuplicateOutput(_device);
-
-        // Staging-текстура для копирования GPU -> CPU.
-        var texDesc = new Texture2DDescription
+        try
         {
-            Width = (uint)_width,
-            Height = (uint)_height,
-            MipLevels = 1,
-            ArraySize = 1,
-            Format = Format.B8G8R8A8_UNorm,
-            SampleDescription = new SampleDescription(1, 0),
-            Usage = ResourceUsage.Staging,
-            BindFlags = BindFlags.None,
-            CPUAccessFlags = CpuAccessFlags.Read,
-            MiscFlags = ResourceOptionFlags.None
-        };
-        _stagingTexture = _device.CreateTexture2D(texDesc);
+            // Создаём D3D11 устройство.
+            D3D11.D3D11CreateDevice(
+                null,
+                DriverType.Hardware,
+                DeviceCreationFlags.BgraSupport,
+                null,
+                out _device,
+                out _context).CheckError();
 
-        _stride = _width * 4;
-        _buffer = new byte[_stride * _height];
+            using var dxgiDevice = _device!.QueryInterface<IDXGIDevice>();
+            using var adapter = dxgiDevice.GetAdapter();
+            adapter.EnumOutputs((uint)outputIndex, out var output).CheckError();
+            using var _ = output;
+            using var output1 = output.QueryInterface<IDXGIOutput1>();
+
+            var desc = output.Description;
+            _width = desc.DesktopCoordinates.Right - desc.DesktopCoordinates.Left;
+            _height = desc.DesktopCoordinates.Bottom - desc.DesktopCoordinates.Top;
+
+            _duplication = output1.DuplicateOutput(_device);
+
+            // Staging-текстура для копирования GPU -> CPU.
+            var texDesc = new Texture2DDescription
+            {
+                Width = (uint)_width,
+                Height = (uint)_height,
+                MipLevels = 1,
+                ArraySize = 1,
+                Format = Format.B8G8R8A8_UNorm,
+                SampleDescription = new SampleDescription(1, 0),
+                Usage = ResourceUsage.Staging,
+                BindFlags = BindFlags.None,
+                CPUAccessFlags = CpuAccessFlags.Read,
+                MiscFlags = ResourceOptionFlags.None
+            };
+            _stagingTexture = _device.CreateTexture2D(texDesc);
+
+            _stride = _width * 4;
+            _buffer = new byte[_stride * _height];
+        }
+        catch
+        {
+            // Если создание упало — освобождаем частично созданные ресурсы и пробрасываем ошибку.
+            Cleanup();
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Освобождает все COM-ресурсы и зануляет ссылки. Исключения не бросает.
+    /// </summary>
+    private void Cleanup()
+    {
+        try
+        {
+            _stagingTexture?.Dispose();
+        }
+        catch { }
+        _stagingTexture = null;
+
+        try
+        {
+            _duplication?.Dispose();
+        }
+        catch { }
+        _duplication = null;
+
+        try
+        {
+            _context?.Dispose();
+        }
+        catch { }
+        _context = null;
+
+        try
+        {
+            _device?.Dispose();
+        }
+        catch { }
+        _device = null;
     }
 
     /// <summary>
@@ -98,8 +138,24 @@ public sealed class DxgiScreenCapture : IDisposable
     public bool TryCaptureFrame(int timeoutMs = 0)
     {
         ThrowIfDisposed();
+
+        // Ленивая реинициализация: если ресурсы были освобождены (например, после
+        // AccessLost или Dispose), пробуем восстановиться. Если экран заблокирован —
+        // просто пропускаем кадр, не выбрасывая исключение.
         if (_duplication is null || _stagingTexture is null || _context is null)
-            throw new InvalidOperationException("Захват не инициализирован. Вызовите Initialize().");
+        {
+            try
+            {
+                Initialize(_outputIndex);
+            }
+            catch
+            {
+                return false;
+            }
+
+            if (_duplication is null || _stagingTexture is null || _context is null)
+                return false;
+        }
 
         var result = _duplication.AcquireNextFrame((uint)timeoutMs, out _, out var desktopResource);
         if (result == Vortice.DXGI.ResultCode.WaitTimeout)
@@ -113,6 +169,10 @@ public sealed class DxgiScreenCapture : IDisposable
 
         if (accessLost)
         {
+            // Обязательно освобождаем старые ресурсы перед пересозданием,
+            // иначе Initialize может упасть на невалидном дубликаторе.
+            Cleanup();
+
             try
             {
                 Initialize(_outputIndex);
@@ -192,23 +252,6 @@ public sealed class DxgiScreenCapture : IDisposable
 
         // COM-объекты — неуправляемые ресурсы, освобождаем их в любом случае.
         // Исключения не бросаем, чтобы не сломать финализатор.
-        try
-        {
-            _stagingTexture?.Dispose();
-            _duplication?.Dispose();
-            _context?.Dispose();
-            _device?.Dispose();
-        }
-        catch
-        {
-            // Намеренно игнорируем ошибки освобождения COM-объектов.
-        }
-        finally
-        {
-            _stagingTexture = null;
-            _duplication = null;
-            _context = null;
-            _device = null;
-        }
+        Cleanup();
     }
 }

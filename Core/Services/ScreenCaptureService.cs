@@ -50,10 +50,11 @@ public static class ScreenCaptureService
         {
             try
             {
-                // Пытаемся взять кадр (таймаут 5 мс)
-                if (_capturer.TryCaptureFrame(timeoutMs: 5))
+                // Захват кадра и обновление буфера держим под одним локом,
+                // чтобы Stop() не вызвал Dispose прямо во время работы с _capturer.
+                lock (_syncLock)
                 {
-                    lock (_syncLock)
+                    if (_capturer.TryCaptureFrame(timeoutMs: 5))
                     {
                         _buffer.Update(_capturer.Buffer, _capturer.Width, _capturer.Height, _capturer.Stride);
                     }
@@ -106,13 +107,18 @@ public static class ScreenCaptureService
         }
         finally
         {
-            try
+            // Освобождаем _capturer под локом, чтобы не пересечься с фоновым
+            // потоком, который может находиться внутри TryCaptureFrame.
+            lock (_syncLock)
             {
-                _capturer.Dispose();
-            }
-            catch
-            {
-                // Игнорируем ошибки освобождения COM-ресурсов.
+                try
+                {
+                    _capturer.Dispose();
+                }
+                catch
+                {
+                    // Игнорируем ошибки освобождения COM-ресурсов.
+                }
             }
 
             _cts?.Dispose();
