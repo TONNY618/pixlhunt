@@ -7,6 +7,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using PixelMacroEngine.Core.Services;
 
 namespace pxlhunt.FORMS
 {
@@ -421,7 +422,6 @@ namespace pxlhunt.FORMS
                 isPipetteActive = true;
                 pbox.Capture = true;
 
-                UpdateFrameBuffer();
                 UpdatePipetteData(pbox, Cursor.Position);
             }
         }
@@ -505,18 +505,9 @@ namespace pxlhunt.FORMS
             currentPbox.BackColor = pixelColor;
         }
 
-        private void UpdateFrameBuffer() { }
-
         private Color GetPixelColorFromBufferOrScreen(Point point)
         {
-            using (Bitmap bmp = new Bitmap(1, 1))
-            {
-                using (Graphics g = Graphics.FromImage(bmp))
-                {
-                    g.CopyFromScreen(point, Point.Empty, new Size(1, 1));
-                }
-                return bmp.GetPixel(0, 0);
-            }
+            return ScreenCaptureService.GetPixel(point.X, point.Y);
         }
 
         private GroupBox? GetParentGroupBox(Control? control)
