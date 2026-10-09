@@ -1,8 +1,4 @@
-﻿//Сервис берет на себя запуск фонового цикла
-//захвата видео буфера с экрана и предоставляет доступ к пикселям через общий буфер
-//
-
-using System.Drawing;
+﻿using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
 using PixelMacroEngine.Core.Capture;
@@ -10,6 +6,12 @@ using PixelMacroEngine.Core.Models;
 
 namespace PixelMacroEngine.Core.Services;
 
+/// <summary>
+/// [Подсистема видеозахвата: Уровень 3 - Фасад / Сервис]
+/// Потокобезопасная публичная точка входа. Управляет фоновым циклом опроса экрана на заданном FPS.
+/// Связан с: Объединяет DxgiScreenCapture и FrameBuffer. Предоставляет GetPixel(...) для форм и триггеров.
+/// </summary>
+/// 
 public static class ScreenCaptureService
 {
     private static readonly DxgiScreenCapture _capturer = new();

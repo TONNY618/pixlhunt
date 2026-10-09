@@ -7,9 +7,10 @@ using Vortice.DXGI;
 namespace PixelMacroEngine.Core.Capture;
 
 /// <summary>
-/// Захват кадра экрана через DXGI Desktop Duplication API.
-/// Класс изолирован: вся работа с D3D11/DXGI инкапсулирована здесь.
-/// Буфер кадра переиспользуется между вызовами, чтобы минимизировать нагрузку на GC.
+/// [Подсистема видеозахвата: Уровень 1 - Драйвер]
+/// Низкоуровневый захват экрана через DXGI Desktop Duplication API (DirectX 11).
+/// Отвечает за коммуникацию с GPU, построчное копирование VRAM -> CPU и восстановление при AccessLost/UAC.
+/// Связан с: ScreenCaptureService (вызывается исключительно из него).
 /// </summary>
 public sealed class DxgiScreenCapture : IDisposable
 {

@@ -2,6 +2,7 @@ using pxlhunt.FORMS;
 
 namespace pxlhunt
 {
+    
     internal static class Program
     {
         /// <summary>

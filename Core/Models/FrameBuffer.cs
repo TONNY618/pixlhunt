@@ -4,8 +4,10 @@ using System.Drawing;
 namespace PixelMacroEngine.Core.Models;
 
 /// <summary>
-/// Буфер кадра. Хранит сырые BGRA-данные, полученные из DXGI Desktop Duplication.
-/// Не аллоцирует память при чтении пикселей.
+/// [Подсистема видеозахвата: Уровень 2 - Данные]
+/// Пассивный буфер сырых BGRA-данных в оперативной памяти (Zero-Allocation).
+/// Отвечает за O(1) доступ к цвету пикселей без создания объектов в куче.
+/// Связан с: Наполняется из DxgiScreenCapture, управляется ScreenCaptureService.
 /// </summary>
 public class FrameBuffer
 {
