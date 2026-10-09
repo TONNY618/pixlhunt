@@ -1,4 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using PixelMacroEngine.Core.Abstractions;
 using PixelMacroEngine.Core.Input;
 using PixelMacroEngine.Core.Models;
@@ -7,10 +11,11 @@ namespace PixelMacroEngine.Engine;
 
 public class Orchestrator
 {
-    private readonly List<ITriggerEvaluator> _triggers = new();
+    /// <summary>Коллекция активных комбо, управляемых оркестратором.</summary>
+    public List<ActiveCombo> Combos { get; } = new();
+
     private readonly SimpleTaskQueue _queue;
     private readonly InputDispatcher _dispatcher;
-    private ITriggerEvaluator? _activeExclusiveTrigger = null;
 
     public Orchestrator(SimpleTaskQueue queue, InputDispatcher dispatcher)
     {
@@ -18,67 +23,51 @@ public class Orchestrator
         _dispatcher = dispatcher;
     }
 
-    public void RegisterTrigger(ITriggerEvaluator trigger) => _triggers.Add(trigger);
+    /// <summary>Регистрирует комбо в оркестраторе.</summary>
+    public void RegisterCombo(ActiveCombo combo) => Combos.Add(combo);
 
-    public void ProcessFrame(FrameBuffer frame)
+    /// <summary>
+    /// Обрабатывает один кадр: сортирует комбо по приоритету, проверяет кулдаун и триггеры,
+    /// и при срабатывании последовательно выполняет шаги комбо.
+    /// </summary>
+    public async Task ProcessFrameAsync(FrameBuffer frame, CancellationToken ct = default)
     {
-        var context = new TriggerExecutionContext
+        // Сортируем комбо по убыванию приоритета
+        var ordered = Combos.OrderByDescending(c => c.Priority).ToList();
+
+        foreach (var combo in ordered)
         {
-            Frame = frame,
-            CurrentlyActiveTrigger = _activeExclusiveTrigger,
-            ActiveTriggerCurrentWeight = _activeExclusiveTrigger?.CurrentWeight ?? 0
-        };
+            if (!combo.CanExecute())
+                continue;
 
-        ITriggerEvaluator? bestCandidate = null;
-        EvaluationResult? bestResult = null;
-
-        // Опрашиваем триггеры и ищем победителя аукциона
-        foreach (var trigger in _triggers)
-        {
-            if (!trigger.IsEnabled) continue;
-
-            var result = trigger.Evaluate(context);
-            if (result.WantsToExecute)
+            // Проверяем все триггеры: должны вернуть true
+            bool allTriggersPassed = true;
+            foreach (var trigger in combo.Triggers)
             {
-                if (bestResult == null || result.DynamicWeight > bestResult.DynamicWeight)
+                if (!trigger.Evaluate(frame))
                 {
-                    bestCandidate = trigger;
-                    bestResult = result;
+                    allTriggersPassed = false;
+                    break;
                 }
             }
-        }
 
-        if (bestCandidate == null || bestResult == null || bestResult.BatchToExecute == null)
-            return;
+            if (!allTriggersPassed)
+                continue;
 
-        // Если победитель пытается перебить уже выполняющийся триггер
-        if (_activeExclusiveTrigger != null && _activeExclusiveTrigger != bestCandidate)
-        {
-            // Строгое правило: перебить можно, только если новый вес строго больше
-            if (bestResult.DynamicWeight > _activeExclusiveTrigger.CurrentWeight)
+            // Обновляем время последнего выполнения
+            combo.LastExecuted = DateTime.UtcNow;
+
+            // Последовательно выполняем шаги комбо
+            var context = new TriggerExecutionContext
             {
-                _activeExclusiveTrigger.InterruptAndReset();
-                _dispatcher.EmergencyClear(); // Сброс очереди и клавиш
-                _activeExclusiveTrigger = bestCandidate;
-            }
-            else
+                Frame = frame
+            };
+
+            foreach (var step in combo.Steps)
             {
-                // Недостаточно веса — уступаем текущему исполнителю
-                return;
+                ct.ThrowIfCancellationRequested();
+                await step.ExecuteAsync(context, ct).ConfigureAwait(false);
             }
-        }
-        else
-        {
-            _activeExclusiveTrigger = bestCandidate;
-        }
-
-        // Закидываем непрерываемый батч в очередь диспетчера
-        _queue.Enqueue(bestResult.BatchToExecute);
-
-        // Если триггер закончил комбо — отпускаем монополию
-        if (!_activeExclusiveTrigger.IsExecuting)
-        {
-            _activeExclusiveTrigger = null;
         }
     }
 }
