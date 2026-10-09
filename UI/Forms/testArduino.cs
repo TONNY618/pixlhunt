@@ -186,15 +186,15 @@ namespace pxlhunt
         // 2. УПРАВЛЕНИЕ КЛАВИАТУРОЙ
         // =========================================================
 
-        public void KeyDown(byte keyCode) => SendRawCommand(0x03, keyCode, 1);
-        public void KeyUp(byte keyCode) => SendRawCommand(0x03, keyCode, 0);
+        public void SendKeyDown(byte keyCode) => SendRawCommand(0x03, keyCode, 1);
+        public void SendKeyUp(byte keyCode) => SendRawCommand(0x03, keyCode, 0);
 
         public async Task TapKeyAsync(byte keyCode, int minHoldMs = 45, int maxHoldMs = 85)
         {
-            KeyDown(keyCode);
+            SendKeyDown(keyCode);
             int holdTime = _random.Next(minHoldMs, maxHoldMs);
             await Task.Delay(holdTime);
-            KeyUp(keyCode);
+            SendKeyUp(keyCode);
         }
 
         private async void SendKeybCMD_Click(object sender, EventArgs e)

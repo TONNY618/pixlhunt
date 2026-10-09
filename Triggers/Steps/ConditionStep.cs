@@ -25,18 +25,6 @@ public class ConditionStep : IComboStep
         Parameters = parameters ?? new Dictionary<string, string>();
     }
 
-    public bool IsConditionMet(FrameBuffer frame, DateTime lastStepExecutedTime)
-    {
-        // TODO: реализовать проверку условия
-        return true;
-    }
-
-    public InputBatchCmd GenerateBatch()
-    {
-        // TODO: реализовать генерацию батча ввода
-        return new InputBatchCmd();
-    }
-
     public Task ExecuteAsync(TriggerExecutionContext context, CancellationToken cancellationToken)
     {
         // TODO: реализовать выполнение вложенных шагов TrueSteps
