@@ -53,6 +53,7 @@ public sealed class DxgiScreenCapture : IDisposable
         using var dxgiDevice = _device!.QueryInterface<IDXGIDevice>();
         using var adapter = dxgiDevice.GetAdapter();
         adapter.EnumOutputs((uint)outputIndex, out var output).CheckError();
+        using var _ = output;
         using var output1 = output.QueryInterface<IDXGIOutput1>();
 
         var desc = output.Description;
@@ -98,32 +99,35 @@ public sealed class DxgiScreenCapture : IDisposable
 
         try
         {
-            using var frameTexture = desktopResource.QueryInterface<ID3D11Texture2D>();
-            _context.CopyResource(_stagingTexture, frameTexture);
-
-            var mapped = _context.Map(_stagingTexture, 0, MapMode.Read, Vortice.Direct3D11.MapFlags.None);
-            try
+            using (desktopResource)
+            using (var frameTexture = desktopResource.QueryInterface<ID3D11Texture2D>())
             {
-                // Копируем построчно, т.к. RowPitch может быть больше ширины*4.
-                unsafe
+                _context.CopyResource(_stagingTexture, frameTexture);
+
+                var mapped = _context.Map(_stagingTexture, 0, MapMode.Read, Vortice.Direct3D11.MapFlags.None);
+                try
                 {
-                    byte* src = (byte*)mapped.DataPointer;
-                    fixed (byte* dst = _buffer)
+                    // Копируем построчно, т.к. RowPitch может быть больше ширины*4.
+                    unsafe
                     {
-                        for (int y = 0; y < _height; y++)
+                        byte* src = (byte*)mapped.DataPointer;
+                        fixed (byte* dst = _buffer)
                         {
-                            System.Buffer.MemoryCopy(
-                                src + y * mapped.RowPitch,
-                                dst + y * _stride,
-                                _stride,
-                                _stride);
+                            for (int y = 0; y < _height; y++)
+                            {
+                                System.Buffer.MemoryCopy(
+                                    src + y * mapped.RowPitch,
+                                    dst + y * _stride,
+                                    _stride,
+                                    _stride);
+                            }
                         }
                     }
                 }
-            }
-            finally
-            {
-                _context.Unmap(_stagingTexture, 0);
+                finally
+                {
+                    _context.Unmap(_stagingTexture, 0);
+                }
             }
         }
         finally
