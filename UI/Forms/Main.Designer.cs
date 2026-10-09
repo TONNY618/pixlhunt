@@ -33,10 +33,10 @@
             groupBoxStatus = new GroupBox();
             checkBoxStatus = new CheckBox();
             flowLayoutPanel1 = new FlowLayoutPanel();
+            checkBox1 = new CheckBox();
             labelEvents = new Label();
             buttonSettings = new Button();
             buttonComboForm = new Button();
-            checkBox1 = new CheckBox();
             groupBoxActiveTime.SuspendLayout();
             groupBoxStatus.SuspendLayout();
             flowLayoutPanel1.SuspendLayout();
@@ -92,6 +92,16 @@
             flowLayoutPanel1.TabIndex = 4;
             flowLayoutPanel1.WrapContents = false;
             // 
+            // checkBox1
+            // 
+            checkBox1.AutoSize = true;
+            checkBox1.Location = new Point(3, 3);
+            checkBox1.Name = "checkBox1";
+            checkBox1.Size = new Size(83, 19);
+            checkBox1.TabIndex = 0;
+            checkBox1.Text = "checkBox1";
+            checkBox1.UseVisualStyleBackColor = true;
+            // 
             // labelEvents
             // 
             labelEvents.AutoSize = true;
@@ -120,16 +130,6 @@
             buttonComboForm.Text = "ComboForm";
             buttonComboForm.UseVisualStyleBackColor = true;
             buttonComboForm.Click += buttonComboForm_Click;
-            // 
-            // checkBox1
-            // 
-            checkBox1.AutoSize = true;
-            checkBox1.Location = new Point(3, 3);
-            checkBox1.Name = "checkBox1";
-            checkBox1.Size = new Size(83, 19);
-            checkBox1.TabIndex = 0;
-            checkBox1.Text = "checkBox1";
-            checkBox1.UseVisualStyleBackColor = true;
             // 
             // pxlHunt
             // 

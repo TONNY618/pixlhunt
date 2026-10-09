@@ -41,6 +41,12 @@ public sealed class DxgiScreenCapture : IDisposable
     {
         ThrowIfDisposed();
 
+        // Освобождаем старые ресурсы, если это повторная инициализация
+        _stagingTexture?.Dispose();
+        _duplication?.Dispose();
+        _context?.Dispose();
+        _device?.Dispose();
+
         // Создаём D3D11 устройство.
         D3D11.D3D11CreateDevice(
             null,
@@ -96,9 +102,13 @@ public sealed class DxgiScreenCapture : IDisposable
         if (result == Vortice.DXGI.ResultCode.WaitTimeout)
             return false;
         result.CheckError();
-
+    
         try
         {
+            // если ресурс null, мы выйдем, но блок finally все равно вызовет ReleaseFrame()!
+            if (desktopResource is null)
+                return false;
+
             using (desktopResource)
             using (var frameTexture = desktopResource.QueryInterface<ID3D11Texture2D>())
             {

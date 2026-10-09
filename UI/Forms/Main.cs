@@ -1,15 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Text;
-using System.Windows.Forms;
-
-namespace pxlhunt.FORMS
+﻿namespace pxlhunt.FORMS
 {
     public partial class pxlHunt : Form
     {
+
         public pxlHunt()
         {
             InitializeComponent();
@@ -27,4 +20,5 @@ namespace pxlhunt.FORMS
             settingsForm.Show();
         }
     }
+    
 }
