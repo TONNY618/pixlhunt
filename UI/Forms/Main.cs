@@ -55,7 +55,31 @@ namespace pxlhunt.FORMS
             checkedListBoxCombo.ItemCheck += CheckedListBoxCombo_ItemCheck;
             checkBoxStatus.CheckedChanged += CheckBoxStatus_CheckedChanged;
 
+            // Снятие выделения при клике вне списка комбо
+            this.MouseDown += (s, e) => checkedListBoxCombo.ClearSelected();
+            SubscribeClearSelection(this);
+
             UpdateActiveTimeLabel();
+        }
+
+        /// <summary>
+        /// Рекурсивно подписывает MouseDown всех дочерних контролов (кроме самого списка)
+        /// на сброс выделения в checkedListBoxCombo.
+        /// </summary>
+        private void SubscribeClearSelection(Control parent)
+        {
+            foreach (Control ctrl in parent.Controls)
+            {
+                if (ctrl == checkedListBoxCombo)
+                    continue;
+
+                ctrl.MouseDown += (s, e) => checkedListBoxCombo.ClearSelected();
+
+                if (ctrl.HasChildren)
+                {
+                    SubscribeClearSelection(ctrl);
+                }
+            }
         }
 
         private async Task OnFrameCapturedHandler(FrameBuffer frame)
@@ -253,9 +277,10 @@ namespace pxlhunt.FORMS
 
         private void buttonComboForm_Click(object sender, EventArgs e)
         {
-            // Просто открываем форму — ей ничего передавать не нужно,
-            // буфер уже сам работает в фоне!
-            ComboEditorForm editor = new ComboEditorForm();
+            // Если в списке выделено комбо — открываем редактор с его загрузкой
+            string? selectedCombo = checkedListBoxCombo.SelectedItem as string;
+
+            ComboEditorForm editor = new ComboEditorForm(selectedCombo);
 
             // После закрытия редактора перезагружаем список комбо
             editor.FormClosed += (s, args) => LoadCombosFromConfig();

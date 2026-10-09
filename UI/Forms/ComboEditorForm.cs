@@ -54,6 +54,17 @@ namespace pxlhunt.FORMS
         }
 
         /// <summary>
+        /// Конструктор с опциональной загрузкой комбо по имени.
+        /// </summary>
+        public ComboEditorForm(string? comboNameToLoad = null) : this()
+        {
+            if (!string.IsNullOrWhiteSpace(comboNameToLoad))
+            {
+                LoadComboByName(comboNameToLoad);
+            }
+        }
+
+        /// <summary>
         /// Рекурсивная подписка переключателей режимов (Точка/Прямоугольник) для ВСЕХ групп
         /// </summary>
         private void SubscribeSquareModes(Control parent)
@@ -690,8 +701,26 @@ namespace pxlhunt.FORMS
                 return;
             }
 
-            // Ищем файл внутри папки Config
+            LoadComboByName(comboName);
+        }
+
+        /// <summary>
+        /// Загружает комбо по имени из папки Config (сначала рядом с exe, затем в исходниках).
+        /// </summary>
+        public void LoadComboByName(string comboName)
+        {
+            if (string.IsNullOrWhiteSpace(comboName))
+                return;
+
+            // Ищем файл внутри папки Config рядом с exe
             string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Config", $"{comboName}.json");
+
+            // Если не найден — пробуем папку Config в исходниках (для отладки)
+            if (!File.Exists(filePath))
+            {
+                filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "Config", $"{comboName}.json");
+            }
+
             if (!File.Exists(filePath))
             {
                 MessageBox.Show($"Файл не найден по пути:\n{filePath}");
@@ -703,6 +732,7 @@ namespace pxlhunt.FORMS
 
             if (profile != null)
             {
+                textBox5.Text = comboName;
                 textBoxCDglobal.Text = profile.CooldownTime ?? "1500";
                 radioButtonSkillCooldownGLOBAL.Checked = profile.IsCooldownGlobal;
                 radioButtonSkillCooldownSingleHP.Checked = !profile.IsCooldownGlobal;
@@ -715,8 +745,6 @@ namespace pxlhunt.FORMS
 
                 RestorePanelElements(profile.Triggers, flowLayoutPanelTrigger, GroupTriggerPreset);
                 RestorePanelElements(profile.Actions, flowLayoutPanelActions, GroupActionPreset);
-
-                MessageBox.Show("Триггер успешно загружен.");
             }
         }
 
