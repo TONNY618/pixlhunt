@@ -21,6 +21,7 @@ public sealed class DxgiScreenCapture : IDisposable
     private int _width;
     private int _height;
     private int _stride;
+    private int _outputIndex;
 
     // Переиспользуемый CPU-буфер с сырыми BGRA-данными.
     private byte[] _buffer = Array.Empty<byte>();
@@ -40,6 +41,8 @@ public sealed class DxgiScreenCapture : IDisposable
     public void Initialize(int outputIndex = 0)
     {
         ThrowIfDisposed();
+
+        _outputIndex = outputIndex;
 
         // Освобождаем старые ресурсы, если это повторная инициализация
         _stagingTexture?.Dispose();
@@ -101,6 +104,15 @@ public sealed class DxgiScreenCapture : IDisposable
         var result = _duplication.AcquireNextFrame((uint)timeoutMs, out _, out var desktopResource);
         if (result == Vortice.DXGI.ResultCode.WaitTimeout)
             return false;
+
+        // При потере доступа (например, смена разрешения, переключение пользователя,
+        // переход в полноэкранный режим) пересоздаём все ресурсы и пропускаем кадр.
+        if (result == Vortice.DXGI.ResultCode.AccessLost)
+        {
+            Initialize(_outputIndex);
+            return false;
+        }
+
         result.CheckError();
     
         try
@@ -153,14 +165,38 @@ public sealed class DxgiScreenCapture : IDisposable
         if (_disposed) throw new ObjectDisposedException(nameof(DxgiScreenCapture));
     }
 
+    ~DxgiScreenCapture() => Dispose(false);
+
     public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    private void Dispose(bool disposing)
     {
         if (_disposed) return;
         _disposed = true;
 
-        _stagingTexture?.Dispose();
-        _duplication?.Dispose();
-        _context?.Dispose();
-        _device?.Dispose();
+        // COM-объекты — неуправляемые ресурсы, освобождаем их в любом случае.
+        // Исключения не бросаем, чтобы не сломать финализатор.
+        try
+        {
+            _stagingTexture?.Dispose();
+            _duplication?.Dispose();
+            _context?.Dispose();
+            _device?.Dispose();
+        }
+        catch
+        {
+            // Намеренно игнорируем ошибки освобождения COM-объектов.
+        }
+        finally
+        {
+            _stagingTexture = null;
+            _duplication = null;
+            _context = null;
+            _device = null;
+        }
     }
 }
