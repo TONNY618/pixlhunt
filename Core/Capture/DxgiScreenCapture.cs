@@ -106,10 +106,22 @@ public sealed class DxgiScreenCapture : IDisposable
             return false;
 
         // При потере доступа (например, смена разрешения, переключение пользователя,
-        // переход в полноэкранный режим) пересоздаём все ресурсы и пропускаем кадр.
-        if (result == Vortice.DXGI.ResultCode.AccessLost)
+        // переход в полноэкранный режим, блокировка рабочего стола) пересоздаём
+        // все ресурсы и пропускаем кадр, не выбрасывая исключение наружу.
+        bool accessLost = result == Vortice.DXGI.ResultCode.AccessLost
+                          || result.Code == unchecked((int)0x80070005); // E_ACCESSDENIED
+
+        if (accessLost)
         {
-            Initialize(_outputIndex);
+            try
+            {
+                Initialize(_outputIndex);
+            }
+            catch
+            {
+                // Рабочий стол может быть временно заблокирован (UAC, lock screen).
+                // Игнорируем — попробуем восстановиться на следующем кадре.
+            }
             return false;
         }
 

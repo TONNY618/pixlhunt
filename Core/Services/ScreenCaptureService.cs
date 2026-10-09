@@ -25,40 +25,101 @@ public static class ScreenCaptureService
     {
         if (IsRunning) return;
 
-        _capturer.Initialize(monitorIndex);
-        _cts = new CancellationTokenSource();
-        IsRunning = true;
+        try
+        {
+            _capturer.Initialize(monitorIndex);
+            _cts = new CancellationTokenSource();
+            IsRunning = true;
 
-        // Запускаем независимый фоновый поток обновления буфера
-        _loopTask = Task.Run(() => CaptureLoopAsync(_cts.Token));
+            // Запускаем независимый фоновый поток обновления буфера
+            _loopTask = Task.Run(() => CaptureLoopAsync(_cts.Token));
+        }
+        catch
+        {
+            // Ошибка инициализации видеокарты/дублирования не должна ронять приложение.
+            IsRunning = false;
+            _cts?.Dispose();
+            _cts = null;
+            _loopTask = null;
+        }
     }
 
     private static async Task CaptureLoopAsync(CancellationToken ct)
     {
         while (!ct.IsCancellationRequested)
         {
-            // Пытаемся взять кадр (таймаут 5 мс)
-            if (_capturer.TryCaptureFrame(timeoutMs: 5))
+            try
             {
-                lock (_syncLock)
+                // Пытаемся взять кадр (таймаут 5 мс)
+                if (_capturer.TryCaptureFrame(timeoutMs: 5))
                 {
-                    _buffer.Update(_capturer.Buffer, _capturer.Width, _capturer.Height, _capturer.Stride);
+                    lock (_syncLock)
+                    {
+                        _buffer.Update(_capturer.Buffer, _capturer.Width, _capturer.Height, _capturer.Stride);
+                    }
+                }
+
+                // Динамическая пауза под нужный FPS (при 30 FPS = ~33 мс)
+                int delay = 1000 / Math.Max(1, TargetFps);
+                await Task.Delay(delay, ct).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                // Чистый выход по отмене.
+                break;
+            }
+            catch
+            {
+                // Не роняем фоновый поток: короткая пауза и продолжаем.
+                try
+                {
+                    await Task.Delay(100, ct).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
                 }
             }
-
-            // Динамическая пауза под нужный FPS (при 30 FPS = ~33 мс)
-            int delay = 1000 / Math.Max(1, TargetFps);
-            await Task.Delay(delay, ct).ConfigureAwait(false);
         }
     }
 
     public static void Stop()
     {
         if (!IsRunning) return;
-        _cts?.Cancel();
-        _loopTask?.Wait(500);
-        _capturer.Dispose();
-        IsRunning = false;
+
+        try
+        {
+            _cts?.Cancel();
+            _loopTask?.Wait(500);
+        }
+        catch (AggregateException)
+        {
+            // Подавляем исключения отмены/ошибок фоновой задачи при закрытии.
+        }
+        catch (TaskCanceledException)
+        {
+            // Подавляем отмену задачи при закрытии.
+        }
+        catch
+        {
+            // Любые прочие ошибки при остановке не должны ронять приложение.
+        }
+        finally
+        {
+            try
+            {
+                _capturer.Dispose();
+            }
+            catch
+            {
+                // Игнорируем ошибки освобождения COM-ресурсов.
+            }
+
+            _cts?.Dispose();
+            _cts = null;
+            _loopTask = null;
+            IsRunning = false;
+        }
     }
 
     /// <summary>Мгновенное чтение пикселя из общего буфера для любых окон и модулей</summary>
