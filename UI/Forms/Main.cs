@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -78,7 +79,12 @@ namespace pxlhunt.FORMS
                 if (!Directory.Exists(configDir))
                     return;
 
+                // Очищаем оркестратор и UI перед загрузкой
+                _orchestrator.Combos.Clear();
                 checkedListBoxCombo.Items.Clear();
+
+                // Сначала собираем все валидные комбо
+                var loaded = new List<ActiveCombo>();
 
                 foreach (var file in Directory.GetFiles(configDir, "*.json"))
                 {
@@ -96,15 +102,23 @@ namespace pxlhunt.FORMS
                         var combo = ComboFactory.Create(profile);
                         combo.IsEnabled = profile.IsOnOff;
 
-                        _orchestrator.RegisterCombo(combo);
-
-                        int index = checkedListBoxCombo.Items.Add(combo.Name);
-                        checkedListBoxCombo.SetItemChecked(index, combo.IsEnabled);
+                        loaded.Add(combo);
                     }
                     catch
                     {
                         // Пропускаем битые файлы
                     }
+                }
+
+                // Сортируем по приоритету (от большего к меньшему) и регистрируем
+                var sorted = loaded.OrderByDescending(c => c.Priority).ToList();
+
+                foreach (var combo in sorted)
+                {
+                    _orchestrator.RegisterCombo(combo);
+
+                    int index = checkedListBoxCombo.Items.Add(combo.Name);
+                    checkedListBoxCombo.SetItemChecked(index, combo.IsEnabled);
                 }
             }
             catch
@@ -242,6 +256,10 @@ namespace pxlhunt.FORMS
             // Просто открываем форму — ей ничего передавать не нужно,
             // буфер уже сам работает в фоне!
             ComboEditorForm editor = new ComboEditorForm();
+
+            // После закрытия редактора перезагружаем список комбо
+            editor.FormClosed += (s, args) => LoadCombosFromConfig();
+
             editor.Show();
         }
 
