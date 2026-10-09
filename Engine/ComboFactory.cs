@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using PixelMacroEngine.Core.Abstractions;
 using PixelMacroEngine.Core.Models;
+using PixelMacroEngine.Triggers;
 using PixelMacroEngine.Triggers.Steps;
 using pxlhunt.FORMS;
 
@@ -31,8 +33,91 @@ public static class ComboFactory
         };
 
         BuildSteps(profile.Actions, combo.Steps);
+        BuildTriggers(profile.Triggers, combo.Triggers);
 
         return combo;
+    }
+
+    /// <summary>
+    /// Собирает триггеры из UI-элементов профиля.
+    /// Поддерживается тип "groupBox1" (проверка цвета/региона).
+    /// </summary>
+    private static void BuildTriggers(List<ComboElement> elements, List<ITriggerEvaluator> targetList)
+    {
+        if (elements == null) return;
+
+        foreach (var elem in elements)
+        {
+            if (elem == null) continue;
+
+            switch (elem.ElementType)
+            {
+                case "groupBox1":
+                    var trigger = CreateColorTrigger(elem);
+                    if (trigger != null)
+                        targetList.Add(trigger);
+                    break;
+
+                case "IFconditionsOrAndStart":
+                case "IFconditionsTimerStart":
+                    // Пока безопасно пропускаем
+                    break;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Создаёт ColorTriggerEvaluator из параметров UI-элемента "groupBox1".
+    /// </summary>
+    private static ColorTriggerEvaluator? CreateColorTrigger(ComboElement elem)
+    {
+        var p = elem.Parameters;
+        if (p == null) return null;
+
+        Point point1 = ParsePoint(p.GetValueOrDefault("textBoxXY1_1"));
+        Point point2 = ParsePoint(p.GetValueOrDefault("textBoxXY1_2"));
+        Color expected = ParseColor(p.GetValueOrDefault("textBoxColor1"));
+        int deviant = ParseIntOrDefault(p.GetValueOrDefault("textBoxDeviant1"), 0);
+
+        bool isNotEqual = p.GetValueOrDefault("radioButtonEqu1_2") == "True";
+        bool isRegionAverage = p.GetValueOrDefault("radioButtonSquare1_2") == "True";
+
+        return new ColorTriggerEvaluator(point1, point2, expected, deviant, isNotEqual, isRegionAverage);
+    }
+
+    /// <summary>
+    /// Парсит строку вида "119, 273" в Point.
+    /// </summary>
+    private static Point ParsePoint(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return Point.Empty;
+
+        var parts = value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (parts.Length < 2)
+            return Point.Empty;
+
+        int x = ParseIntOrDefault(parts[0], 0);
+        int y = ParseIntOrDefault(parts[1], 0);
+        return new Point(x, y);
+    }
+
+    /// <summary>
+    /// Парсит hex-строку цвета (например "#A0A0A0") в Color.
+    /// </summary>
+    private static Color ParseColor(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return Color.Black;
+
+        try
+        {
+            return ColorTranslator.FromHtml(value);
+        }
+        catch
+        {
+            return Color.Black;
+        }
     }
 
     /// <summary>
