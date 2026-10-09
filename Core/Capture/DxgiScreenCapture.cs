@@ -52,7 +52,7 @@ public sealed class DxgiScreenCapture : IDisposable
 
         using var dxgiDevice = _device!.QueryInterface<IDXGIDevice>();
         using var adapter = dxgiDevice.GetAdapter();
-        using var output = adapter.GetOutput(outputIndex);
+        adapter.EnumOutputs((uint)outputIndex, out var output).CheckError();
         using var output1 = output.QueryInterface<IDXGIOutput1>();
 
         var desc = output.Description;
@@ -64,8 +64,8 @@ public sealed class DxgiScreenCapture : IDisposable
         // Staging-текстура для копирования GPU -> CPU.
         var texDesc = new Texture2DDescription
         {
-            Width = _width,
-            Height = _height,
+            Width = (uint)_width,
+            Height = (uint)_height,
             MipLevels = 1,
             ArraySize = 1,
             Format = Format.B8G8R8A8_UNorm,
@@ -91,7 +91,7 @@ public sealed class DxgiScreenCapture : IDisposable
         if (_duplication is null || _stagingTexture is null || _context is null)
             throw new InvalidOperationException("Захват не инициализирован. Вызовите Initialize().");
 
-        var result = _duplication.AcquireNextFrame(timeoutMs, out _, out var desktopResource);
+        var result = _duplication.AcquireNextFrame((uint)timeoutMs, out _, out var desktopResource);
         if (result == Vortice.DXGI.ResultCode.WaitTimeout)
             return false;
         result.CheckError();
@@ -112,7 +112,7 @@ public sealed class DxgiScreenCapture : IDisposable
                     {
                         for (int y = 0; y < _height; y++)
                         {
-                            Buffer.MemoryCopy(
+                            System.Buffer.MemoryCopy(
                                 src + y * mapped.RowPitch,
                                 dst + y * _stride,
                                 _stride,
