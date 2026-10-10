@@ -23,11 +23,27 @@ public static class ComboFactory
     {
         if (profile == null) throw new ArgumentNullException(nameof(profile));
 
+        // Определяем кулдаун: для общих комбо (Skill) — из профиля или глобальный дефолт,
+        // для мгновенных (HP) — из профиля, если задан, иначе дефолт мгновенных комбо.
+        int cooldownMs;
+        if (profile.IsCooldownGlobal)
+        {
+            cooldownMs = ParseIntOrDefault(profile.CooldownTime,
+                AppConfigManager.Config.GlobalCooldownDefaultMs);
+        }
+        else
+        {
+            int parsed = ParseIntOrDefault(profile.CooldownTime, 0);
+            cooldownMs = parsed > 0
+                ? parsed
+                : AppConfigManager.Config.InstantComboDefaultCooldownMs;
+        }
+
         var combo = new ActiveCombo
         {
             Name = profile.ComboName ?? string.Empty,
             Priority = ParseIntOrDefault(profile.Priority, 50),
-            CooldownMs = ParseIntOrDefault(profile.CooldownTime, 1500),
+            CooldownMs = cooldownMs,
             IsGlobalCooldown = profile.IsCooldownGlobal,
             PauseIfWasd = profile.PauseIfWASD
         };

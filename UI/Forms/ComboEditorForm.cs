@@ -7,6 +7,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using PixelMacroEngine.Core.Models;
 using PixelMacroEngine.Core.Services;
 
 namespace pxlhunt.FORMS
@@ -58,6 +59,12 @@ namespace pxlhunt.FORMS
 
             // 6. Подписываем радиокнопки режимов (Точка/Прямоугольник) и кнопки захвата прямоугольника
             SubscribeSquareModes(this);
+
+            // 7. Подставляем дефолтный кулдаун из глобального конфига, если поле пустое
+            if (string.IsNullOrWhiteSpace(textBoxCDglobal.Text))
+            {
+                textBoxCDglobal.Text = AppConfigManager.Config.GlobalCooldownDefaultMs.ToString();
+            }
         }
 
         /// <summary>
@@ -698,11 +705,19 @@ namespace pxlhunt.FORMS
                 return;
             }
 
+            // Определяем значение кулдауна для сохранения:
+            // - режим "Общий (Skill)": сохраняем введённое значение из textBoxCDglobal;
+            // - режим "Мгновенный (HP)": сохраняем дефолт мгновенных комбо из глобального конфига.
+            bool isGlobalCooldown = radioButtonSkillCooldownGLOBAL.Checked;
+            string cooldownToSave = isGlobalCooldown
+                ? textBoxCDglobal.Text
+                : AppConfigManager.Config.InstantComboDefaultCooldownMs.ToString();
+
             var profile = new ComboProfile
             {
                 ComboName = comboName,
-                CooldownTime = textBoxCDglobal.Text,
-                IsCooldownGlobal = radioButtonSkillCooldownGLOBAL.Checked,
+                CooldownTime = cooldownToSave,
+                IsCooldownGlobal = isGlobalCooldown,
                 Priority = textBoxPriorityTrigger.Text,
                 PauseIfWASD = checkBoxWASDpauseTrigger.Checked,
                 IsOnOff = checkBoxOnOff.Checked
