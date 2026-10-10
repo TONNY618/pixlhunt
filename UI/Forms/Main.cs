@@ -18,6 +18,7 @@ namespace pxlhunt.FORMS
         private const string SessionFileName = "session.json";
         private readonly HashSet<string> _changedComboNames = new(StringComparer.OrdinalIgnoreCase);
         private bool _isLoadingCombos = false;
+        private bool _wasPaused = false;
 
         public pxlHunt()
         {
@@ -137,7 +138,17 @@ namespace pxlhunt.FORMS
             // не сбрасывая состояния комбо.
             if (BotStateController.CanExecuteCombos)
             {
+                _wasPaused = false;
                 await _orchestrator.ProcessFrameAsync(frame);
+            }
+            else
+            {
+                // Если только что ушли в паузу (например, открыли окно настроек) - отпускаем все залипшие кнопки
+                if (!_wasPaused)
+                {
+                    _wasPaused = true;
+                    PixelMacroEngine.Core.Services.ArduinoHidService.EmergencyReset();
+                }
             }
         }
 
@@ -264,6 +275,9 @@ namespace pxlhunt.FORMS
             {
                 // При явном выключении — сбрасываем кулдауны всех комбо
                 _orchestrator.ResetAllStates();
+
+                // Стоп-кран: аварийно отпускаем все залипшие клавиши на плате
+                PixelMacroEngine.Core.Services.ArduinoHidService.EmergencyReset();
             }
         }
 

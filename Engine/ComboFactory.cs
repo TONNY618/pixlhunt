@@ -190,6 +190,9 @@ public static class ComboFactory
             case "groupBoxCond":
                 return new ConditionStep(elem.Parameters);
 
+            case "delayMs":
+                return new PixelMacroEngine.Triggers.Steps.DelayStep(elem.Parameters);
+
             default:
                 return null;
         }
