@@ -34,12 +34,13 @@
             checkBoxStatus = new CheckBox();
             checkedListBoxCombo = new CheckedListBox();
             listBoxActiv = new ListBox();
-            labelLogs = new Label();
             labelEvents = new Label();
             buttonSettings = new Button();
             buttonComboForm = new Button();
+            trackBarTransparency = new TrackBar();
             groupBoxActiveTime.SuspendLayout();
             groupBoxStatus.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)trackBarTransparency).BeginInit();
             SuspendLayout();
             // 
             // groupBoxActiveTime
@@ -85,33 +86,23 @@
             // checkedListBoxCombo
             // 
             checkedListBoxCombo.FormattingEnabled = true;
-            checkedListBoxCombo.Location = new Point(12, 85);
+            checkedListBoxCombo.Location = new Point(12, 124);
             checkedListBoxCombo.Name = "checkedListBoxCombo";
-            checkedListBoxCombo.Size = new Size(160, 350);
+            checkedListBoxCombo.Size = new Size(163, 238);
             checkedListBoxCombo.TabIndex = 4;
             // 
             // listBoxActiv
             // 
             listBoxActiv.FormattingEnabled = true;
-            listBoxActiv.ItemHeight = 15;
-            listBoxActiv.Location = new Point(177, 85);
+            listBoxActiv.Location = new Point(12, 368);
             listBoxActiv.Name = "listBoxActiv";
-            listBoxActiv.Size = new Size(160, 350);
+            listBoxActiv.Size = new Size(163, 154);
             listBoxActiv.TabIndex = 9;
-            // 
-            // labelLogs
-            // 
-            labelLogs.AutoSize = true;
-            labelLogs.Location = new Point(177, 67);
-            labelLogs.Name = "labelLogs";
-            labelLogs.Size = new Size(35, 15);
-            labelLogs.TabIndex = 10;
-            labelLogs.Text = "Логи";
             // 
             // labelEvents
             // 
             labelEvents.AutoSize = true;
-            labelEvents.Location = new Point(12, 67);
+            labelEvents.Location = new Point(12, 106);
             labelEvents.Name = "labelEvents";
             labelEvents.Size = new Size(56, 15);
             labelEvents.TabIndex = 5;
@@ -119,7 +110,7 @@
             // 
             // buttonSettings
             // 
-            buttonSettings.Location = new Point(100, 444);
+            buttonSettings.Location = new Point(12, 528);
             buttonSettings.Name = "buttonSettings";
             buttonSettings.Size = new Size(75, 23);
             buttonSettings.TabIndex = 7;
@@ -129,28 +120,40 @@
             // 
             // buttonComboForm
             // 
-            buttonComboForm.Location = new Point(195, 444);
+            buttonComboForm.Location = new Point(93, 528);
             buttonComboForm.Name = "buttonComboForm";
-            buttonComboForm.Size = new Size(101, 23);
+            buttonComboForm.Size = new Size(82, 23);
             buttonComboForm.TabIndex = 8;
-            buttonComboForm.Text = "ComboForm";
+            buttonComboForm.Text = "Combo Edit";
             buttonComboForm.UseVisualStyleBackColor = true;
             buttonComboForm.Click += buttonComboForm_Click;
+            // 
+            // trackBarTransparency
+            // 
+            trackBarTransparency.LargeChange = 10;
+            trackBarTransparency.Location = new Point(14, 73);
+            trackBarTransparency.Maximum = 100;
+            trackBarTransparency.Minimum = 10;
+            trackBarTransparency.Name = "trackBarTransparency";
+            trackBarTransparency.Size = new Size(161, 45);
+            trackBarTransparency.TabIndex = 10;
+            trackBarTransparency.TickFrequency = 10;
+            trackBarTransparency.Value = 100;
             // 
             // pxlHunt
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.Ivory;
-            ClientSize = new Size(349, 516);
+            ClientSize = new Size(185, 614);
             Controls.Add(buttonComboForm);
             Controls.Add(buttonSettings);
-            Controls.Add(labelLogs);
             Controls.Add(listBoxActiv);
             Controls.Add(checkedListBoxCombo);
             Controls.Add(labelEvents);
             Controls.Add(groupBoxStatus);
             Controls.Add(groupBoxActiveTime);
+            Controls.Add(trackBarTransparency);
             Name = "pxlHunt";
             ShowIcon = false;
             Text = "pxlHunt";
@@ -158,6 +161,7 @@
             groupBoxActiveTime.PerformLayout();
             groupBoxStatus.ResumeLayout(false);
             groupBoxStatus.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)trackBarTransparency).EndInit();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -169,9 +173,9 @@
         private CheckBox checkBoxStatus;
         private CheckedListBox checkedListBoxCombo;
         private ListBox listBoxActiv;
-        private Label labelLogs;
         private Label labelEvents;
         private Button buttonSettings;
         private Button buttonComboForm;
+        private TrackBar trackBarTransparency;
     }
 }
