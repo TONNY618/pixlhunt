@@ -114,7 +114,9 @@ namespace pxlhunt.FORMS
 
         private async Task OnFrameCapturedHandler(FrameBuffer frame)
         {
-            if (checkBoxStatus.Checked)
+            // Тихая пауза: если окно активно или открыт редактор — просто пропускаем кадр,
+            // не сбрасывая состояния комбо.
+            if (BotStateController.CanExecuteCombos)
             {
                 await _orchestrator.ProcessFrameAsync(frame);
             }
@@ -192,16 +194,20 @@ namespace pxlhunt.FORMS
 
         private void CheckBoxStatus_CheckedChanged(object? sender, EventArgs e)
         {
+            // Синхронизируем мастер-флаг с галочкой
+            BotStateController.IsMasterEnabled = checkBoxStatus.Checked;
+
             if (!checkBoxStatus.Checked)
             {
-                // При выключении — сбрасываем кулдауны всех комбо
+                // При явном выключении — сбрасываем кулдауны всех комбо
                 _orchestrator.ResetAllStates();
             }
         }
 
         private void SessionTimer_Tick(object? sender, EventArgs e)
         {
-            if (checkBoxStatus.Checked)
+            // Время активной игры накручиваем только когда комбо реально могут работать
+            if (BotStateController.CanExecuteCombos)
             {
                 _activeSessionTime = _activeSessionTime.Add(TimeSpan.FromSeconds(1));
                 UpdateActiveTimeLabel();
