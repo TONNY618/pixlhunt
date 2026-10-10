@@ -99,8 +99,62 @@ namespace pxlhunt.FORMS
             menu.Items.Add(editItem);
 
             var priorityItem = new ToolStripMenuItem("Приоритет...");
-            priorityItem.Click += (s, e) => ChangeSelectedComboPriority();
+            priorityItem.Click += (s, e) =>
+            {
+                int index = checkedListBoxCombo.SelectedIndex;
+                if (index < 0 || index >= _orchestrator.Combos.Count) return;
+                var combo = _orchestrator.Combos[index];
+
+                // Создаем легкое окно для ввода приоритета
+                Form inputForm = new Form
+                {
+                    Text = "Приоритет",
+                    Size = new System.Drawing.Size(200, 120),
+                    TopMost = true,
+                    ShowInTaskbar = false,
+                    FormBorderStyle = FormBorderStyle.FixedDialog,
+                    StartPosition = FormStartPosition.CenterParent,
+                    MaximizeBox = false,
+                    MinimizeBox = false
+                };
+                NumericUpDown num = new NumericUpDown
+                {
+                    Value = Math.Clamp(combo.Priority, 0, 99),
+                    Minimum = 0,
+                    Maximum = 99,
+                    Location = new System.Drawing.Point(50, 20)
+                };
+                Button btnOk = new Button
+                {
+                    Text = "OK",
+                    Location = new System.Drawing.Point(50, 50)
+                };
+                btnOk.Click += (s1, e1) =>
+                {
+                    combo.Priority = (int)num.Value;
+                    // Пересохраняем профиль
+                    UpdateComboFilePriority(combo.FilePath, combo.Priority);
+                    LoadCombosFromConfig(); // Пересортировка списка
+                    inputForm.Close();
+                };
+                inputForm.Controls.Add(num);
+                inputForm.Controls.Add(btnOk);
+                inputForm.Show(this); // Показываем немодально, чтобы не блочить родителя
+            };
             menu.Items.Add(priorityItem);
+
+            menu.Opening += (s, e) =>
+            {
+                int index = checkedListBoxCombo.SelectedIndex;
+                if (index >= 0 && index < _orchestrator.Combos.Count)
+                {
+                    var combo = _orchestrator.Combos[index];
+                    var editItem = menu.Items.Cast<ToolStripMenuItem>()
+                        .FirstOrDefault(i => i.Text.StartsWith("Приоритет"));
+                    if (editItem != null)
+                        editItem.Text = $"Приоритет ({combo.Priority})";
+                }
+            };
 
             menu.Items.Add(new ToolStripSeparator());
 
@@ -417,6 +471,25 @@ namespace pxlhunt.FORMS
 
             // Мгновенно обновляем JSON-файл комбо на диске
             UpdateComboFileState(combo.FilePath, isEnabled);
+        }
+
+        /// <summary>
+        /// Записывает новое значение Priority в JSON-файл комбо.
+        /// </summary>
+        private void UpdateComboFilePriority(string? filePath, int priority)
+        {
+            if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath)) return;
+            try
+            {
+                string json = File.ReadAllText(filePath);
+                var node = System.Text.Json.Nodes.JsonNode.Parse(json);
+                if (node != null)
+                {
+                    node["Priority"] = priority.ToString();
+                    File.WriteAllText(filePath, node.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+                }
+            }
+            catch { }
         }
 
         /// <summary>
