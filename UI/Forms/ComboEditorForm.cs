@@ -60,11 +60,10 @@ namespace pxlhunt.FORMS
             // 6. Подписываем радиокнопки режимов (Точка/Прямоугольник) и кнопки захвата прямоугольника
             SubscribeSquareModes(this);
 
-            // 7. Подставляем дефолтный кулдаун из глобального конфига, если поле пустое
-            if (string.IsNullOrWhiteSpace(textBoxCDglobal.Text))
-            {
-                textBoxCDglobal.Text = AppConfigManager.Config.GlobalCooldownDefaultMs.ToString();
-            }
+            // 7. Отображаем системный кулдаун из глобального конфига (только для справки).
+            //    Значение не сохраняется в профиль — тайминг берётся из AppConfigManager.
+            textBoxCDglobal.Text = AppConfigManager.Config.GlobalCooldownDefaultMs.ToString();
+            textBoxCDglobal.ReadOnly = true;
         }
 
         /// <summary>
@@ -705,18 +704,13 @@ namespace pxlhunt.FORMS
                 return;
             }
 
-            // Определяем значение кулдауна для сохранения:
-            // - режим "Общий (Skill)": сохраняем введённое значение из textBoxCDglobal;
-            // - режим "Мгновенный (HP)": сохраняем дефолт мгновенных комбо из глобального конфига.
+            // Кулдаун определяется системно через AppConfigManager.
+            // В профиле сохраняем только переключатель режима (Общий / Мгновенный).
             bool isGlobalCooldown = radioButtonSkillCooldownGLOBAL.Checked;
-            string cooldownToSave = isGlobalCooldown
-                ? textBoxCDglobal.Text
-                : AppConfigManager.Config.InstantComboDefaultCooldownMs.ToString();
 
             var profile = new ComboProfile
             {
                 ComboName = comboName,
-                CooldownTime = cooldownToSave,
                 IsCooldownGlobal = isGlobalCooldown,
                 Priority = textBoxPriorityTrigger.Text,
                 PauseIfWASD = checkBoxWASDpauseTrigger.Checked,
@@ -827,7 +821,6 @@ namespace pxlhunt.FORMS
             if (profile != null)
             {
                 textBox5.Text = comboName;
-                textBoxCDglobal.Text = profile.CooldownTime ?? "1500";
                 radioButtonSkillCooldownGLOBAL.Checked = profile.IsCooldownGlobal;
                 radioButtonSkillCooldownSingleHP.Checked = !profile.IsCooldownGlobal;
                 textBoxPriorityTrigger.Text = profile.Priority ?? "50";
@@ -902,7 +895,6 @@ namespace pxlhunt.FORMS
 
         // Новые свойства для хранения статических настроек триггера
         public bool IsOnOff { get; set; } = true;
-        public string CooldownTime { get; set; } = "1500";
         public bool IsCooldownGlobal { get; set; } = true;
         public string Priority { get; set; } = "50";
         public bool PauseIfWASD { get; set; } = true;
