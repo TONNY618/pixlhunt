@@ -7,19 +7,19 @@ public static class ArduinoKeyMap
 {
     public static readonly Dictionary<string, byte> KeyMap = new Dictionary<string, byte>(StringComparer.OrdinalIgnoreCase)
     {
-        // Буквы (ASCII)
-        ["A"] = (byte)'a', ["B"] = (byte)'b', ["C"] = (byte)'c', ["D"] = (byte)'d',
-        ["E"] = (byte)'e', ["F"] = (byte)'f', ["G"] = (byte)'g', ["H"] = (byte)'h',
-        ["I"] = (byte)'i', ["J"] = (byte)'j', ["K"] = (byte)'k', ["L"] = (byte)'l',
-        ["M"] = (byte)'m', ["N"] = (byte)'n', ["O"] = (byte)'o', ["P"] = (byte)'p',
-        ["Q"] = (byte)'q', ["R"] = (byte)'r', ["S"] = (byte)'s', ["T"] = (byte)'t',
-        ["U"] = (byte)'u', ["V"] = (byte)'v', ["W"] = (byte)'w', ["X"] = (byte)'x',
-        ["Y"] = (byte)'y', ["Z"] = (byte)'z',
+        // Буквы (Сырые HID коды)
+        ["A"] = 0x04, ["B"] = 0x05, ["C"] = 0x06, ["D"] = 0x07,
+        ["E"] = 0x08, ["F"] = 0x09, ["G"] = 0x0A, ["H"] = 0x0B,
+        ["I"] = 0x0C, ["J"] = 0x0D, ["K"] = 0x0E, ["L"] = 0x0F,
+        ["M"] = 0x10, ["N"] = 0x11, ["O"] = 0x12, ["P"] = 0x13,
+        ["Q"] = 0x14, ["R"] = 0x15, ["S"] = 0x16, ["T"] = 0x17,
+        ["U"] = 0x18, ["V"] = 0x19, ["W"] = 0x1A, ["X"] = 0x1B,
+        ["Y"] = 0x1C, ["Z"] = 0x1D,
 
-        // Цифры верхнего ряда
-        ["0"] = (byte)'0', ["1"] = (byte)'1', ["2"] = (byte)'2', ["3"] = (byte)'3',
-        ["4"] = (byte)'4', ["5"] = (byte)'5', ["6"] = (byte)'6', ["7"] = (byte)'7',
-        ["8"] = (byte)'8', ["9"] = (byte)'9',
+        // Цифры верхнего ряда (Сырые HID коды)
+        ["1"] = 0x1E, ["2"] = 0x1F, ["3"] = 0x20, ["4"] = 0x21,
+        ["5"] = 0x22, ["6"] = 0x23, ["7"] = 0x24, ["8"] = 0x25,
+        ["9"] = 0x26, ["0"] = 0x27,
 
         // F-клавиши
         ["F1"] = 0xC2, ["F2"] = 0xC3, ["F3"] = 0xC4, ["F4"] = 0xC5,
@@ -42,7 +42,8 @@ public static class ArduinoKeyMap
         ["Left Win"]    = 0x83, ["Right Win"]   = 0x87,
 
         // Служебные и навигация
-        ["Space"]       = 0x20,
+        // Пробел в HID - это 0x2C (старый 0x20 перезапиши)
+        ["Space"]       = 0x2C,
         ["Enter"]       = 0xB0,
         ["Tab"]         = 0xB3,
         ["Escape"]      = 0xB1,
@@ -62,18 +63,18 @@ public static class ArduinoKeyMap
         ["Pause"]       = 0xD0,
         ["Caps Lock"]   = 0xC1,
 
-        // Знаки препинания / спецсимволы
-        ["` (Тильда)"]  = (byte)'`',
-        ["- (Минус)"]   = (byte)'-',
-        ["= (Равно)"]   = (byte)'=',
-        ["["]           = (byte)'[',
-        ["]"]           = (byte)']',
-        ["\\"]          = (byte)'\\',
-        [";"]           = (byte)';',
-        ["'"]           = (byte)'\'',
-        [","]           = (byte)',',
-        ["."]           = (byte)'.',
-        ["/"]           = (byte)'/'
+        // Знаки препинания / спецсимволы (Сырые HID коды)
+        ["` (Тильда)"]  = 0x35,
+        ["- (Минус)"]   = 0x2D,
+        ["= (Равно)"]   = 0x2E,
+        ["["]           = 0x2F,
+        ["]"]           = 0x30,
+        ["\\"]          = 0x31,
+        [";"]           = 0x33,
+        ["'"]           = 0x34,
+        [","]           = 0x36,
+        ["."]           = 0x37,
+        ["/"]           = 0x38
     };
 
     public static byte GetByte(string keyName)
