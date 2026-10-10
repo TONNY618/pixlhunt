@@ -468,38 +468,38 @@ namespace pxlhunt.FORMS
             GroupBox? parentGroup = GetParentGroupBox(currentPbox);
             if (parentGroup == null) return;
 
-            Color pixelColor = GetPixelColorFromBufferOrScreen(screenPoint);
+            // Определяем индекс пипетки (1..4) из имени pictureBoxCreatePXL{N}
+            string index = Regex.Match(currentPbox.Name, @"\d+").Value;
+            if (string.IsNullOrEmpty(index)) return;
 
-            string targetTextBoxXY = string.Empty;
-            string targetTextBoxColor = string.Empty;
+            // Определяем режим: точка (pxl) или прямоугольник (avrg)
+            bool isSquareMode = IsSquareModeSelected(parentGroup, index);
 
-            switch (currentPbox.Name)
+            Color pixelColor;
+
+            if (isSquareMode)
             {
-                case "pictureBoxCreatePXL1":
-                    targetTextBoxXY = "textBoxXY1_1";
-                    targetTextBoxColor = "textBoxColor1";
-                    break;
+                // В режиме avrg берём две точки: textBoxXY{index}_1 и textBoxXY{index}_2
+                TextBox? txtXY1 = FindControlByName<TextBox>(parentGroup, $"textBoxXY{index}_1");
+                TextBox? txtXY2 = FindControlByName<TextBox>(parentGroup, $"textBoxXY{index}_2");
 
-                case "pictureBoxCreatePXL2":
-                    targetTextBoxXY = "textBoxXY2_1";
-                    targetTextBoxColor = "textBoxColor2";
-                    break;
+                Point point1 = TryParsePoint(txtXY1?.Text) ?? screenPoint;
+                Point point2 = TryParsePoint(txtXY2?.Text) ?? screenPoint;
 
-                case "pictureBoxCreatePXL3":
-                    targetTextBoxXY = "textBoxXY3_1";
-                    targetTextBoxColor = "textBoxColor3";
-                    break;
-
-                case "pictureBoxCreatePXL4":
-                    targetTextBoxXY = "textBoxXY4_1";
-                    targetTextBoxColor = string.Empty;
-                    break;
-
-                default:
-                    return;
+                pixelColor = GetAverageColor(point1, point2);
+            }
+            else
+            {
+                // Режим одиночного пикселя
+                pixelColor = ScreenCaptureService.GetPixel(screenPoint.X, screenPoint.Y);
             }
 
-            if (!string.IsNullOrEmpty(targetTextBoxXY))
+            string targetTextBoxXY = $"textBoxXY{index}_1";
+            string targetTextBoxColor = $"textBoxColor{index}";
+
+            // В режиме avrg координаты в textBoxXY{index}_1 не перезаписываем,
+            // чтобы не сломать уже заданную область.
+            if (!isSquareMode)
             {
                 TextBox? txtXY = FindControlByName<TextBox>(parentGroup, targetTextBoxXY);
                 if (txtXY != null)
@@ -508,21 +508,52 @@ namespace pxlhunt.FORMS
                 }
             }
 
-            if (!string.IsNullOrEmpty(targetTextBoxColor))
+            // textBoxColor4 в дизайнере отсутствует — просто не найдётся
+            TextBox? txtColor = FindControlByName<TextBox>(parentGroup, targetTextBoxColor);
+            if (txtColor != null)
             {
-                TextBox? txtColor = FindControlByName<TextBox>(parentGroup, targetTextBoxColor);
-                if (txtColor != null)
-                {
-                    txtColor.Text = $"#{pixelColor.R:X2}{pixelColor.G:X2}{pixelColor.B:X2}";
-                }
+                txtColor.Text = $"#{pixelColor.R:X2}{pixelColor.G:X2}{pixelColor.B:X2}";
             }
 
             currentPbox.BackColor = pixelColor;
         }
 
-        private Color GetPixelColorFromBufferOrScreen(Point point)
+        /// <summary>
+        /// Проверяет, выбран ли для данной группы режим прямоугольника (avrg).
+        /// Ищем radioButtonSquare{index}_2 внутри parentGroup.
+        /// </summary>
+        private bool IsSquareModeSelected(GroupBox parentGroup, string index)
         {
-            return ScreenCaptureService.GetPixel(point.X, point.Y);
+            RadioButton? rbSquare = FindControlByName<RadioButton>(parentGroup, $"radioButtonSquare{index}_2");
+            return rbSquare != null && rbSquare.Checked;
+        }
+
+        /// <summary>
+        /// Парсит строку вида "X, Y" в Point. Возвращает null, если строка пуста или некорректна.
+        /// </summary>
+        private static Point? TryParsePoint(string? text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return null;
+
+            string[] parts = text.Split(',');
+            if (parts.Length != 2) return null;
+
+            if (int.TryParse(parts[0].Trim(), out int x) &&
+                int.TryParse(parts[1].Trim(), out int y))
+            {
+                return new Point(x, y);
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Вычисляет средний цвет прямоугольника между двумя точками.
+        /// Использует общий буфер кадра (ScreenCaptureService.CurrentBuffer) —
+        /// без блокировок на каждый пиксель и без аллокаций.
+        /// </summary>
+        private Color GetAverageColor(Point p1, Point p2)
+        {
+            return ScreenCaptureService.CurrentBuffer.GetAverageColor(p1.X, p1.Y, p2.X, p2.Y);
         }
 
         private GroupBox? GetParentGroupBox(Control? control)
