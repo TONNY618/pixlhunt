@@ -26,6 +26,20 @@ public class Orchestrator
     /// <summary>Регистрирует комбо в оркестраторе.</summary>
     public void RegisterCombo(ActiveCombo combo) => Combos.Add(combo);
 
+    /// <summary>Проверяет, нажата ли хотя бы одна из клавиш движения W, A, S, D.</summary>
+    private static bool IsWasdPressed()
+    {
+        const int VK_W = 0x57;
+        const int VK_A = 0x41;
+        const int VK_S = 0x53;
+        const int VK_D = 0x44;
+
+        return (GetAsyncKeyState(VK_W) & 0x8000) != 0
+            || (GetAsyncKeyState(VK_A) & 0x8000) != 0
+            || (GetAsyncKeyState(VK_S) & 0x8000) != 0
+            || (GetAsyncKeyState(VK_D) & 0x8000) != 0;
+    }
+
     /// <summary>Сбрасывает состояние кулдауна у всех комбо.</summary>
     public void ResetAllStates()
     {
@@ -47,6 +61,10 @@ public class Orchestrator
         foreach (var combo in ordered)
         {
             if (!combo.IsEnabled || !combo.CanExecute())
+                continue;
+
+            // Если включён PauseIfWasd и игрок двигается — пропускаем комбо
+            if (combo.PauseIfWasd && IsWasdPressed())
                 continue;
 
             // Проверяем все триггеры: должны вернуть true
@@ -75,6 +93,13 @@ public class Orchestrator
 
             foreach (var step in combo.Steps)
             {
+                // Ожидаем, пока игрок отпустит клавиши движения (если включён PauseIfWasd)
+                while (combo.PauseIfWasd && IsWasdPressed())
+                {
+                    ct.ThrowIfCancellationRequested();
+                    await Task.Delay(25, ct).ConfigureAwait(false);
+                }
+
                 ct.ThrowIfCancellationRequested();
                 await step.ExecuteAsync(context, ct).ConfigureAwait(false);
             }
