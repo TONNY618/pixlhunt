@@ -33,16 +33,17 @@ public static class ComboFactory
         };
 
         BuildSteps(profile.Actions, combo.Steps);
-        BuildTriggers(profile.Triggers, combo.Triggers);
+        BuildTriggers(profile.Triggers, combo);
 
         return combo;
     }
 
     /// <summary>
     /// Собирает триггеры из UI-элементов профиля.
-    /// Поддерживается тип "groupBox1" (проверка цвета/региона).
+    /// Поддерживаются типы: "groupBox1" (цвет), "IFconditionsKEYgroupBox" (клавиша),
+    /// "IFconditionsOrAndStart" (логика И/ИЛИ), "IFconditionsTimerStart" (таймер).
     /// </summary>
-    private static void BuildTriggers(List<ComboElement> elements, List<ITriggerEvaluator> targetList)
+    private static void BuildTriggers(List<ComboElement> elements, ActiveCombo combo)
     {
         if (elements == null) return;
 
@@ -53,40 +54,51 @@ public static class ComboFactory
             switch (elem.ElementType)
             {
                 case "groupBox1":
-                    var trigger = CreateColorTrigger(elem);
+                    var trigger = ParseColorEvaluator(elem.Parameters, "1");
                     if (trigger != null)
-                        targetList.Add(trigger);
+                        combo.Triggers.Add(trigger);
                     break;
 
                 case "IFconditionsKEYgroupBox":
                     var keyTrigger = CreateKeyTrigger(elem);
                     if (keyTrigger != null)
-                        targetList.Add(keyTrigger);
+                        combo.Triggers.Add(keyTrigger);
                     break;
 
                 case "IFconditionsOrAndStart":
+                    if (elem.Parameters != null &&
+                        elem.Parameters.GetValueOrDefault("radioButtonOrAnd1_1") == "True")
+                    {
+                        combo.IsOrTriggerLogic = true;
+                    }
+                    break;
+
                 case "IFconditionsTimerStart":
-                    // Пока безопасно пропускаем
+                    if (elem.Parameters != null)
+                    {
+                        int ms = ParseIntOrDefault(elem.Parameters.GetValueOrDefault("TimerStarttextBox"), 0);
+                        if (ms > 0)
+                            combo.Triggers.Add(new TimerTriggerEvaluator(ms));
+                    }
                     break;
             }
         }
     }
 
     /// <summary>
-    /// Создаёт ColorTriggerEvaluator из параметров UI-элемента "groupBox1".
+    /// Создаёт ColorTriggerEvaluator из параметров UI-элемента по заданному суффиксу.
     /// </summary>
-    private static ColorTriggerEvaluator? CreateColorTrigger(ComboElement elem)
+    private static ColorTriggerEvaluator? ParseColorEvaluator(Dictionary<string, string>? p, string suffix)
     {
-        var p = elem.Parameters;
         if (p == null) return null;
 
-        Point point1 = ParsePoint(p.GetValueOrDefault("textBoxXY1_1"));
-        Point point2 = ParsePoint(p.GetValueOrDefault("textBoxXY1_2"));
-        Color expected = ParseColor(p.GetValueOrDefault("textBoxColor1"));
-        int deviant = ParseIntOrDefault(p.GetValueOrDefault("textBoxDeviant1"), 0);
+        Point point1 = ParsePoint(p.GetValueOrDefault($"textBoxXY{suffix}_1"));
+        Point point2 = ParsePoint(p.GetValueOrDefault($"textBoxXY{suffix}_2"));
+        Color expected = ParseColor(p.GetValueOrDefault($"textBoxColor{suffix}"));
+        int deviant = ParseIntOrDefault(p.GetValueOrDefault($"textBoxDeviant{suffix}"), 0);
 
-        bool isNotEqual = p.GetValueOrDefault("radioButtonEqu1_2") == "True";
-        bool isRegionAverage = p.GetValueOrDefault("radioButtonSquare1_2") == "True";
+        bool isNotEqual = p.GetValueOrDefault($"radioButtonEqu{suffix}_2") == "True";
+        bool isRegionAverage = p.GetValueOrDefault($"radioButtonSquare{suffix}_2") == "True";
 
         return new ColorTriggerEvaluator(point1, point2, expected, deviant, isNotEqual, isRegionAverage);
     }
@@ -188,7 +200,10 @@ public static class ComboFactory
                 return new PressKeyStep(elem.Parameters);
 
             case "groupBoxCond":
-                return new ConditionStep(elem.Parameters);
+                return new ConditionStep(ParseColorEvaluator(elem.Parameters, "2"));
+
+            case "groupBoxAwait":
+                return new AwaitStep(ParseColorEvaluator(elem.Parameters, "3"));
 
             case "delayMs":
                 return new PixelMacroEngine.Triggers.Steps.DelayStep(elem.Parameters);

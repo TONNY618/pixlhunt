@@ -29,6 +29,9 @@ public class ActiveCombo
     /// <summary>Приостанавливать выполнение, если пользователь нажимает WASD.</summary>
     public bool PauseIfWasd { get; set; }
 
+    /// <summary>Использовать логику ИЛИ для триггеров (по умолчанию — И).</summary>
+    public bool IsOrTriggerLogic { get; set; } = false;
+
     /// <summary>Включено ли комбо (управляется галочкой в UI).</summary>
     public bool IsEnabled { get; set; } = true;
 

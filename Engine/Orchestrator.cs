@@ -75,18 +75,22 @@ public class Orchestrator
             if (combo.PauseIfWasd && IsWasdPressed())
                 continue;
 
-            // Проверяем все триггеры: должны вернуть true
-            bool allTriggersPassed = true;
-            foreach (var trigger in combo.Triggers)
+            // Проверяем триггеры с учётом логики И/ИЛИ
+            bool triggersPassed;
+            if (combo.Triggers.Count == 0)
             {
-                if (!trigger.Evaluate(frame))
-                {
-                    allTriggersPassed = false;
-                    break;
-                }
+                triggersPassed = true;
+            }
+            else if (combo.IsOrTriggerLogic)
+            {
+                triggersPassed = combo.Triggers.Any(t => t.Evaluate(frame));
+            }
+            else
+            {
+                triggersPassed = combo.Triggers.All(t => t.Evaluate(frame));
             }
 
-            if (!allTriggersPassed)
+            if (!triggersPassed)
                 continue;
 
             combo.IsRunning = true;
@@ -102,17 +106,24 @@ public class Orchestrator
                     ComboName = combo.Name
                 };
 
-                foreach (var step in combo.Steps)
+                try
                 {
-                    // Ожидаем, пока игрок отпустит клавиши движения (если включён PauseIfWasd)
-                    while (combo.PauseIfWasd && IsWasdPressed())
+                    foreach (var step in combo.Steps)
                     {
-                        ct.ThrowIfCancellationRequested();
-                        await Task.Delay(25, ct).ConfigureAwait(false);
-                    }
+                        // Ожидаем, пока игрок отпустит клавиши движения (если включён PauseIfWasd)
+                        while (combo.PauseIfWasd && IsWasdPressed())
+                        {
+                            ct.ThrowIfCancellationRequested();
+                            await Task.Delay(25, ct).ConfigureAwait(false);
+                        }
 
-                    ct.ThrowIfCancellationRequested();
-                    await step.ExecuteAsync(context, ct).ConfigureAwait(false);
+                        ct.ThrowIfCancellationRequested();
+                        await step.ExecuteAsync(context, ct).ConfigureAwait(false);
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    // Прервано (таймаут или WASD)
                 }
             }
             finally

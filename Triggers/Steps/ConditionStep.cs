@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,25 +8,30 @@ namespace PixelMacroEngine.Triggers.Steps;
 
 /// <summary>
 /// [Подсистема движка: Уровень 3 - Шаг]
-/// Заглушка шага-условия (ЕСЛИ). Содержит вложенные шаги TrueSteps.
-/// Связан с: IComboStep, ComboFactory.
+/// Шаг-условие (ЕСЛИ): выполняет вложенные шаги TrueSteps, если цветовой триггер истинен.
+/// Связан с: IComboStep, ColorTriggerEvaluator, ComboFactory.
 /// </summary>
 public class ConditionStep : IComboStep
 {
-    /// <summary>Параметры условия (имена контролов -> значения из UI).</summary>
-    public Dictionary<string, string> Parameters { get; }
+    private readonly ColorTriggerEvaluator? _evaluator;
 
     /// <summary>Шаги, выполняемые при истинности условия.</summary>
     public List<IComboStep> TrueSteps { get; } = new List<IComboStep>();
 
-    public ConditionStep(Dictionary<string, string> parameters)
+    public ConditionStep(ColorTriggerEvaluator? evaluator)
     {
-        Parameters = parameters ?? new Dictionary<string, string>();
+        _evaluator = evaluator;
     }
 
-    public Task ExecuteAsync(TriggerExecutionContext context, CancellationToken cancellationToken)
+    public async Task ExecuteAsync(TriggerExecutionContext context, CancellationToken cancellationToken)
     {
-        // TODO: реализовать выполнение вложенных шагов TrueSteps
-        return Task.CompletedTask;
+        if (_evaluator != null && _evaluator.Evaluate(context.Frame))
+        {
+            foreach (var step in TrueSteps)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                await step.ExecuteAsync(context, cancellationToken).ConfigureAwait(false);
+            }
+        }
     }
 }
