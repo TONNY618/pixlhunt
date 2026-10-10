@@ -69,7 +69,8 @@ public class Orchestrator
             // Последовательно выполняем шаги комбо
             var context = new TriggerExecutionContext
             {
-                Frame = frame
+                Frame = frame,
+                ComboName = combo.Name
             };
 
             foreach (var step in combo.Steps)

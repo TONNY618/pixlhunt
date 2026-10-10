@@ -32,7 +32,7 @@ public class PressKeyStep : IComboStep
 
         if (pressDown)
         {
-            PixelMacroEngine.Core.Services.ActionLogger.LogKey(key, code, isDown: true);
+            PixelMacroEngine.Core.Services.ActionLogger.LogKey(key, code, isDown: true, context.ComboName);
         }
 
         if (pressDown && pressUp)
@@ -42,7 +42,7 @@ public class PressKeyStep : IComboStep
 
         if (pressUp)
         {
-            PixelMacroEngine.Core.Services.ActionLogger.LogKey(key, code, isDown: false);
+            PixelMacroEngine.Core.Services.ActionLogger.LogKey(key, code, isDown: false, context.ComboName);
         }
     }
 }

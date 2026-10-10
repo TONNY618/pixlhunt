@@ -22,6 +22,9 @@ namespace pxlhunt.FORMS
         {
             InitializeComponent();
 
+            // Главное окно всегда поверх остальных
+            this.TopMost = true;
+
             // Создаём оркестратор с очередью и диспетчером ввода
             var queue = new SimpleTaskQueue();
             _orchestrator = new Orchestrator(queue, new InputDispatcher(queue));
