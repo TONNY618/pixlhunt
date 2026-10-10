@@ -83,28 +83,32 @@ public static class BotStateController
         if (deltaSeconds > 1.0)
             deltaSeconds = 1.0;
 
+        // Точное аналитическое решение дифференциального уравнения dF/dt = -k*(F - Target).
+        // В отличие от метода Эйлера, экспонента НИКОГДА не пробивает целевой уровень
+        // и не даёт расходящихся колебаний даже при гигантских скачках deltaSeconds
+        // (GC-паузы, подвисания потока, отладчик).
         switch (state)
         {
             case PhysiologicalState.Action:
-                // Асимптотическое приближение к потолку:
-                // чем сильнее устал, тем медленнее растёт (экспоненциальная кривая).
-                FatigueLevel += (FatigueCeiling - FatigueLevel) * FatigueRiseActionPerSecond * deltaSeconds;
+                // Асимптотическое приближение к потолку усталости.
+                FatigueLevel = FatigueCeiling
+                    + (FatigueLevel - FatigueCeiling) * Math.Exp(-FatigueRiseActionPerSecond * deltaSeconds);
                 break;
 
             case PhysiologicalState.Navigation:
                 // Статическое изометрическое напряжение (WASD).
                 // Предел статической усталости ниже динамической — 85% от максимума.
+                // Экспонента работает в обе стороны: из Action усталость плавно спадёт
+                // до 85%, из TrueIdle — плавно вырастет до 85%.
                 double isometricCeiling = FatigueFloor + (FatigueCeiling - FatigueFloor) * 0.85;
-                if (FatigueLevel < isometricCeiling)
-                {
-                    FatigueLevel += (isometricCeiling - FatigueLevel) * FatigueRiseNavigationPerSecond * deltaSeconds;
-                }
+                FatigueLevel = isometricCeiling
+                    + (FatigueLevel - isometricCeiling) * Math.Exp(-FatigueRiseNavigationPerSecond * deltaSeconds);
                 break;
 
             case PhysiologicalState.TrueIdle:
-                // Логарифмический спад: быстрый сброс напряжения в начале,
-                // медленное восстановление у базового уровня.
-                FatigueLevel -= (FatigueLevel - FatigueFloor) * FatigueFallIdlePerSecond * deltaSeconds;
+                // Экспоненциальное восстановление к базовому уровню.
+                FatigueLevel = FatigueFloor
+                    + (FatigueLevel - FatigueFloor) * Math.Exp(-FatigueFallIdlePerSecond * deltaSeconds);
                 break;
         }
 
