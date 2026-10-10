@@ -18,6 +18,7 @@ namespace pxlhunt.FORMS
         private TimeSpan _activeSessionTime = TimeSpan.Zero;
         private const string SessionFileName = "session.json";
         private readonly HashSet<string> _changedComboNames = new(StringComparer.OrdinalIgnoreCase);
+        private bool _isLoadingCombos = false;
 
         public pxlHunt()
         {
@@ -150,48 +151,56 @@ namespace pxlhunt.FORMS
                 if (!Directory.Exists(configDir))
                     return;
 
-                // Очищаем оркестратор и UI перед загрузкой
-                _orchestrator.Combos.Clear();
-                checkedListBoxCombo.Items.Clear();
-                _changedComboNames.Clear();
-
-                // Сначала собираем все валидные комбо
-                var loaded = new List<ActiveCombo>();
-
-                foreach (var file in Directory.GetFiles(configDir, "*.json"))
+                _isLoadingCombos = true;
+                try
                 {
-                    if (string.Equals(Path.GetFileName(file), SessionFileName, StringComparison.OrdinalIgnoreCase))
-                        continue;
+                    // Очищаем оркестратор и UI перед загрузкой
+                    _orchestrator.Combos.Clear();
+                    checkedListBoxCombo.Items.Clear();
+                    _changedComboNames.Clear();
 
-                    try
+                    // Сначала собираем все валидные комбо
+                    var loaded = new List<ActiveCombo>();
+
+                    foreach (var file in Directory.GetFiles(configDir, "*.json"))
                     {
-                        string json = File.ReadAllText(file);
-                        var profile = JsonSerializer.Deserialize<ComboProfile>(json,
-                            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        if (string.Equals(Path.GetFileName(file), SessionFileName, StringComparison.OrdinalIgnoreCase))
+                            continue;
 
-                        if (profile == null) continue;
+                        try
+                        {
+                            string json = File.ReadAllText(file);
+                            var profile = JsonSerializer.Deserialize<ComboProfile>(json,
+                                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-                        var combo = ComboFactory.Create(profile);
-                        combo.IsEnabled = profile.IsOnOff;
-                        combo.FilePath = file;
+                            if (profile == null) continue;
 
-                        loaded.Add(combo);
+                            var combo = ComboFactory.Create(profile);
+                            combo.IsEnabled = profile.IsOnOff;
+                            combo.FilePath = file;
+
+                            loaded.Add(combo);
+                        }
+                        catch
+                        {
+                            // Пропускаем битые файлы
+                        }
                     }
-                    catch
+
+                    // Сортируем по приоритету (от большего к меньшему) и регистрируем
+                    var sorted = loaded.OrderByDescending(c => c.Priority).ToList();
+
+                    foreach (var combo in sorted)
                     {
-                        // Пропускаем битые файлы
+                        _orchestrator.RegisterCombo(combo);
+
+                        int index = checkedListBoxCombo.Items.Add(combo.Name);
+                        checkedListBoxCombo.SetItemChecked(index, combo.IsEnabled);
                     }
                 }
-
-                // Сортируем по приоритету (от большего к меньшему) и регистрируем
-                var sorted = loaded.OrderByDescending(c => c.Priority).ToList();
-
-                foreach (var combo in sorted)
+                finally
                 {
-                    _orchestrator.RegisterCombo(combo);
-
-                    int index = checkedListBoxCombo.Items.Add(combo.Name);
-                    checkedListBoxCombo.SetItemChecked(index, combo.IsEnabled);
+                    _isLoadingCombos = false;
                 }
             }
             catch
@@ -202,40 +211,44 @@ namespace pxlhunt.FORMS
 
         private void CheckedListBoxCombo_ItemCheck(object? sender, ItemCheckEventArgs e)
         {
+            if (_isLoadingCombos)
+                return;
+
             if (e.Index < 0 || e.Index >= _orchestrator.Combos.Count)
                 return;
 
             // ItemCheck срабатывает ДО применения нового состояния, поэтому учитываем e.NewValue
             var combo = _orchestrator.Combos[e.Index];
-            combo.IsEnabled = (e.NewValue == CheckState.Checked);
+            bool isEnabled = (e.NewValue == CheckState.Checked);
+            combo.IsEnabled = isEnabled;
             _changedComboNames.Add(combo.Name);
+
+            // Мгновенно обновляем JSON-файл комбо на диске
+            UpdateComboFileState(combo.FilePath, isEnabled);
         }
 
         /// <summary>
-        /// Сохраняет текущее состояние IsEnabled каждого комбо в его исходный JSON-файл.
+        /// Мгновенно записывает состояние IsOnOff в JSON-файл комбо.
         /// </summary>
-        private void SaveComboStatesToFiles()
+        private void UpdateComboFileState(string? filePath, bool isOnOff)
         {
-            foreach (var combo in _orchestrator.Combos)
-            {
-                if (string.IsNullOrWhiteSpace(combo.FilePath) || !File.Exists(combo.FilePath))
-                    continue;
+            if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
+                return;
 
-                try
+            try
+            {
+                string json = File.ReadAllText(filePath);
+                var node = System.Text.Json.Nodes.JsonNode.Parse(json);
+                if (node != null)
                 {
-                    string json = File.ReadAllText(combo.FilePath);
-                    var node = System.Text.Json.Nodes.JsonNode.Parse(json);
-                    if (node != null)
-                    {
-                        node["IsOnOff"] = combo.IsEnabled;
-                        var options = new JsonSerializerOptions { WriteIndented = true };
-                        File.WriteAllText(combo.FilePath, node.ToJsonString(options));
-                    }
+                    node["IsOnOff"] = isOnOff;
+                    var options = new JsonSerializerOptions { WriteIndented = true };
+                    File.WriteAllText(filePath, node.ToJsonString(options));
                 }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"[SaveComboStates] Ошибка сохранения {combo.FilePath}: {ex.Message}");
-                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[UpdateComboFileState] Ошибка записи {filePath}: {ex.Message}");
             }
         }
 
@@ -393,7 +406,6 @@ namespace pxlhunt.FORMS
                 _sessionTimer?.Dispose();
                 _sessionTimer = null;
 
-                SaveComboStatesToFiles();
                 SaveSessionTime();
             }
             catch
