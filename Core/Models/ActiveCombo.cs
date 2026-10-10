@@ -35,6 +35,9 @@ public class ActiveCombo
     /// <summary>Время последнего успешного выполнения комбо (для расчёта кулдауна).</summary>
     public DateTime LastExecuted { get; set; } = DateTime.MinValue;
 
+    /// <summary>Признак того, что комбо в данный момент выполняет свои шаги.</summary>
+    public bool IsRunning { get; set; } = false;
+
     /// <summary>Список триггеров, определяющих срабатывание комбо.</summary>
     public List<ITriggerEvaluator> Triggers { get; set; } = new List<ITriggerEvaluator>();
 

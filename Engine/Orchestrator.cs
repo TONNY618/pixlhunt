@@ -64,6 +64,10 @@ public class Orchestrator
 
         foreach (var combo in ordered)
         {
+            // Если комбо уже выполняет свои шаги — пропускаем его на этом кадре
+            if (combo.IsRunning)
+                continue;
+
             if (!combo.IsEnabled || !combo.CanExecute())
                 continue;
 
@@ -85,27 +89,35 @@ public class Orchestrator
             if (!allTriggersPassed)
                 continue;
 
-            // Обновляем время последнего выполнения
-            combo.LastExecuted = DateTime.UtcNow;
-
-            // Последовательно выполняем шаги комбо
-            var context = new TriggerExecutionContext
+            combo.IsRunning = true;
+            try
             {
-                Frame = frame,
-                ComboName = combo.Name
-            };
+                // Обновляем время последнего выполнения
+                combo.LastExecuted = DateTime.UtcNow;
 
-            foreach (var step in combo.Steps)
-            {
-                // Ожидаем, пока игрок отпустит клавиши движения (если включён PauseIfWasd)
-                while (combo.PauseIfWasd && IsWasdPressed())
+                // Последовательно выполняем шаги комбо
+                var context = new TriggerExecutionContext
                 {
-                    ct.ThrowIfCancellationRequested();
-                    await Task.Delay(25, ct).ConfigureAwait(false);
-                }
+                    Frame = frame,
+                    ComboName = combo.Name
+                };
 
-                ct.ThrowIfCancellationRequested();
-                await step.ExecuteAsync(context, ct).ConfigureAwait(false);
+                foreach (var step in combo.Steps)
+                {
+                    // Ожидаем, пока игрок отпустит клавиши движения (если включён PauseIfWasd)
+                    while (combo.PauseIfWasd && IsWasdPressed())
+                    {
+                        ct.ThrowIfCancellationRequested();
+                        await Task.Delay(25, ct).ConfigureAwait(false);
+                    }
+
+                    ct.ThrowIfCancellationRequested();
+                    await step.ExecuteAsync(context, ct).ConfigureAwait(false);
+                }
+            }
+            finally
+            {
+                combo.IsRunning = false;
             }
         }
     }
