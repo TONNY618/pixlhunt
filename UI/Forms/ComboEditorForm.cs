@@ -520,11 +520,12 @@ namespace pxlhunt.FORMS
 
         /// <summary>
         /// Проверяет, выбран ли для данной группы режим прямоугольника (avrg).
-        /// Ищем radioButtonSquare{index}_2 внутри parentGroup.
+        /// Ищем radioButtonSquare{index}_2 внутри parentGroup (рекурсивно по всем вложенным контейнерам).
         /// </summary>
         private bool IsSquareModeSelected(GroupBox parentGroup, string index)
         {
-            RadioButton? rbSquare = FindControlByName<RadioButton>(parentGroup, $"radioButtonSquare{index}_2");
+            string targetName = $"radioButtonSquare{index}_2";
+            RadioButton? rbSquare = FindControlByName<RadioButton>(parentGroup, targetName);
             return rbSquare != null && rbSquare.Checked;
         }
 
@@ -566,13 +567,18 @@ namespace pxlhunt.FORMS
             return null;
         }
 
+        /// <summary>
+        /// Рекурсивно ищет контрол по имени внутри parent, обходя все вложенные
+        /// контейнеры (Panel, GroupBox, FlowLayoutPanel и т.д.).
+        /// Сравнение имён — без учёта регистра.
+        /// </summary>
         private T? FindControlByName<T>(Control parent, string exactName) where T : Control
         {
             if (string.IsNullOrEmpty(exactName)) return null;
 
             foreach (Control child in parent.Controls)
             {
-                if (child is T typedControl && string.Equals(child.Name, exactName, StringComparison.Ordinal))
+                if (child is T typedControl && string.Equals(child.Name, exactName, StringComparison.OrdinalIgnoreCase))
                 {
                     return typedControl;
                 }
