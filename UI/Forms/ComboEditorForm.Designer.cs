@@ -55,7 +55,6 @@
             TimerStarttextBox = new TextBox();
             TimerStartlabel1 = new Label();
             groupBoxCDtrigger = new GroupBox();
-            textBoxCDglobal = new TextBox();
             radioButtonSkillCooldownSingleHP = new RadioButton();
             radioButtonSkillCooldownGLOBAL = new RadioButton();
             groupBoxPriority = new GroupBox();
@@ -130,6 +129,7 @@
             checkBoxWASDpauseTrigger = new CheckBox();
             buttonLoad = new Button();
             checkBoxOnOff = new CheckBox();
+            textBoxCDglobal = new TextBox();
             GroupTriggerPreset.SuspendLayout();
             IFconditionsKEYgroupBox.SuspendLayout();
             groupBox1.SuspendLayout();
@@ -452,16 +452,6 @@
             groupBoxCDtrigger.TabIndex = 14;
             groupBoxCDtrigger.TabStop = false;
             groupBoxCDtrigger.Text = "CD триг.";
-            // 
-            // textBoxCDglobal
-            // 
-            textBoxCDglobal.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            textBoxCDglobal.Location = new Point(160, 0);
-            textBoxCDglobal.MaxLength = 4;
-            textBoxCDglobal.Name = "textBoxCDglobal";
-            textBoxCDglobal.Size = new Size(34, 23);
-            textBoxCDglobal.TabIndex = 16;
-            textBoxCDglobal.Text = "1500";
             // 
             // radioButtonSkillCooldownSingleHP
             // 
@@ -1278,6 +1268,16 @@
             checkBoxOnOff.Text = "Вкл";
             checkBoxOnOff.UseVisualStyleBackColor = true;
             // 
+            // textBoxCDglobal
+            // 
+            textBoxCDglobal.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            textBoxCDglobal.Location = new Point(160, 0);
+            textBoxCDglobal.MaxLength = 4;
+            textBoxCDglobal.Name = "textBoxCDglobal";
+            textBoxCDglobal.Size = new Size(34, 23);
+            textBoxCDglobal.TabIndex = 16;
+            textBoxCDglobal.Text = "11";
+            // 
             // ComboEditorForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -1450,10 +1450,10 @@
         private ListBox listBox1;
         private GroupBox groupBoxPauseIfMooved;
         private CheckBox checkBoxWASDpauseTrigger;
-        private TextBox textBoxCDglobal;
         private Button buttonLoad;
         private CheckBox checkBoxOnOff;
         private GroupBox IFconditionsKEYgroupBox;
         private ComboBox IFconditionsKEYcomboBox;
+        private TextBox textBoxCDglobal;
     }
 }
