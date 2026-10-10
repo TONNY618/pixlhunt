@@ -55,6 +55,9 @@ namespace pxlhunt.FORMS
             checkedListBoxCombo.ItemCheck += CheckedListBoxCombo_ItemCheck;
             checkBoxStatus.CheckedChanged += CheckBoxStatus_CheckedChanged;
 
+            // Синхронизируем мастер-флаг с начальным состоянием галочки
+            BotStateController.IsMasterEnabled = checkBoxStatus.Checked;
+
             // Снятие выделения при клике по пустому пространству формы
             this.MouseDown += (s, e) => checkedListBoxCombo.ClearSelected();
 
