@@ -88,14 +88,25 @@ namespace pxlhunt.FORMS
         }
 
         /// <summary>
-        /// Создаёт и привязывает контекстное меню "Редактировать" к списку комбо.
+        /// Создаёт и привязывает контекстное меню к списку комбо.
         /// </summary>
         private void SetupComboContextMenu()
         {
             var menu = new ContextMenuStrip();
+
             var editItem = new ToolStripMenuItem("Редактировать");
             editItem.Click += (s, e) => OpenSelectedComboInEditor();
             menu.Items.Add(editItem);
+
+            var priorityItem = new ToolStripMenuItem("Приоритет...");
+            priorityItem.Click += (s, e) => ChangeSelectedComboPriority();
+            menu.Items.Add(priorityItem);
+
+            menu.Items.Add(new ToolStripSeparator());
+
+            var deleteItem = new ToolStripMenuItem("Удалить");
+            deleteItem.Click += (s, e) => DeleteSelectedCombo();
+            menu.Items.Add(deleteItem);
 
             checkedListBoxCombo.ContextMenuStrip = menu;
 
@@ -110,6 +121,180 @@ namespace pxlhunt.FORMS
                     }
                 }
             };
+        }
+
+        /// <summary>
+        /// Возвращает путь к каталогу Config, создавая его при необходимости.
+        /// </summary>
+        private string GetConfigDir()
+        {
+            string configDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Config");
+            if (!Directory.Exists(configDir))
+            {
+                string alt = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "Config");
+                if (Directory.Exists(alt))
+                    configDir = alt;
+            }
+
+            Directory.CreateDirectory(configDir);
+            return configDir;
+        }
+
+        /// <summary>
+        /// Перемещает файл в Config/RecycleBin. При конфликте имён старый файл в корзине удаляется.
+        /// </summary>
+        private void MoveToRecycleBin(string filePath)
+        {
+            if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
+                return;
+
+            try
+            {
+                string binDir = Path.Combine(GetConfigDir(), "RecycleBin");
+                Directory.CreateDirectory(binDir);
+
+                string dest = Path.Combine(binDir, Path.GetFileName(filePath));
+
+                if (File.Exists(dest))
+                    File.Delete(dest);
+
+                File.Move(filePath, dest);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[MoveToRecycleBin] Ошибка: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Открывает диалог изменения приоритета выделенного комбо.
+        /// </summary>
+        private void ChangeSelectedComboPriority()
+        {
+            int index = checkedListBoxCombo.SelectedIndex;
+            if (index < 0 || index >= _orchestrator.Combos.Count)
+                return;
+
+            var combo = _orchestrator.Combos[index];
+
+            using var dialog = new Form
+            {
+                Text = "Приоритет",
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                StartPosition = FormStartPosition.CenterParent,
+                ClientSize = new System.Drawing.Size(240, 110),
+                MaximizeBox = false,
+                MinimizeBox = false,
+                ShowInTaskbar = false
+            };
+
+            var label = new Label
+            {
+                Text = "Приоритет (0-99):",
+                Location = new System.Drawing.Point(12, 15),
+                AutoSize = true
+            };
+
+            var numeric = new NumericUpDown
+            {
+                Minimum = 0,
+                Maximum = 99,
+                Value = Math.Clamp(combo.Priority, 0, 99),
+                Location = new System.Drawing.Point(12, 40),
+                Width = 100
+            };
+
+            var okButton = new Button
+            {
+                Text = "OK",
+                DialogResult = DialogResult.OK,
+                Location = new System.Drawing.Point(60, 75),
+                Width = 75
+            };
+
+            var cancelButton = new Button
+            {
+                Text = "Отмена",
+                DialogResult = DialogResult.Cancel,
+                Location = new System.Drawing.Point(145, 75),
+                Width = 75
+            };
+
+            dialog.Controls.Add(label);
+            dialog.Controls.Add(numeric);
+            dialog.Controls.Add(okButton);
+            dialog.Controls.Add(cancelButton);
+            dialog.AcceptButton = okButton;
+            dialog.CancelButton = cancelButton;
+
+            if (dialog.ShowDialog(this) != DialogResult.OK)
+                return;
+
+            int newPriority = (int)numeric.Value;
+            if (newPriority == combo.Priority)
+                return;
+
+            combo.Priority = newPriority;
+
+            // Перезаписываем JSON комбо
+            UpdateComboFileState(combo.FilePath, combo.IsEnabled, newPriority);
+
+            // Пересортировываем оркестратор и перерисовываем список
+            RebuildComboList();
+        }
+
+        /// <summary>
+        /// Удаляет выделенное комбо: файл — в корзину, комбо — из оркестратора и UI.
+        /// </summary>
+        private void DeleteSelectedCombo()
+        {
+            int index = checkedListBoxCombo.SelectedIndex;
+            if (index < 0 || index >= _orchestrator.Combos.Count)
+                return;
+
+            var combo = _orchestrator.Combos[index];
+
+            var result = MessageBox.Show(
+                $"Удалить комбо \"{combo.Name}\"?\nФайл будет перемещён в Config/RecycleBin.",
+                "Подтверждение удаления",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question);
+
+            if (result != DialogResult.Yes)
+                return;
+
+            MoveToRecycleBin(combo.FilePath);
+
+            _orchestrator.Combos.RemoveAt(index);
+            RebuildComboList();
+        }
+
+        /// <summary>
+        /// Пересортировывает комбо по приоритету и перерисовывает список в UI.
+        /// </summary>
+        private void RebuildComboList()
+        {
+            var sorted = _orchestrator.Combos
+                .OrderByDescending(c => c.Priority)
+                .ToList();
+
+            _orchestrator.Combos.Clear();
+            _orchestrator.Combos.AddRange(sorted);
+
+            _isLoadingCombos = true;
+            try
+            {
+                checkedListBoxCombo.Items.Clear();
+                foreach (var combo in _orchestrator.Combos)
+                {
+                    int i = checkedListBoxCombo.Items.Add(combo.Name);
+                    checkedListBoxCombo.SetItemChecked(i, combo.IsEnabled);
+                }
+            }
+            finally
+            {
+                _isLoadingCombos = false;
+            }
         }
 
         /// <summary>
@@ -156,14 +341,7 @@ namespace pxlhunt.FORMS
         {
             try
             {
-                string configDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Config");
-                if (!Directory.Exists(configDir))
-                {
-                    configDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "Config");
-                }
-
-                if (!Directory.Exists(configDir))
-                    return;
+                string configDir = GetConfigDir();
 
                 _isLoadingCombos = true;
                 try
@@ -242,9 +420,9 @@ namespace pxlhunt.FORMS
         }
 
         /// <summary>
-        /// Мгновенно записывает состояние IsOnOff в JSON-файл комбо.
+        /// Мгновенно записывает состояние IsOnOff (и, опционально, Priority) в JSON-файл комбо.
         /// </summary>
-        private void UpdateComboFileState(string? filePath, bool isOnOff)
+        private void UpdateComboFileState(string? filePath, bool isOnOff, int? priority = null)
         {
             if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
                 return;
@@ -256,6 +434,9 @@ namespace pxlhunt.FORMS
                 if (node != null)
                 {
                     node["IsOnOff"] = isOnOff;
+                    if (priority.HasValue)
+                        node["Priority"] = priority.Value;
+
                     var options = new JsonSerializerOptions { WriteIndented = true };
                     File.WriteAllText(filePath, node.ToJsonString(options));
                 }
@@ -326,7 +507,7 @@ namespace pxlhunt.FORMS
         {
             try
             {
-                string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Config", SessionFileName);
+                string path = Path.Combine(GetConfigDir(), SessionFileName);
                 if (!File.Exists(path))
                     return;
 
@@ -382,8 +563,7 @@ namespace pxlhunt.FORMS
         {
             try
             {
-                string configDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Config");
-                Directory.CreateDirectory(configDir);
+                string configDir = GetConfigDir();
 
                 // Определяем реальные координаты окна (с защитой от свёрнутого состояния)
                 Point loc = (this.WindowState == FormWindowState.Normal)
