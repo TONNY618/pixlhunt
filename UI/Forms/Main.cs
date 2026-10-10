@@ -17,6 +17,7 @@ namespace pxlhunt.FORMS
         private System.Windows.Forms.Timer? _sessionTimer;
         private TimeSpan _activeSessionTime = TimeSpan.Zero;
         private const string SessionFileName = "session.json";
+        private readonly HashSet<string> _changedComboNames = new(StringComparer.OrdinalIgnoreCase);
 
         public pxlHunt()
         {
@@ -152,6 +153,7 @@ namespace pxlhunt.FORMS
                 // Очищаем оркестратор и UI перед загрузкой
                 _orchestrator.Combos.Clear();
                 checkedListBoxCombo.Items.Clear();
+                _changedComboNames.Clear();
 
                 // Сначала собираем все валидные комбо
                 var loaded = new List<ActiveCombo>();
@@ -203,7 +205,9 @@ namespace pxlhunt.FORMS
                 return;
 
             // ItemCheck срабатывает ДО применения нового состояния, поэтому учитываем e.NewValue
-            _orchestrator.Combos[e.Index].IsEnabled = e.NewValue == CheckState.Checked;
+            var combo = _orchestrator.Combos[e.Index];
+            combo.IsEnabled = e.NewValue == CheckState.Checked;
+            _changedComboNames.Add(combo.Name);
         }
 
         private void CheckBoxStatus_CheckedChanged(object? sender, EventArgs e)
