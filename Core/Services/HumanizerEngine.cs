@@ -3,60 +3,70 @@ using System;
 namespace PixelMacroEngine.Core.Services;
 
 /// <summary>
-/// Движок генерации человекоподобных таймингов (Log-Normal / Ex-Gaussian аппроксимация).
-/// Учитывает множитель усталости на основе длительности текущей сессии.
+/// Движок генерации человекоподобных таймингов на основе логнормального распределения.
+/// Логнормальное распределение даёт "плотное ядро" быстрых реакций и длинный правый хвост
+/// редких аномально долгих задержек — что соответствует реальной моторике человека.
+/// Учитывает волновой множитель усталости (см. BotStateController).
 /// </summary>
 public static class HumanizerEngine
 {
     private static readonly Random _random = new();
 
-    /// <summary>
-    /// Рассчитывает множитель усталости.
-    /// 0 минут = 1.0 (бодрый). 60 минут = 1.15. 120 минут = 1.30 (потолок).
-    /// </summary>
-    private static double GetFatigueMultiplier()
-    {
-        double minutes = BotStateController.ActiveSessionTime.TotalMinutes;
-        if (minutes <= 0) return 1.0;
-
-        // Линейный рост усталости до 2 часов (120 минут)
-        double fatigue = 1.0 + (minutes / 120.0) * 0.30;
-        return Math.Min(fatigue, 1.30);
-    }
+    // Жёсткие границы, чтобы экстремальные выбросы логнормальной кривой
+    // не привели к зависанию макроса на секунды.
+    private const int HardMinMs = 10;
+    private const int HardMaxMs = 400;
 
     /// <summary>
-    /// Генерирует задержку с Гауссовым (нормальным) распределением и "длинным хвостом" вправо.
+    /// Возвращает текущий волновой множитель усталости из контроллера состояния.
+    /// 1.0 — бодрый, до ~1.4 — сильно уставший.
     /// </summary>
-    private static int GetHumanDelay(int min, int mean, int max)
+    private static double GetFatigueMultiplier() => BotStateController.FatigueMultiplier;
+
+    /// <summary>
+    /// Генерирует стандартную нормальную величину N(0,1) через преобразование Бокса-Мюллера.
+    /// </summary>
+    private static double NextGaussian()
     {
-        // Преобразование Бокса-Мюллера для Гауссова распределения
+        // u1 в (0,1], чтобы избежать log(0)
         double u1 = 1.0 - _random.NextDouble();
         double u2 = 1.0 - _random.NextDouble();
-        double z = Math.Sqrt(-2.0 * Math.Log(u1)) * Math.Sin(2.0 * Math.PI * u2);
-
-        double fatigue = GetFatigueMultiplier();
-        double adjustedMean = mean * fatigue;
-        double adjustedMax = max * fatigue;
-
-        double stdDev = (adjustedMean - min) / 2.0;
-        double result = adjustedMean + (z * stdDev);
-
-        // Имитация микро-затупа: если Гаусс уходит ниже физического минимума,
-        // "отражаем" его далеко вправо (длинный хвост лог-нормального распределения)
-        if (result < min)
-        {
-            result = adjustedMean + Math.Abs(z * stdDev * 1.5);
-        }
-
-        return (int)Math.Clamp(result, min, adjustedMax);
+        return Math.Sqrt(-2.0 * Math.Log(u1)) * Math.Sin(2.0 * Math.PI * u2);
     }
 
-    /// <summary>Время физического удержания клавиши нажатой.</summary>
-    public static int GetKeyPressDuration() => GetHumanDelay(35, 55, 120);
+    /// <summary>
+    /// Генерирует значение по логнормальному распределению.
+    /// Параметры mu и sigma задаются в логарифмическом пространстве (натуральный логарифм миллисекунд).
+    /// Усталость применяется и к mu (сдвиг среднего), и к sigma (удлинение хвоста).
+    /// </summary>
+    private static int GetLogNormalDelay(double mu, double sigma)
+    {
+        double fatigue = GetFatigueMultiplier();
 
-    /// <summary>Пауза перед нажатием следующей независимой кнопки (время переноса пальца).</summary>
-    public static int GetFlightTime() => GetHumanDelay(60, 110, 250);
+        // Сдвигаем среднее вверх и одновременно расширяем разброс.
+        // Уставший игрок не только медленнее в среднем, но и чаще "залипает".
+        double adjustedMu = mu + Math.Log(fatigue);
+        double adjustedSigma = sigma * fatigue;
 
-    /// <summary>Пауза после зажатия модификатора (Shift/Ctrl/Alt) перед нажатием основной клавиши.</summary>
-    public static int GetModifierDelay() => GetHumanDelay(40, 70, 150);
+        double z = NextGaussian();
+        double logValue = adjustedMu + adjustedSigma * z;
+        double value = Math.Exp(logValue);
+
+        return (int)Math.Clamp(value, HardMinMs, HardMaxMs);
+    }
+
+    /// <summary>Время физического удержания клавиши нажатой. Плотное ядро, умеренный хвост.</summary>
+    public static int GetKeyPressDuration() => GetLogNormalDelay(mu: Math.Log(55.0), sigma: 0.28);
+
+    /// <summary>
+    /// Пауза перед нажатием следующей независимой кнопки (время переноса пальца).
+    /// Короче по среднему, но с большим разбросом — палец может "промахнуться" и задержаться.
+    /// </summary>
+    public static int GetFlightTime() => GetLogNormalDelay(mu: Math.Log(95.0), sigma: 0.42);
+
+    /// <summary>
+    /// Пауза после зажатия модификатора (Shift/Ctrl/Alt) перед нажатием основной клавиши.
+    /// Самый узкий разброс — это почти рефлекторное действие.
+    /// </summary>
+    public static int GetModifierDelay() => GetLogNormalDelay(mu: Math.Log(65.0), sigma: 0.22);
 }

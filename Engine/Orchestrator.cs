@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using PixelMacroEngine.Core.Abstractions;
 using PixelMacroEngine.Core.Input;
 using PixelMacroEngine.Core.Models;
+using PixelMacroEngine.Core.Services;
 
 namespace PixelMacroEngine.Engine;
 
@@ -62,6 +63,10 @@ public class Orchestrator
         // Сортируем комбо по убыванию приоритета
         var ordered = Combos.OrderByDescending(c => c.Priority).ToList();
 
+        // Флаг: был ли на этом кадре хотя бы один реально выполняющийся шаг комбо.
+        // Если нет — сообщаем контроллеру состояний о фазе микро-отдыха.
+        bool anyComboRan = false;
+
         foreach (var combo in ordered)
         {
             // Если комбо уже выполняет свои шаги — пропускаем его на этом кадре
@@ -72,8 +77,12 @@ public class Orchestrator
                 continue;
 
             // Если включён PauseIfWasd и игрок двигается — пропускаем комбо
+            // и сигнализируем о микро-отдыхе (игрок сам двигается, макрос на паузе).
             if (combo.PauseIfWasd && IsWasdPressed())
+            {
+                BotStateController.NotifyIdle();
                 continue;
+            }
 
             // Проверяем триггеры с учётом логики И/ИЛИ
             bool triggersPassed;
@@ -94,10 +103,14 @@ public class Orchestrator
                 continue;
 
             combo.IsRunning = true;
+            anyComboRan = true;
             try
             {
                 // Обновляем время последнего выполнения
                 combo.LastExecuted = DateTime.UtcNow;
+
+                // Сигнализируем контроллеру состояний о фазе нагрузки
+                BotStateController.NotifyLoad();
 
                 // Последовательно выполняем шаги комбо
                 var context = new TriggerExecutionContext
@@ -130,6 +143,12 @@ public class Orchestrator
             {
                 combo.IsRunning = false;
             }
+        }
+
+        // Если ни одно комбо не выполнялось на этом кадре — фаза микро-отдыха.
+        if (!anyComboRan)
+        {
+            BotStateController.NotifyIdle();
         }
     }
 }
