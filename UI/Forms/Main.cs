@@ -352,6 +352,25 @@ namespace pxlhunt.FORMS
         }
 
         /// <summary>
+        /// Размещает дочернюю форму строго по центру главного окна.
+        /// </summary>
+        private void CenterFormOnMain(Form child)
+        {
+            if (child == null) return;
+
+            // Если главное окно свёрнуто — используем его RestoreBounds
+            Rectangle mainBounds = (this.WindowState == FormWindowState.Normal)
+                ? this.Bounds
+                : this.RestoreBounds;
+
+            int centerX = mainBounds.X + (mainBounds.Width - child.Width) / 2;
+            int centerY = mainBounds.Y + (mainBounds.Height - child.Height) / 2;
+
+            child.StartPosition = FormStartPosition.Manual;
+            child.Location = new Point(centerX, centerY);
+        }
+
+        /// <summary>
         /// Открывает выделенное в списке комбо в редакторе.
         /// </summary>
         private void OpenSelectedComboInEditor()
@@ -360,6 +379,7 @@ namespace pxlhunt.FORMS
 
             ComboEditorForm editor = new ComboEditorForm(selectedCombo);
             editor.FormClosed += (s, args) => LoadCombosFromConfig();
+            CenterFormOnMain(editor);
             editor.ShowDialog(this);
         }
 
@@ -693,6 +713,7 @@ namespace pxlhunt.FORMS
         private void buttonSettings_Click(object sender, EventArgs e)
         {
             testArduino settingsForm = new testArduino();
+            CenterFormOnMain(settingsForm);
             settingsForm.Show(this);
         }
 

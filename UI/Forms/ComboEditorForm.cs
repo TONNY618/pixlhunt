@@ -31,8 +31,9 @@ namespace pxlhunt.FORMS
             // Окно редактора всегда поверх остальных
             this.TopMost = true;
 
-            // Открываемся по центру родительского окна
-            this.StartPosition = FormStartPosition.CenterParent;
+            // Позиционирование задаётся родителем через CenterFormOnMain (Manual).
+            // CenterParent здесь не используем, чтобы не перезаписывать ручные координаты.
+            this.StartPosition = FormStartPosition.Manual;
 
             // 1. Разрешаем Drag-and-Drop на обеих панелях-"стаканах"
             flowLayoutPanelActions.AllowDrop = true;
