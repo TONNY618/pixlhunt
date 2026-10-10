@@ -297,6 +297,17 @@ namespace pxlhunt.FORMS
                 int transparency = data.TransparencyPercent >= 10 ? data.TransparencyPercent : 100;
                 trackBarTransparency.Value = Math.Clamp(transparency, 10, 100);
                 this.Opacity = trackBarTransparency.Value / 100.0;
+
+                // Восстанавливаем позицию окна, если она попадает в видимую область хотя бы одного экрана
+                if (data.WindowX.HasValue && data.WindowY.HasValue)
+                {
+                    Point pt = new Point(data.WindowX.Value, data.WindowY.Value);
+                    if (Screen.AllScreens.Any(s => s.WorkingArea.IntersectsWith(new Rectangle(pt, this.Size))))
+                    {
+                        this.StartPosition = FormStartPosition.Manual;
+                        this.Location = pt;
+                    }
+                }
             }
             catch
             {
@@ -311,11 +322,18 @@ namespace pxlhunt.FORMS
                 string configDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Config");
                 Directory.CreateDirectory(configDir);
 
+                // Определяем реальные координаты окна (с защитой от свёрнутого состояния)
+                Point loc = (this.WindowState == FormWindowState.Normal)
+                    ? this.Location
+                    : this.RestoreBounds.Location;
+
                 var data = new SessionData
                 {
                     LastExitUtc = DateTime.UtcNow,
                     ActiveSeconds = _activeSessionTime.TotalSeconds,
-                    TransparencyPercent = trackBarTransparency.Value
+                    TransparencyPercent = trackBarTransparency.Value,
+                    WindowX = loc.X,
+                    WindowY = loc.Y
                 };
 
                 string json = JsonSerializer.Serialize(data,
@@ -370,6 +388,8 @@ namespace pxlhunt.FORMS
             public DateTime LastExitUtc { get; set; }
             public double ActiveSeconds { get; set; }
             public int TransparencyPercent { get; set; } = 100;
+            public int? WindowX { get; set; }
+            public int? WindowY { get; set; }
         }
     }
 }
