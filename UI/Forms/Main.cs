@@ -24,6 +24,10 @@ namespace pxlhunt.FORMS
         {
             InitializeComponent();
 
+            // Подключаемся к плате Arduino HID и отображаем статус
+            bool isArduinoConnected = ArduinoHidService.Connect();
+            groupBoxStatus.Text = isArduinoConnected ? "Статус - плата OK" : "Статус - плата НЕ НАЙДЕНА";
+
             // Главное окно всегда поверх остальных
             this.TopMost = true;
 
@@ -407,6 +411,10 @@ namespace pxlhunt.FORMS
                 _sessionTimer = null;
 
                 SaveSessionTime();
+
+                // Аварийный сброс платы и отключение HID
+                ArduinoHidService.EmergencyReset();
+                ArduinoHidService.Disconnect();
             }
             catch
             {
