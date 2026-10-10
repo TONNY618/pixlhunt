@@ -39,12 +39,24 @@ public class PressKeyStep : IComboStep
             return;
         }
 
+        // Модификаторы (Shift, Ctrl, Alt, Win) занимают диапазон 0x80 - 0x87.
+        bool isModifier = code >= 0x80 && code <= 0x87;
+
         var batch = new PacketBatch();
 
         if (pressDown)
         {
             batch.AddKey(code, isDown: true);
             ActionLogger.LogKey(key, code, isDown: true, context.ComboName);
+
+            // Для модификатора сразу отправляем нажатие и даём паузу на его "подготовку",
+            // чтобы последующая клавиша успела застать модификатор активным.
+            if (isModifier)
+            {
+                ArduinoHidService.Send(batch);
+                await Task.Delay(PixelMacroEngine.Core.Services.HumanizerEngine.GetModifierDelay(), cancellationToken);
+                batch = new PacketBatch();
+            }
         }
 
         if (pressDown && pressUp)
@@ -66,7 +78,6 @@ public class PressKeyStep : IComboStep
 
         // Пост-пауза (Flight Time): имитация переноса пальца к следующей клавише.
         // Для модификаторов (Shift, Ctrl, Alt, Win = 0x80 - 0x87) используется укороченная задержка.
-        bool isModifier = code >= 0x80 && code <= 0x87;
         int postDelay = isModifier
             ? HumanizerEngine.GetModifierDelay()
             : HumanizerEngine.GetFlightTime();
