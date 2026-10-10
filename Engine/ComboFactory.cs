@@ -58,6 +58,12 @@ public static class ComboFactory
                         targetList.Add(trigger);
                     break;
 
+                case "IFconditionsKEYgroupBox":
+                    var keyTrigger = CreateKeyTrigger(elem);
+                    if (keyTrigger != null)
+                        targetList.Add(keyTrigger);
+                    break;
+
                 case "IFconditionsOrAndStart":
                 case "IFconditionsTimerStart":
                     // Пока безопасно пропускаем
@@ -83,6 +89,21 @@ public static class ComboFactory
         bool isRegionAverage = p.GetValueOrDefault("radioButtonSquare1_2") == "True";
 
         return new ColorTriggerEvaluator(point1, point2, expected, deviant, isNotEqual, isRegionAverage);
+    }
+
+    /// <summary>
+    /// Создаёт KeyTriggerEvaluator из параметров UI-элемента "IFconditionsKEYgroupBox".
+    /// Имя клавиши берётся из параметра "IFconditionsKEYcomboBox".
+    /// </summary>
+    private static KeyTriggerEvaluator? CreateKeyTrigger(ComboElement elem)
+    {
+        var p = elem.Parameters;
+        if (p == null) return null;
+
+        string keyName = p.GetValueOrDefault("IFconditionsKEYcomboBox", "");
+        if (string.IsNullOrWhiteSpace(keyName)) return null;
+
+        return new KeyTriggerEvaluator(keyName);
     }
 
     /// <summary>
