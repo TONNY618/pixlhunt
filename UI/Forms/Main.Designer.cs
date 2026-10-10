@@ -96,7 +96,7 @@
             listBoxActiv.FormattingEnabled = true;
             listBoxActiv.Location = new Point(12, 368);
             listBoxActiv.Name = "listBoxActiv";
-            listBoxActiv.Size = new Size(163, 154);
+            listBoxActiv.Size = new Size(443, 154);
             listBoxActiv.TabIndex = 9;
             // 
             // labelEvents
@@ -145,7 +145,7 @@
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.Ivory;
-            ClientSize = new Size(185, 614);
+            ClientSize = new Size(607, 614);
             Controls.Add(buttonComboForm);
             Controls.Add(buttonSettings);
             Controls.Add(listBoxActiv);

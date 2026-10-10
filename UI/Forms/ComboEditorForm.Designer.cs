@@ -31,6 +31,8 @@
             buttonSave = new Button();
             buttonCancelTrigger = new Button();
             GroupTriggerPreset = new GroupBox();
+            IFconditionsKEYgroupBox = new GroupBox();
+            IFconditionsKEYcomboBox = new ComboBox();
             groupBox1 = new GroupBox();
             textBoxDeviant1 = new TextBox();
             label6 = new Label();
@@ -129,6 +131,7 @@
             buttonLoad = new Button();
             checkBoxOnOff = new CheckBox();
             GroupTriggerPreset.SuspendLayout();
+            IFconditionsKEYgroupBox.SuspendLayout();
             groupBox1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)pictureBoxCreatePXL1).BeginInit();
             panel3.SuspendLayout();
@@ -177,15 +180,36 @@
             // GroupTriggerPreset
             // 
             GroupTriggerPreset.BackColor = SystemColors.ControlDark;
+            GroupTriggerPreset.Controls.Add(IFconditionsKEYgroupBox);
             GroupTriggerPreset.Controls.Add(groupBox1);
             GroupTriggerPreset.Controls.Add(IFconditionsOrAndStart);
             GroupTriggerPreset.Controls.Add(IFconditionsTimerStart);
             GroupTriggerPreset.Location = new Point(369, 73);
             GroupTriggerPreset.Name = "GroupTriggerPreset";
-            GroupTriggerPreset.Size = new Size(323, 152);
+            GroupTriggerPreset.Size = new Size(323, 185);
             GroupTriggerPreset.TabIndex = 8;
             GroupTriggerPreset.TabStop = false;
             GroupTriggerPreset.Text = "Старт условие";
+            // 
+            // IFconditionsKEYgroupBox
+            // 
+            IFconditionsKEYgroupBox.BackColor = Color.Gainsboro;
+            IFconditionsKEYgroupBox.Controls.Add(IFconditionsKEYcomboBox);
+            IFconditionsKEYgroupBox.Location = new Point(118, 100);
+            IFconditionsKEYgroupBox.Name = "IFconditionsKEYgroupBox";
+            IFconditionsKEYgroupBox.Size = new Size(178, 28);
+            IFconditionsKEYgroupBox.TabIndex = 20;
+            IFconditionsKEYgroupBox.TabStop = false;
+            IFconditionsKEYgroupBox.Text = "Key";
+            // 
+            // IFconditionsKEYcomboBox
+            // 
+            IFconditionsKEYcomboBox.FormattingEnabled = true;
+            IFconditionsKEYcomboBox.Items.AddRange(new object[] { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "Left Shift", "Left Ctrl", "Left Alt", "Right Shift", "Right Ctrl", "Right Alt", "Space", "Enter", "Tab", "Escape", "Backspace", "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12", "Up Arrow", "Down Arrow", "Left Arrow", "Right Arrow", "Left Win", "Right Win", "Insert", "Delete", "Home", "End", "Page Up", "Page Down", "Print Screen", "Scroll Lock", "Pause", "Caps Lock", "` (Тильда)", "- (Минус)", "= (Равно)", "[", "]", "\\", ";", "'", ",", ".", "/", "NumPad 0", "NumPad 1", "NumPad 2", "NumPad 3", "NumPad 4", "NumPad 5", "NumPad 6", "NumPad 7", "NumPad 8", "NumPad 9", "NumPad +", "NumPad -", "NumPad *", "NumPad /", "NumPad Enter", "NumPad .", "NumLock" });
+            IFconditionsKEYcomboBox.Location = new Point(36, 3);
+            IFconditionsKEYcomboBox.Name = "IFconditionsKEYcomboBox";
+            IFconditionsKEYcomboBox.Size = new Size(139, 23);
+            IFconditionsKEYcomboBox.TabIndex = 16;
             // 
             // groupBox1
             // 
@@ -392,7 +416,7 @@
             IFconditionsTimerStart.BackColor = Color.WhiteSmoke;
             IFconditionsTimerStart.Controls.Add(TimerStarttextBox);
             IFconditionsTimerStart.Controls.Add(TimerStartlabel1);
-            IFconditionsTimerStart.Location = new Point(121, 100);
+            IFconditionsTimerStart.Location = new Point(118, 135);
             IFconditionsTimerStart.Name = "IFconditionsTimerStart";
             IFconditionsTimerStart.Size = new Size(155, 44);
             IFconditionsTimerStart.TabIndex = 4;
@@ -505,7 +529,7 @@
             // 
             label8.AutoSize = true;
             label8.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            label8.Location = new Point(10, 242);
+            label8.Location = new Point(12, 264);
             label8.Name = "label8";
             label8.Size = new Size(58, 15);
             label8.TabIndex = 21;
@@ -579,7 +603,7 @@
             GroupActionPreset.Controls.Add(pressKey);
             GroupActionPreset.Controls.Add(label7);
             GroupActionPreset.Controls.Add(panel4);
-            GroupActionPreset.Location = new Point(369, 242);
+            GroupActionPreset.Location = new Point(369, 264);
             GroupActionPreset.Name = "GroupActionPreset";
             GroupActionPreset.Size = new Size(333, 448);
             GroupActionPreset.TabIndex = 9;
@@ -1182,9 +1206,9 @@
             flowLayoutPanelActions.AutoScroll = true;
             flowLayoutPanelActions.BackColor = Color.LightSkyBlue;
             flowLayoutPanelActions.FlowDirection = FlowDirection.TopDown;
-            flowLayoutPanelActions.Location = new Point(10, 264);
+            flowLayoutPanelActions.Location = new Point(10, 282);
             flowLayoutPanelActions.Name = "flowLayoutPanelActions";
-            flowLayoutPanelActions.Size = new Size(353, 368);
+            flowLayoutPanelActions.Size = new Size(353, 350);
             flowLayoutPanelActions.TabIndex = 23;
             flowLayoutPanelActions.WrapContents = false;
             // 
@@ -1195,7 +1219,7 @@
             flowLayoutPanelTrigger.FlowDirection = FlowDirection.TopDown;
             flowLayoutPanelTrigger.Location = new Point(19, 73);
             flowLayoutPanelTrigger.Name = "flowLayoutPanelTrigger";
-            flowLayoutPanelTrigger.Size = new Size(328, 152);
+            flowLayoutPanelTrigger.Size = new Size(328, 179);
             flowLayoutPanelTrigger.TabIndex = 25;
             flowLayoutPanelTrigger.WrapContents = false;
             // 
@@ -1204,7 +1228,7 @@
             pictureBox1.BackColor = Color.LightGray;
             pictureBox1.Location = new Point(10, 35);
             pictureBox1.Name = "pictureBox1";
-            pictureBox1.Size = new Size(692, 201);
+            pictureBox1.Size = new Size(692, 223);
             pictureBox1.TabIndex = 26;
             pictureBox1.TabStop = false;
             // 
@@ -1258,13 +1282,13 @@
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(714, 702);
+            ClientSize = new Size(714, 729);
+            Controls.Add(label8);
             Controls.Add(checkBoxOnOff);
             Controls.Add(buttonLoad);
             Controls.Add(groupBoxPauseIfMooved);
             Controls.Add(flowLayoutPanelTrigger);
             Controls.Add(flowLayoutPanelActions);
-            Controls.Add(label8);
             Controls.Add(label5);
             Controls.Add(textBox5);
             Controls.Add(groupBoxPriority);
@@ -1278,6 +1302,7 @@
             Text = "Создание тригера";
             Load += ComboEditorForm_Load;
             GroupTriggerPreset.ResumeLayout(false);
+            IFconditionsKEYgroupBox.ResumeLayout(false);
             groupBox1.ResumeLayout(false);
             groupBox1.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)pictureBoxCreatePXL1).EndInit();
@@ -1428,5 +1453,7 @@
         private TextBox textBoxCDglobal;
         private Button buttonLoad;
         private CheckBox checkBoxOnOff;
+        private GroupBox IFconditionsKEYgroupBox;
+        private ComboBox IFconditionsKEYcomboBox;
     }
 }
