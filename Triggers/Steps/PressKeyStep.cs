@@ -27,61 +27,55 @@ public class PressKeyStep : IComboStep
     public async Task ExecuteAsync(TriggerExecutionContext context, CancellationToken cancellationToken)
     {
         string key = Parameters.GetValueOrDefault("comboBoxKeyList", "");
-        byte code = ArduinoKeyMap.GetByte(key);
+        byte code = PixelMacroEngine.Core.Input.ArduinoKeyMap.GetByte(key);
 
         bool pressDown = Parameters.GetValueOrDefault("checkBoxUpDownKey1_1") == "True";
         bool pressUp = Parameters.GetValueOrDefault("checkBoxUpDownKey1_2") == "True";
 
-        // Клавиша не найдена в мапе — просто логируем текстовое действие.
-        if (code == 0)
-        {
-            ActionLogger.Log($"[PressKeyStep] Клавиша '{key}' не найдена в ArduinoKeyMap (down={pressDown}, up={pressUp}).");
-            return;
-        }
+        if (code == 0) return;
 
-        // Модификаторы (Shift, Ctrl, Alt, Win) занимают диапазон 0x80 - 0x87.
         bool isModifier = code >= 0x80 && code <= 0x87;
 
-        var batch = new PacketBatch();
-
+        // 1. Атомарное нажатие (DOWN) - отдельный пакет
         if (pressDown)
         {
-            batch.AddKey(code, isDown: true);
-            ActionLogger.LogKey(key, code, isDown: true, context.ComboName);
+            var batchDown = new PixelMacroEngine.Core.Input.PacketBatch();
+            batchDown.AddKey(code, true);
+            PixelMacroEngine.Core.Services.ArduinoHidService.Send(batchDown);
+            PixelMacroEngine.Core.Services.ActionLogger.LogKey(key, code, true, context.ComboName);
 
-            // Для модификатора сразу отправляем нажатие и даём паузу на его "подготовку",
-            // чтобы последующая клавиша успела застать модификатор активным.
-            if (isModifier)
+            // Если это модификатор и мы его только зажимаем (без отпускания тут же)
+            // Даем Windows время "осознать", что Shift нажат, перед следующей буквой
+            if (isModifier && !pressUp)
             {
-                ArduinoHidService.Send(batch);
                 await Task.Delay(PixelMacroEngine.Core.Services.HumanizerEngine.GetModifierDelay(), cancellationToken);
-                batch = new PacketBatch();
             }
         }
 
+        // 2. Пауза удержания клавиши (HOLD) - если это обычный клик (Down + Up)
         if (pressDown && pressUp)
         {
-            // Отправляем нажатие, держим клавишу, затем готовим пачку на отпускание.
-            ArduinoHidService.Send(batch);
-            int holdTime = HumanizerEngine.GetKeyPressDuration();
+            int holdTime = PixelMacroEngine.Core.Services.HumanizerEngine.GetKeyPressDuration();
             await Task.Delay(holdTime, cancellationToken);
-            batch = new PacketBatch();
         }
 
+        // 3. Атомарное отпускание (UP) - отдельный пакет
         if (pressUp)
         {
-            batch.AddKey(code, isDown: false);
-            ActionLogger.LogKey(key, code, isDown: false, context.ComboName);
+            var batchUp = new PixelMacroEngine.Core.Input.PacketBatch();
+            batchUp.AddKey(code, false);
+            PixelMacroEngine.Core.Services.ArduinoHidService.Send(batchUp);
+            PixelMacroEngine.Core.Services.ActionLogger.LogKey(key, code, false, context.ComboName);
         }
 
-        ArduinoHidService.Send(batch);
-
-        // Пост-пауза (Flight Time): имитация переноса пальца к следующей клавише.
-        // Для модификаторов (Shift, Ctrl, Alt, Win = 0x80 - 0x87) используется укороченная задержка.
-        int postDelay = isModifier
-            ? HumanizerEngine.GetModifierDelay()
-            : HumanizerEngine.GetFlightTime();
-
-        await Task.Delay(postDelay, cancellationToken);
+        // 4. Пост-пауза (перенос пальца на следующую кнопку)
+        // Делаем паузу после полного клика или после отпускания кнопки
+        if ((pressDown && pressUp) || (!pressDown && pressUp))
+        {
+            int postDelay = isModifier 
+                ? PixelMacroEngine.Core.Services.HumanizerEngine.GetModifierDelay() 
+                : PixelMacroEngine.Core.Services.HumanizerEngine.GetFlightTime();
+            await Task.Delay(postDelay, cancellationToken);
+        }
     }
 }
