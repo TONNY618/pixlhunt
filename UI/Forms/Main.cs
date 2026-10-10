@@ -67,9 +67,6 @@ namespace pxlhunt.FORMS
             // Открытие комбо по двойному клику
             checkedListBoxCombo.DoubleClick += CheckedListBoxCombo_DoubleClick;
 
-            // Подписка на логгер действий
-            ActionLogger.OnLog += AppendLogMessage;
-
             UpdateActiveTimeLabel();
         }
 
@@ -225,19 +222,6 @@ namespace pxlhunt.FORMS
             labelActiveTime.Text = _activeSessionTime.ToString(@"hh\:mm\:ss");
         }
 
-        private void AppendLogMessage(string message)
-        {
-            if (listBoxActiv.IsDisposed) return;
-            if (listBoxActiv.InvokeRequired)
-            {
-                listBoxActiv.BeginInvoke(() => AppendLogMessage(message));
-                return;
-            }
-            listBoxActiv.Items.Add(message);
-            if (listBoxActiv.Items.Count > 150) listBoxActiv.Items.RemoveAt(0);
-            listBoxActiv.TopIndex = listBoxActiv.Items.Count - 1;
-        }
-
         private void RestoreSessionTime()
         {
             try
@@ -310,7 +294,6 @@ namespace pxlhunt.FORMS
             try
             {
                 ScreenCaptureService.OnFrameCaptured -= OnFrameCapturedHandler;
-                ActionLogger.OnLog -= AppendLogMessage;
                 _sessionTimer?.Stop();
                 _sessionTimer?.Dispose();
                 _sessionTimer = null;
