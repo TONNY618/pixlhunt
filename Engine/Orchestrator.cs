@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using PixelMacroEngine.Core.Abstractions;
@@ -11,6 +12,9 @@ namespace PixelMacroEngine.Engine;
 
 public class Orchestrator
 {
+    [DllImport("user32.dll")]
+    private static extern short GetAsyncKeyState(int vKey);
+
     /// <summary>Коллекция активных комбо, управляемых оркестратором.</summary>
     public List<ActiveCombo> Combos { get; } = new();
 
