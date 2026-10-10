@@ -15,6 +15,9 @@ public static class BotStateController
     /// <summary>Мастер-флаг: включены ли комбо пользователем (галочка в главном окне).</summary>
     public static bool IsMasterEnabled { get; set; } = false;
 
+    /// <summary>Время активной сессии (используется движком HumanizerEngine для расчёта усталости).</summary>
+    public static TimeSpan ActiveSessionTime { get; set; } = TimeSpan.Zero;
+
     /// <summary>
     /// true, если открыто хотя бы одно видимое дочернее окно (кроме главного).
     /// </summary>

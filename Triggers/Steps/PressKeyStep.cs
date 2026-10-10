@@ -51,7 +51,8 @@ public class PressKeyStep : IComboStep
         {
             // Отправляем нажатие, держим клавишу, затем готовим пачку на отпускание.
             ArduinoHidService.Send(batch);
-            await Task.Delay(40, cancellationToken);
+            int holdTime = HumanizerEngine.GetKeyPressDuration();
+            await Task.Delay(holdTime, cancellationToken);
             batch = new PacketBatch();
         }
 
@@ -62,5 +63,14 @@ public class PressKeyStep : IComboStep
         }
 
         ArduinoHidService.Send(batch);
+
+        // Пост-пауза (Flight Time): имитация переноса пальца к следующей клавише.
+        // Для модификаторов (Shift, Ctrl, Alt, Win = 0x80 - 0x87) используется укороченная задержка.
+        bool isModifier = code >= 0x80 && code <= 0x87;
+        int postDelay = isModifier
+            ? HumanizerEngine.GetModifierDelay()
+            : HumanizerEngine.GetFlightTime();
+
+        await Task.Delay(postDelay, cancellationToken);
     }
 }

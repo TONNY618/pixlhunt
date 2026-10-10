@@ -15,7 +15,6 @@ namespace pxlhunt.FORMS
     {
         private readonly Orchestrator _orchestrator;
         private System.Windows.Forms.Timer? _sessionTimer;
-        private TimeSpan _activeSessionTime = TimeSpan.Zero;
         private const string SessionFileName = "session.json";
         private readonly HashSet<string> _changedComboNames = new(StringComparer.OrdinalIgnoreCase);
         private bool _isLoadingCombos = false;
@@ -273,14 +272,14 @@ namespace pxlhunt.FORMS
             // Время активной игры накручиваем только когда комбо реально могут работать
             if (BotStateController.CanExecuteCombos)
             {
-                _activeSessionTime = _activeSessionTime.Add(TimeSpan.FromSeconds(1));
+                BotStateController.ActiveSessionTime = BotStateController.ActiveSessionTime.Add(TimeSpan.FromSeconds(1));
                 UpdateActiveTimeLabel();
             }
         }
 
         private void UpdateActiveTimeLabel()
         {
-            labelActiveTime.Text = _activeSessionTime.ToString(@"hh\:mm\:ss");
+            labelActiveTime.Text = BotStateController.ActiveSessionTime.ToString(@"hh\:mm\:ss");
         }
 
         private void TrackBarTransparency_Scroll(object? sender, EventArgs e)
@@ -341,7 +340,7 @@ namespace pxlhunt.FORMS
                     seconds = 0;
                 }
 
-                _activeSessionTime = TimeSpan.FromSeconds(seconds);
+                BotStateController.ActiveSessionTime = TimeSpan.FromSeconds(seconds);
 
                 // Восстанавливаем прозрачность окна
                 int transparency = data.TransparencyPercent >= 10 ? data.TransparencyPercent : 100;
@@ -380,7 +379,7 @@ namespace pxlhunt.FORMS
                 var data = new SessionData
                 {
                     LastExitUtc = DateTime.UtcNow,
-                    ActiveSeconds = _activeSessionTime.TotalSeconds,
+                    ActiveSeconds = BotStateController.ActiveSessionTime.TotalSeconds,
                     TransparencyPercent = trackBarTransparency.Value,
                     WindowX = loc.X,
                     WindowY = loc.Y
