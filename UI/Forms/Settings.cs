@@ -13,6 +13,9 @@ namespace pxlhunt.FORMS
         public Settings()
         {
             InitializeComponent();
+
+            // Окно настроек всегда поверх остальных
+            this.TopMost = true;
         }
     }
 }

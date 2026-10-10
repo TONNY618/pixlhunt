@@ -100,6 +100,9 @@ namespace pxlhunt
         {
             InitializeComponent();
 
+            // Окно настроек всегда поверх остальных
+            this.TopMost = true;
+
             // Привязка обработчиков событий к кнопкам
             SendKeybCMD.Click += SendKeybCMD_Click;
             SendMouseCMD.Click += SendMouseCMD_Click;

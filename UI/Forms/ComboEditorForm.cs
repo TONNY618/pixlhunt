@@ -28,6 +28,9 @@ namespace pxlhunt.FORMS
         {
             InitializeComponent();
 
+            // Окно редактора всегда поверх остальных
+            this.TopMost = true;
+
             // 1. Разрешаем Drag-and-Drop на обеих панелях-"стаканах"
             flowLayoutPanelActions.AllowDrop = true;
             flowLayoutPanelTrigger.AllowDrop = true;

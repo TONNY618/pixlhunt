@@ -121,7 +121,7 @@ namespace pxlhunt.FORMS
 
             ComboEditorForm editor = new ComboEditorForm(selectedCombo);
             editor.FormClosed += (s, args) => LoadCombosFromConfig();
-            editor.Show();
+            editor.Show(this);
         }
 
         private void CheckedListBoxCombo_DoubleClick(object? sender, EventArgs e)
@@ -440,7 +440,7 @@ namespace pxlhunt.FORMS
         private void buttonSettings_Click(object sender, EventArgs e)
         {
             testArduino settingsForm = new testArduino();
-            settingsForm.Show();
+            settingsForm.Show(this);
         }
 
         private void buttonComboForm_Click(object sender, EventArgs e)
