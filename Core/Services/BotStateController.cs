@@ -86,15 +86,25 @@ public static class BotStateController
         switch (state)
         {
             case PhysiologicalState.Action:
-                FatigueLevel += FatigueRiseActionPerSecond * deltaSeconds;
+                // Асимптотическое приближение к потолку:
+                // чем сильнее устал, тем медленнее растёт (экспоненциальная кривая).
+                FatigueLevel += (FatigueCeiling - FatigueLevel) * FatigueRiseActionPerSecond * deltaSeconds;
                 break;
 
             case PhysiologicalState.Navigation:
-                FatigueLevel += FatigueRiseNavigationPerSecond * deltaSeconds;
+                // Статическое изометрическое напряжение (WASD).
+                // Предел статической усталости ниже динамической — 85% от максимума.
+                double isometricCeiling = FatigueFloor + (FatigueCeiling - FatigueFloor) * 0.85;
+                if (FatigueLevel < isometricCeiling)
+                {
+                    FatigueLevel += (isometricCeiling - FatigueLevel) * FatigueRiseNavigationPerSecond * deltaSeconds;
+                }
                 break;
 
             case PhysiologicalState.TrueIdle:
-                FatigueLevel -= FatigueFallIdlePerSecond * deltaSeconds;
+                // Логарифмический спад: быстрый сброс напряжения в начале,
+                // медленное восстановление у базового уровня.
+                FatigueLevel -= (FatigueLevel - FatigueFloor) * FatigueFallIdlePerSecond * deltaSeconds;
                 break;
         }
 
