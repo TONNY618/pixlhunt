@@ -113,7 +113,7 @@ namespace pxlhunt.FORMS
                     TopMost = true,
                     ShowInTaskbar = false,
                     FormBorderStyle = FormBorderStyle.FixedDialog,
-                    StartPosition = FormStartPosition.CenterParent,
+                    StartPosition = FormStartPosition.Manual,
                     MaximizeBox = false,
                     MinimizeBox = false
                 };
@@ -139,7 +139,8 @@ namespace pxlhunt.FORMS
                 };
                 inputForm.Controls.Add(num);
                 inputForm.Controls.Add(btnOk);
-                inputForm.Show(this); // Показываем немодально, чтобы не блочить родителя
+                CenterFormOnMain(inputForm);
+                inputForm.ShowDialog(this);
             };
             menu.Items.Add(priorityItem);
 
