@@ -54,4 +54,52 @@ public class FrameBuffer
         byte r = _data[offset + 2];
         return Color.FromArgb(r, g, b);
     }
+
+    /// <summary>
+    /// Вычисляет средний цвет прямоугольной области без аллокаций.
+    /// Координаты автоматически нормализуются (min/max), выходящие за границы
+    /// пиксели отбрасываются. Если область пуста — возвращает Color.Black.
+    /// </summary>
+    public Color GetAverageColor(int x1, int y1, int x2, int y2)
+    {
+        if (_data.Length == 0 || _width == 0 || _height == 0)
+            return Color.Black;
+
+        int left = Math.Min(x1, x2);
+        int right = Math.Max(x1, x2);
+        int top = Math.Min(y1, y2);
+        int bottom = Math.Max(y1, y2);
+
+        // Клипаем по границам буфера
+        if (left < 0) left = 0;
+        if (top < 0) top = 0;
+        if (right >= _width) right = _width - 1;
+        if (bottom >= _height) bottom = _height - 1;
+
+        if (left > right || top > bottom)
+            return Color.Black;
+
+        long sumR = 0, sumG = 0, sumB = 0;
+        long count = 0;
+
+        for (int y = top; y <= bottom; y++)
+        {
+            int rowOffset = y * _stride;
+            for (int x = left; x <= right; x++)
+            {
+                int offset = rowOffset + x * 4;
+                sumB += _data[offset + 0];
+                sumG += _data[offset + 1];
+                sumR += _data[offset + 2];
+                count++;
+            }
+        }
+
+        if (count == 0) return Color.Black;
+
+        return Color.FromArgb(
+            (int)(sumR / count),
+            (int)(sumG / count),
+            (int)(sumB / count));
+    }
 }
