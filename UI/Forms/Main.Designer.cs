@@ -32,14 +32,14 @@
             labelActiveTime = new Label();
             groupBoxStatus = new GroupBox();
             checkBoxStatus = new CheckBox();
-            flowLayoutPanel1 = new FlowLayoutPanel();
-            checkBox1 = new CheckBox();
+            checkedListBoxCombo = new CheckedListBox();
+            listBoxActiv = new ListBox();
+            labelLogs = new Label();
             labelEvents = new Label();
             buttonSettings = new Button();
             buttonComboForm = new Button();
             groupBoxActiveTime.SuspendLayout();
             groupBoxStatus.SuspendLayout();
-            flowLayoutPanel1.SuspendLayout();
             SuspendLayout();
             // 
             // groupBoxActiveTime
@@ -82,25 +82,31 @@
             checkBoxStatus.TabIndex = 0;
             checkBoxStatus.UseVisualStyleBackColor = true;
             // 
-            // flowLayoutPanel1
+            // checkedListBoxCombo
             // 
-            flowLayoutPanel1.Controls.Add(checkBox1);
-            flowLayoutPanel1.FlowDirection = FlowDirection.TopDown;
-            flowLayoutPanel1.Location = new Point(12, 85);
-            flowLayoutPanel1.Name = "flowLayoutPanel1";
-            flowLayoutPanel1.Size = new Size(163, 353);
-            flowLayoutPanel1.TabIndex = 4;
-            flowLayoutPanel1.WrapContents = false;
+            checkedListBoxCombo.FormattingEnabled = true;
+            checkedListBoxCombo.Location = new Point(12, 85);
+            checkedListBoxCombo.Name = "checkedListBoxCombo";
+            checkedListBoxCombo.Size = new Size(160, 350);
+            checkedListBoxCombo.TabIndex = 4;
             // 
-            // checkBox1
+            // listBoxActiv
             // 
-            checkBox1.AutoSize = true;
-            checkBox1.Location = new Point(3, 3);
-            checkBox1.Name = "checkBox1";
-            checkBox1.Size = new Size(83, 19);
-            checkBox1.TabIndex = 0;
-            checkBox1.Text = "checkBox1";
-            checkBox1.UseVisualStyleBackColor = true;
+            listBoxActiv.FormattingEnabled = true;
+            listBoxActiv.ItemHeight = 15;
+            listBoxActiv.Location = new Point(177, 85);
+            listBoxActiv.Name = "listBoxActiv";
+            listBoxActiv.Size = new Size(160, 350);
+            listBoxActiv.TabIndex = 9;
+            // 
+            // labelLogs
+            // 
+            labelLogs.AutoSize = true;
+            labelLogs.Location = new Point(177, 67);
+            labelLogs.Name = "labelLogs";
+            labelLogs.Size = new Size(35, 15);
+            labelLogs.TabIndex = 10;
+            labelLogs.Text = "Логи";
             // 
             // labelEvents
             // 
@@ -139,8 +145,10 @@
             ClientSize = new Size(349, 516);
             Controls.Add(buttonComboForm);
             Controls.Add(buttonSettings);
+            Controls.Add(labelLogs);
+            Controls.Add(listBoxActiv);
+            Controls.Add(checkedListBoxCombo);
             Controls.Add(labelEvents);
-            Controls.Add(flowLayoutPanel1);
             Controls.Add(groupBoxStatus);
             Controls.Add(groupBoxActiveTime);
             Name = "pxlHunt";
@@ -150,8 +158,6 @@
             groupBoxActiveTime.PerformLayout();
             groupBoxStatus.ResumeLayout(false);
             groupBoxStatus.PerformLayout();
-            flowLayoutPanel1.ResumeLayout(false);
-            flowLayoutPanel1.PerformLayout();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -161,10 +167,11 @@
         private Label labelActiveTime;
         private GroupBox groupBoxStatus;
         private CheckBox checkBoxStatus;
-        private FlowLayoutPanel flowLayoutPanel1;
+        private CheckedListBox checkedListBoxCombo;
+        private ListBox listBoxActiv;
+        private Label labelLogs;
         private Label labelEvents;
         private Button buttonSettings;
-        private CheckBox checkBox1;
         private Button buttonComboForm;
     }
 }
