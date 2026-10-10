@@ -117,6 +117,28 @@ namespace pxlhunt.FORMS
                 bool isSquareMode = rb.Name.EndsWith("_2"); // _2 это режим квадрата
 
                 ApplySquareMode(parentGroup, isSquareMode, index);
+
+                // При переключении на режим квадрата — если обе точки уже заданы,
+                // сразу пересчитываем средний цвет области и обновляем плашку/поле цвета.
+                if (isSquareMode)
+                {
+                    TextBox? txtXY1 = FindControlByName<TextBox>(parentGroup, $"textBoxXY{index}_1");
+                    TextBox? txtXY2 = FindControlByName<TextBox>(parentGroup, $"textBoxXY{index}_2");
+
+                    Point? p1 = TryParsePoint(txtXY1?.Text);
+                    Point? p2 = TryParsePoint(txtXY2?.Text);
+
+                    if (p1.HasValue && p2.HasValue)
+                    {
+                        Color avgColor = GetAverageColor(p1.Value, p2.Value);
+
+                        PictureBox? pbox = FindControlByName<PictureBox>(parentGroup, $"pictureBoxCreatePXL{index}");
+                        TextBox? txtColor = FindControlByName<TextBox>(parentGroup, $"textBoxColor{index}");
+
+                        if (pbox != null) pbox.BackColor = avgColor;
+                        if (txtColor != null) txtColor.Text = $"#{avgColor.R:X2}{avgColor.G:X2}{avgColor.B:X2}";
+                    }
+                }
             }
         }
 
@@ -187,6 +209,15 @@ namespace pxlhunt.FORMS
             {
                 txtXY2.Text = $"{bottomRight.X}, {bottomRight.Y}";
             }
+
+            // Автоматически рассчитываем средний цвет области и обновляем плашку/поле цвета
+            Color avgColor = GetAverageColor(topLeft, bottomRight);
+
+            PictureBox? pbox = FindControlByName<PictureBox>(parentGroup, $"pictureBoxCreatePXL{index}");
+            TextBox? txtColor = FindControlByName<TextBox>(parentGroup, $"textBoxColor{index}");
+
+            if (pbox != null) pbox.BackColor = avgColor;
+            if (txtColor != null) txtColor.Text = $"#{avgColor.R:X2}{avgColor.G:X2}{avgColor.B:X2}";
 
             btnSquare.Text = originalText;
             btnSquare.Enabled = true;
