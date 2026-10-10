@@ -296,11 +296,11 @@ namespace pxlhunt
                 _hidStream = null;
                 _hidDevice = null;
 
-                MessageBox.Show(
-                    "Команда отправлена!\nПлата ушла в режим загрузчика на 8 секунд.\nМожно нажимать Upload в VS Code.",
-                    "Успех",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Information);
+                //MessageBox.Show(
+                //    "Команда отправлена!\nПлата ушла в режим загрузчика на 8 секунд.\nМожно нажимать Upload в VS Code.",
+                //    "Успех",
+                //    MessageBoxButtons.OK,
+                //    MessageBoxIcon.Information);
             }
         }
 
