@@ -41,18 +41,18 @@ public static class BotStateController
     /// <summary>Минимальный уровень усталости (бодрый, восстановившийся).</summary>
     private const double FatigueFloor = 1.00;
 
-    /// <summary>Максимальный уровень усталости (долгая непрерывная нагрузка).</summary>
-    private const double FatigueCeiling = 1.40;
+    // Профиль "17-летний геймер": выносливость высокая, потолок усталости низкий, откат быстрый.
+    /// <summary>Максимальный уровень усталости — падение скорости всего на 15% (было 40%).</summary>
+    private const double FatigueCeiling = 1.15;
 
-    // Профиль "Гриндер-марафонец": медленное системное утомление и долгий откат.
-    /// <summary>Скорость роста усталости за секунду в состоянии Action (~20 минут спама до предела).</summary>
-    private const double FatigueRiseActionPerSecond = 0.0025;
+    /// <summary>Скорость роста усталости за секунду в состоянии Action (~3 часа непрерывного спама до потолка).</summary>
+    private const double FatigueRiseActionPerSecond = 0.0003;
 
-    /// <summary>Скорость роста усталости за секунду в состоянии Navigation (~1 час бега до затекания).</summary>
-    private const double FatigueRiseNavigationPerSecond = 0.0008;
+    /// <summary>Скорость роста усталости за секунду в состоянии Navigation (от зажатого WASD почти не устаёт).</summary>
+    private const double FatigueRiseNavigationPerSecond = 0.0001;
 
-    /// <summary>Скорость восстановления за секунду в состоянии TrueIdle (~30 минут покоя для полного сброса).</summary>
-    private const double FatigueFallIdlePerSecond = 0.0015;
+    /// <summary>Скорость восстановления за секунду в состоянии TrueIdle (~5 минут в афк/инвентаре для полного восстановления).</summary>
+    private const double FatigueFallIdlePerSecond = 0.0100;
 
     /// <summary>Текущий волновой уровень усталости (1.0 .. 1.4).</summary>
     public static double FatigueLevel { get; private set; } = FatigueFloor;
