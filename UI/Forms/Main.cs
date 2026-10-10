@@ -55,30 +55,60 @@ namespace pxlhunt.FORMS
             checkedListBoxCombo.ItemCheck += CheckedListBoxCombo_ItemCheck;
             checkBoxStatus.CheckedChanged += CheckBoxStatus_CheckedChanged;
 
-            // Снятие выделения при клике вне списка комбо
+            // Снятие выделения при клике по пустому пространству формы
             this.MouseDown += (s, e) => checkedListBoxCombo.ClearSelected();
-            SubscribeClearSelection(this);
+
+            // Контекстное меню (ПКМ) для списка комбо
+            SetupComboContextMenu();
+
+            // Открытие комбо по двойному клику
+            checkedListBoxCombo.DoubleClick += CheckedListBoxCombo_DoubleClick;
 
             UpdateActiveTimeLabel();
         }
 
         /// <summary>
-        /// Рекурсивно подписывает MouseDown всех дочерних контролов (кроме самого списка)
-        /// на сброс выделения в checkedListBoxCombo.
+        /// Создаёт и привязывает контекстное меню "Редактировать" к списку комбо.
         /// </summary>
-        private void SubscribeClearSelection(Control parent)
+        private void SetupComboContextMenu()
         {
-            foreach (Control ctrl in parent.Controls)
+            var menu = new ContextMenuStrip();
+            var editItem = new ToolStripMenuItem("Редактировать");
+            editItem.Click += (s, e) => OpenSelectedComboInEditor();
+            menu.Items.Add(editItem);
+
+            checkedListBoxCombo.ContextMenuStrip = menu;
+
+            checkedListBoxCombo.MouseDown += (s, e) =>
             {
-                if (ctrl == checkedListBoxCombo)
-                    continue;
-
-                ctrl.MouseDown += (s, e) => checkedListBoxCombo.ClearSelected();
-
-                if (ctrl.HasChildren)
+                if (e.Button == MouseButtons.Right)
                 {
-                    SubscribeClearSelection(ctrl);
+                    int index = checkedListBoxCombo.IndexFromPoint(e.Location);
+                    if (index >= 0)
+                    {
+                        checkedListBoxCombo.SelectedIndex = index;
+                    }
                 }
+            };
+        }
+
+        /// <summary>
+        /// Открывает выделенное в списке комбо в редакторе.
+        /// </summary>
+        private void OpenSelectedComboInEditor()
+        {
+            string? selectedCombo = checkedListBoxCombo.SelectedItem as string;
+
+            ComboEditorForm editor = new ComboEditorForm(selectedCombo);
+            editor.FormClosed += (s, args) => LoadCombosFromConfig();
+            editor.Show();
+        }
+
+        private void CheckedListBoxCombo_DoubleClick(object? sender, EventArgs e)
+        {
+            if (checkedListBoxCombo.SelectedItem != null)
+            {
+                OpenSelectedComboInEditor();
             }
         }
 
@@ -278,14 +308,7 @@ namespace pxlhunt.FORMS
         private void buttonComboForm_Click(object sender, EventArgs e)
         {
             // Если в списке выделено комбо — открываем редактор с его загрузкой
-            string? selectedCombo = checkedListBoxCombo.SelectedItem as string;
-
-            ComboEditorForm editor = new ComboEditorForm(selectedCombo);
-
-            // После закрытия редактора перезагружаем список комбо
-            editor.FormClosed += (s, args) => LoadCombosFromConfig();
-
-            editor.Show();
+            OpenSelectedComboInEditor();
         }
 
         /// <summary>Данные сессии для сохранения/восстановления времени активности.</summary>
