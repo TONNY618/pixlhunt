@@ -44,18 +44,15 @@ public static class BotStateController
     /// <summary>Максимальный уровень усталости (долгая непрерывная нагрузка).</summary>
     private const double FatigueCeiling = 1.40;
 
-    /// <summary>Скорость роста усталости за секунду в состоянии Action (примерно +0.4 за 60 сек).</summary>
-    private const double FatigueRiseActionPerSecond = 0.0067;
+    // Профиль "Гриндер-марафонец": медленное системное утомление и долгий откат.
+    /// <summary>Скорость роста усталости за секунду в состоянии Action (~20 минут спама до предела).</summary>
+    private const double FatigueRiseActionPerSecond = 0.0025;
 
-    /// <summary>
-    /// Скорость роста усталости за секунду в состоянии Navigation.
-    /// 10% от Action — статическое напряжение кисти почти не утомляет,
-    /// но и не даёт восстановиться.
-    /// </summary>
-    private const double FatigueRiseNavigationPerSecond = FatigueRiseActionPerSecond * 0.10;
+    /// <summary>Скорость роста усталости за секунду в состоянии Navigation (~1 час бега до затекания).</summary>
+    private const double FatigueRiseNavigationPerSecond = 0.0008;
 
-    /// <summary>Скорость восстановления за секунду в состоянии TrueIdle (примерно -0.35 за 60 сек).</summary>
-    private const double FatigueFallIdlePerSecond = 0.0058;
+    /// <summary>Скорость восстановления за секунду в состоянии TrueIdle (~30 минут покоя для полного сброса).</summary>
+    private const double FatigueFallIdlePerSecond = 0.0015;
 
     /// <summary>Текущий волновой уровень усталости (1.0 .. 1.4).</summary>
     public static double FatigueLevel { get; private set; } = FatigueFloor;
@@ -112,8 +109,8 @@ public static class BotStateController
                 break;
         }
 
-        if (FatigueLevel > FatigueCeiling) FatigueLevel = FatigueCeiling;
-        if (FatigueLevel < FatigueFloor) FatigueLevel = FatigueFloor;
+        // Оптимизация branch prediction и защита от погрешностей IEEE 754.
+        FatigueLevel = Math.Clamp(FatigueLevel, FatigueFloor, FatigueCeiling);
     }
 
     /// <summary>Сбрасывает усталость к базовому уровню (например, при старте новой сессии).</summary>
