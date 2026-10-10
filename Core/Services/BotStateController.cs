@@ -21,7 +21,22 @@ public static class BotStateController
     /// <summary>Время активной сессии (используется движком HumanizerEngine для расчёта усталости).</summary>
     public static TimeSpan ActiveSessionTime { get; set; } = TimeSpan.Zero;
 
-    // === Волновая модель усталости ===
+    // === Трёхсостоянийная биомеханическая модель усталости ===
+
+    /// <summary>
+    /// Физиологическое состояние игрока в текущий момент.
+    /// </summary>
+    public enum PhysiologicalState
+    {
+        /// <summary>Выполнение боевого комбо — максимальная нагрузка на кисть.</summary>
+        Action,
+
+        /// <summary>Удержание WASD — статическое напряжение, усталость не спадает.</summary>
+        Navigation,
+
+        /// <summary>Полный простой — активное восстановление.</summary>
+        TrueIdle
+    }
 
     /// <summary>Минимальный уровень усталости (бодрый, восстановившийся).</summary>
     private const double FatigueFloor = 1.00;
@@ -29,11 +44,18 @@ public static class BotStateController
     /// <summary>Максимальный уровень усталости (долгая непрерывная нагрузка).</summary>
     private const double FatigueCeiling = 1.40;
 
-    /// <summary>Скорость роста усталости за секунду нагрузки (примерно +0.4 за 60 сек).</summary>
-    private const double FatigueRisePerSecond = 0.0067;
+    /// <summary>Скорость роста усталости за секунду в состоянии Action (примерно +0.4 за 60 сек).</summary>
+    private const double FatigueRiseActionPerSecond = 0.0067;
 
-    /// <summary>Скорость восстановления за секунду простоя (примерно -0.35 за 60 сек).</summary>
-    private const double FatigueFallPerSecond = 0.0058;
+    /// <summary>
+    /// Скорость роста усталости за секунду в состоянии Navigation.
+    /// 10% от Action — статическое напряжение кисти почти не утомляет,
+    /// но и не даёт восстановиться.
+    /// </summary>
+    private const double FatigueRiseNavigationPerSecond = FatigueRiseActionPerSecond * 0.10;
+
+    /// <summary>Скорость восстановления за секунду в состоянии TrueIdle (примерно -0.35 за 60 сек).</summary>
+    private const double FatigueFallIdlePerSecond = 0.0058;
 
     /// <summary>Текущий волновой уровень усталости (1.0 .. 1.4).</summary>
     public static double FatigueLevel { get; private set; } = FatigueFloor;
@@ -41,49 +63,50 @@ public static class BotStateController
     /// <summary>Множитель усталости, применяемый HumanizerEngine к mu и sigma.</summary>
     public static double FatigueMultiplier => FatigueLevel;
 
-    private static readonly Stopwatch _clock = Stopwatch.StartNew();
-    private static TimeSpan _lastUpdate = TimeSpan.Zero;
+    /// <summary>Текущее физиологическое состояние (для телеметрии/отладки).</summary>
+    public static PhysiologicalState CurrentState { get; private set; } = PhysiologicalState.TrueIdle;
 
     /// <summary>
-    /// Сигнал от оркестратора: идёт фаза нагрузки (выполняется комбо).
-    /// Усталость растёт.
+    /// Обновляет уровень усталости на основе реального прошедшего времени (DeltaTime).
+    /// Полностью отвязано от частоты кадров/тиков — только секунды.
     /// </summary>
-    public static void NotifyLoad() => UpdateFatigue(isLoad: true);
-
-    /// <summary>
-    /// Сигнал от оркестратора: идёт фаза микро-отдыха (нет активных комбо,
-    /// либо игрок двигается и комбо на паузе). Усталость спадает.
-    /// </summary>
-    public static void NotifyIdle() => UpdateFatigue(isLoad: false);
-
-    /// <summary>
-    /// Пересчитывает уровень усталости на основе времени, прошедшего с прошлого вызова.
-    /// </summary>
-    private static void UpdateFatigue(bool isLoad)
+    /// <param name="state">Текущее физиологическое состояние.</param>
+    /// <param name="deltaSeconds">Реальное время с прошлого вызова, в секундах.</param>
+    public static void Update(PhysiologicalState state, double deltaSeconds)
     {
-        var now = _clock.Elapsed;
-        double dt = (now - _lastUpdate).TotalSeconds;
-        _lastUpdate = now;
+        CurrentState = state;
 
-        if (dt <= 0) return;
+        if (deltaSeconds <= 0 || double.IsNaN(deltaSeconds) || double.IsInfinity(deltaSeconds))
+            return;
 
-        if (isLoad)
+        // Защита от гигантских скачков DeltaTime (например, после паузы отладчика).
+        if (deltaSeconds > 1.0)
+            deltaSeconds = 1.0;
+
+        switch (state)
         {
-            FatigueLevel += FatigueRisePerSecond * dt;
-            if (FatigueLevel > FatigueCeiling) FatigueLevel = FatigueCeiling;
+            case PhysiologicalState.Action:
+                FatigueLevel += FatigueRiseActionPerSecond * deltaSeconds;
+                break;
+
+            case PhysiologicalState.Navigation:
+                FatigueLevel += FatigueRiseNavigationPerSecond * deltaSeconds;
+                break;
+
+            case PhysiologicalState.TrueIdle:
+                FatigueLevel -= FatigueFallIdlePerSecond * deltaSeconds;
+                break;
         }
-        else
-        {
-            FatigueLevel -= FatigueFallPerSecond * dt;
-            if (FatigueLevel < FatigueFloor) FatigueLevel = FatigueFloor;
-        }
+
+        if (FatigueLevel > FatigueCeiling) FatigueLevel = FatigueCeiling;
+        if (FatigueLevel < FatigueFloor) FatigueLevel = FatigueFloor;
     }
 
     /// <summary>Сбрасывает усталость к базовому уровню (например, при старте новой сессии).</summary>
     public static void ResetFatigue()
     {
         FatigueLevel = FatigueFloor;
-        _lastUpdate = _clock.Elapsed;
+        CurrentState = PhysiologicalState.TrueIdle;
     }
 
     /// <summary>

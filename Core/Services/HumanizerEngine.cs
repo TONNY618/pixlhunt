@@ -17,6 +17,14 @@ public static class HumanizerEngine
     private const int HardMinMs = 10;
     private const int HardMaxMs = 400;
 
+    // Мягкий порог: значения выше него считаются "хвостовыми" и перегенерируются.
+    // Это устраняет "wall effect" — плоскую стену на PDF-графике телеметрии.
+    private const int SoftMaxMs = 320;
+
+    // Сколько раз пытаться перегенерировать хвостовое значение, прежде чем
+    // применить fallback на случайную величину у верхней границы.
+    private const int MaxRerollAttempts = 5;
+
     /// <summary>
     /// Возвращает текущий волновой множитель усталости из контроллера состояния.
     /// 1.0 — бодрый, до ~1.4 — сильно уставший.
@@ -38,6 +46,8 @@ public static class HumanizerEngine
     /// Генерирует значение по логнормальному распределению.
     /// Параметры mu и sigma задаются в логарифмическом пространстве (натуральный логарифм миллисекунд).
     /// Усталость применяется и к mu (сдвиг среднего), и к sigma (удлинение хвоста).
+    /// Вместо жёсткого clamp на верхней границе используется soft-cap с reroll,
+    /// чтобы не создавать "wall effect" на PDF-графике телеметрии.
     /// </summary>
     private static int GetLogNormalDelay(double mu, double sigma)
     {
@@ -48,11 +58,32 @@ public static class HumanizerEngine
         double adjustedMu = mu + Math.Log(fatigue);
         double adjustedSigma = sigma * fatigue;
 
-        double z = NextGaussian();
-        double logValue = adjustedMu + adjustedSigma * z;
-        double value = Math.Exp(logValue);
+        double value = 0.0;
 
-        return (int)Math.Clamp(value, HardMinMs, HardMaxMs);
+        // Soft-cap: перегенерируем хвостовые значения, чтобы не было плоской стены.
+        for (int attempt = 0; attempt < MaxRerollAttempts; attempt++)
+        {
+            double z = NextGaussian();
+            double logValue = adjustedMu + adjustedSigma * z;
+            value = Math.Exp(logValue);
+
+            if (value <= SoftMaxMs)
+                break;
+        }
+
+        // Если после всех попыток значение всё ещё выше мягкого порога —
+        // fallback на случайную величину у верхней границы (без дельта-спайка).
+        if (value > SoftMaxMs)
+        {
+            value = HardMaxMs - _random.Next(0, 50);
+        }
+
+        // Нижняя граница остаётся жёсткой — она физически осмысленна
+        // (быстрее человеческого рефлекса быть нельзя).
+        if (value < HardMinMs)
+            value = HardMinMs;
+
+        return (int)value;
     }
 
     /// <summary>Время физического удержания клавиши нажатой. Плотное ядро, умеренный хвост.</summary>

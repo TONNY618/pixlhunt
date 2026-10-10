@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -21,6 +22,10 @@ public class Orchestrator
 
     private readonly SimpleTaskQueue _queue;
     private readonly InputDispatcher _dispatcher;
+
+    // Часы для расчёта DeltaTime между кадрами (независимо от частоты вызовов).
+    private readonly Stopwatch _frameClock = Stopwatch.StartNew();
+    private TimeSpan _lastFrameTime = TimeSpan.Zero;
 
     public Orchestrator(SimpleTaskQueue queue, InputDispatcher dispatcher)
     {
@@ -60,12 +65,17 @@ public class Orchestrator
     /// </summary>
     public async Task ProcessFrameAsync(FrameBuffer frame, CancellationToken ct = default)
     {
+        // === Расчёт DeltaTime между кадрами (реальное время, не тики) ===
+        var now = _frameClock.Elapsed;
+        double deltaSeconds = (now - _lastFrameTime).TotalSeconds;
+        _lastFrameTime = now;
+
         // Сортируем комбо по убыванию приоритета
         var ordered = Combos.OrderByDescending(c => c.Priority).ToList();
 
-        // Флаг: был ли на этом кадре хотя бы один реально выполняющийся шаг комбо.
-        // Если нет — сообщаем контроллеру состояний о фазе микро-отдыха.
+        // Флаги для маппинга физиологического состояния кадра.
         bool anyComboRan = false;
+        bool wasdHeld = IsWasdPressed();
 
         foreach (var combo in ordered)
         {
@@ -76,11 +86,10 @@ public class Orchestrator
             if (!combo.IsEnabled || !combo.CanExecute())
                 continue;
 
-            // Если включён PauseIfWasd и игрок двигается — пропускаем комбо
-            // и сигнализируем о микро-отдыхе (игрок сам двигается, макрос на паузе).
-            if (combo.PauseIfWasd && IsWasdPressed())
+            // Если включён PauseIfWasd и игрок двигается — пропускаем комбо.
+            // Состояние (Navigation) будет выставлено после цикла.
+            if (combo.PauseIfWasd && wasdHeld)
             {
-                BotStateController.NotifyIdle();
                 continue;
             }
 
@@ -108,9 +117,6 @@ public class Orchestrator
             {
                 // Обновляем время последнего выполнения
                 combo.LastExecuted = DateTime.UtcNow;
-
-                // Сигнализируем контроллеру состояний о фазе нагрузки
-                BotStateController.NotifyLoad();
 
                 // Последовательно выполняем шаги комбо
                 var context = new TriggerExecutionContext
@@ -145,10 +151,19 @@ public class Orchestrator
             }
         }
 
-        // Если ни одно комбо не выполнялось на этом кадре — фаза микро-отдыха.
-        if (!anyComboRan)
-        {
-            BotStateController.NotifyIdle();
-        }
+        // === Маппинг действий оркестратора на физиологические состояния ===
+        // Action     — выполнялось боевое комбо (максимальная нагрузка).
+        // Navigation — удерживаются WASD без боя (статическое напряжение).
+        // TrueIdle   — нет ни боя, ни движения (активное восстановление).
+        BotStateController.PhysiologicalState state;
+        if (anyComboRan)
+            state = BotStateController.PhysiologicalState.Action;
+        else if (wasdHeld)
+            state = BotStateController.PhysiologicalState.Navigation;
+        else
+            state = BotStateController.PhysiologicalState.TrueIdle;
+
+        // Передаём реальный DeltaTime — усталость не зависит от частоты кадров.
+        BotStateController.Update(state, deltaSeconds);
     }
 }
