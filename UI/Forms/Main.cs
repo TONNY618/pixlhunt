@@ -73,6 +73,11 @@ namespace pxlhunt.FORMS
             // Подписка на логи действий
             ActionLogger.OnLog += AppendLogMessage;
 
+            // Настройка трекбара прозрачности (на случай, если не задано в дизайнере)
+            trackBarTransparency.Minimum = 10;
+            trackBarTransparency.Maximum = 100;
+            trackBarTransparency.Scroll += TrackBarTransparency_Scroll;
+
             UpdateActiveTimeLabel();
         }
 
@@ -228,6 +233,11 @@ namespace pxlhunt.FORMS
             labelActiveTime.Text = _activeSessionTime.ToString(@"hh\:mm\:ss");
         }
 
+        private void TrackBarTransparency_Scroll(object? sender, EventArgs e)
+        {
+            this.Opacity = trackBarTransparency.Value / 100.0;
+        }
+
         /// <summary>
         /// Потокобезопасно добавляет сообщение в список логов listBoxActiv.
         /// </summary>
@@ -282,6 +292,11 @@ namespace pxlhunt.FORMS
                 }
 
                 _activeSessionTime = TimeSpan.FromSeconds(seconds);
+
+                // Восстанавливаем прозрачность окна
+                int transparency = data.TransparencyPercent >= 10 ? data.TransparencyPercent : 100;
+                trackBarTransparency.Value = Math.Clamp(transparency, 10, 100);
+                this.Opacity = trackBarTransparency.Value / 100.0;
             }
             catch
             {
@@ -299,7 +314,8 @@ namespace pxlhunt.FORMS
                 var data = new SessionData
                 {
                     LastExitUtc = DateTime.UtcNow,
-                    ActiveSeconds = _activeSessionTime.TotalSeconds
+                    ActiveSeconds = _activeSessionTime.TotalSeconds,
+                    TransparencyPercent = trackBarTransparency.Value
                 };
 
                 string json = JsonSerializer.Serialize(data,
@@ -353,6 +369,7 @@ namespace pxlhunt.FORMS
         {
             public DateTime LastExitUtc { get; set; }
             public double ActiveSeconds { get; set; }
+            public int TransparencyPercent { get; set; } = 100;
         }
     }
 }
