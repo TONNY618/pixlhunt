@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using PixelMacroEngine.Core.Models;
 using PixelMacroEngine.Core.Services;
+using PixelMacroEngine.Engine;
 
 namespace pxlhunt.FORMS
 {
