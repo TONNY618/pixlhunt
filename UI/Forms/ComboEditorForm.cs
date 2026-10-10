@@ -55,12 +55,16 @@ namespace pxlhunt.FORMS
 
         /// <summary>
         /// Конструктор с опциональной загрузкой комбо по имени.
+        /// Загрузка откладывается до события Shown, чтобы FlowLayoutPanel и все
+        /// визуальные блоки были полностью инициализированы.
         /// </summary>
         public ComboEditorForm(string? comboNameToLoad = null) : this()
         {
             if (!string.IsNullOrWhiteSpace(comboNameToLoad))
             {
-                LoadComboByName(comboNameToLoad);
+                textBox5.Text = comboNameToLoad;
+
+                this.Shown += (s, e) => LoadProfileFromConfig(showSuccessMessage: false);
             }
         }
 
@@ -694,23 +698,22 @@ namespace pxlhunt.FORMS
 
         private void buttonLoad_Click(object sender, EventArgs e)
         {
-            string comboName = textBox5.Text.Trim();
-            if (string.IsNullOrEmpty(comboName))
-            {
-                MessageBox.Show("Введите название триггера для загрузки.");
-                return;
-            }
-
-            LoadComboByName(comboName);
+            LoadProfileFromConfig(showSuccessMessage: true);
         }
 
         /// <summary>
-        /// Загружает комбо по имени из папки Config (сначала рядом с exe, затем в исходниках).
+        /// Загружает профиль комбо по имени из textBox5 из папки Config
+        /// (сначала рядом с exe, затем в исходниках).
         /// </summary>
-        public void LoadComboByName(string comboName)
+        public void LoadProfileFromConfig(bool showSuccessMessage = false)
         {
-            if (string.IsNullOrWhiteSpace(comboName))
+            string comboName = textBox5.Text.Trim();
+            if (string.IsNullOrEmpty(comboName))
+            {
+                if (showSuccessMessage)
+                    MessageBox.Show("Введите название триггера для загрузки.");
                 return;
+            }
 
             // Ищем файл внутри папки Config рядом с exe
             string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Config", $"{comboName}.json");
@@ -723,7 +726,8 @@ namespace pxlhunt.FORMS
 
             if (!File.Exists(filePath))
             {
-                MessageBox.Show($"Файл не найден по пути:\n{filePath}");
+                if (showSuccessMessage)
+                    MessageBox.Show($"Файл не найден по пути:\n{filePath}");
                 return;
             }
 
@@ -745,6 +749,9 @@ namespace pxlhunt.FORMS
 
                 RestorePanelElements(profile.Triggers, flowLayoutPanelTrigger, GroupTriggerPreset);
                 RestorePanelElements(profile.Actions, flowLayoutPanelActions, GroupActionPreset);
+
+                if (showSuccessMessage)
+                    MessageBox.Show("Триггер успешно загружен.");
             }
         }
 
