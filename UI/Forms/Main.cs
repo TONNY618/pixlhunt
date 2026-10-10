@@ -173,6 +173,7 @@ namespace pxlhunt.FORMS
 
                         var combo = ComboFactory.Create(profile);
                         combo.IsEnabled = profile.IsOnOff;
+                        combo.FilePath = file;
 
                         loaded.Add(combo);
                     }
@@ -206,8 +207,36 @@ namespace pxlhunt.FORMS
 
             // ItemCheck срабатывает ДО применения нового состояния, поэтому учитываем e.NewValue
             var combo = _orchestrator.Combos[e.Index];
-            combo.IsEnabled = e.NewValue == CheckState.Checked;
+            combo.IsEnabled = (e.NewValue == CheckState.Checked);
             _changedComboNames.Add(combo.Name);
+        }
+
+        /// <summary>
+        /// Сохраняет текущее состояние IsEnabled каждого комбо в его исходный JSON-файл.
+        /// </summary>
+        private void SaveComboStatesToFiles()
+        {
+            foreach (var combo in _orchestrator.Combos)
+            {
+                if (string.IsNullOrWhiteSpace(combo.FilePath) || !File.Exists(combo.FilePath))
+                    continue;
+
+                try
+                {
+                    string json = File.ReadAllText(combo.FilePath);
+                    var node = System.Text.Json.Nodes.JsonNode.Parse(json);
+                    if (node != null)
+                    {
+                        node["IsOnOff"] = combo.IsEnabled;
+                        var options = new JsonSerializerOptions { WriteIndented = true };
+                        File.WriteAllText(combo.FilePath, node.ToJsonString(options));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[SaveComboStates] Ошибка сохранения {combo.FilePath}: {ex.Message}");
+                }
+            }
         }
 
         private void CheckBoxStatus_CheckedChanged(object? sender, EventArgs e)
@@ -364,6 +393,7 @@ namespace pxlhunt.FORMS
                 _sessionTimer?.Dispose();
                 _sessionTimer = null;
 
+                SaveComboStatesToFiles();
                 SaveSessionTime();
             }
             catch

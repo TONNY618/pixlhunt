@@ -14,6 +14,9 @@ public class ActiveCombo
     /// <summary>Уникальное имя комбо (совпадает с именем JSON-профиля).</summary>
     public string Name { get; set; } = string.Empty;
 
+    /// <summary>Полный путь к исходному JSON-файлу комбо (для сохранения состояния).</summary>
+    public string FilePath { get; set; } = string.Empty;
+
     /// <summary>Приоритет выполнения: чем выше, тем раньше проверяется комбо.</summary>
     public int Priority { get; set; }
 
