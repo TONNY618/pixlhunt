@@ -37,6 +37,12 @@ namespace pxlhunt.FORMS
         {
             InitializeComponent();
 
+            // Заголовок окна из централизованного конфига
+            if (!string.IsNullOrWhiteSpace(AppConfigService.Instance.PxlhuntNameMainForm))
+            {
+                this.Text = AppConfigService.Instance.PxlhuntNameMainForm;
+            }
+
             // Подключаемся к плате Arduino HID и отображаем статус
             bool isArduinoConnected = ArduinoHidService.Connect();
             groupBoxStatus.Text = isArduinoConnected ? "Статус - плата OK" : "Статус - плата НЕ НАЙДЕНА";

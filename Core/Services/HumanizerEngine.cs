@@ -91,8 +91,29 @@ public static class HumanizerEngine
         return (int)value;
     }
 
-    /// <summary>Время физического удержания клавиши нажатой. Плотное ядро, умеренный хвост.</summary>
-    public static int GetKeyPressDuration() => GetLogNormalDelay(mu: Math.Log(55.0), sigma: 0.28);
+    /// <summary>
+    /// Время физического удержания клавиши нажатой. Плотное ядро, умеренный хвост.
+    /// Границы берутся из централизованного конфига (HumanLatencyMinMs / HumanLatencyMaxMs).
+    /// </summary>
+    public static int GetKeyPressDuration()
+    {
+        int min = AppConfigService.Instance.HumanLatencyMinMs;
+        int max = AppConfigService.Instance.HumanLatencyMaxMs;
+
+        // Защита от некорректных значений в конфиге
+        if (min < 1) min = 1;
+        if (max <= min) max = min + 1;
+
+        // Среднее значение в миллисекундах — центр логнормального распределения.
+        double mean = (min + max) / 2.0;
+
+        // sigma подбираем так, чтобы ~95% значений попадали в диапазон [min, max]:
+        // для логнормального распределения это соответствует sigma ≈ ln(max/mean) / 1.96.
+        double sigma = Math.Log((double)max / mean) / 1.96;
+        if (sigma < 0.05) sigma = 0.05;
+
+        return GetLogNormalDelay(mu: Math.Log(mean), sigma: sigma);
+    }
 
     /// <summary>
     /// Пауза перед нажатием следующей независимой кнопки (время переноса пальца).

@@ -32,6 +32,10 @@ public static class ScreenCaptureService
 
         try
         {
+            // Частота захвата кадров из централизованного конфига
+            int intervalMs = AppConfigService.Instance.FrameCaptureIntervalMs;
+            TargetFps = 1000 / Math.Max(1, intervalMs);
+
             _capturer.Initialize(monitorIndex);
             _cts = new CancellationTokenSource();
             IsRunning = true;
