@@ -20,6 +20,7 @@ namespace pxlhunt.FORMS
         private readonly HashSet<string> _changedComboNames = new(StringComparer.OrdinalIgnoreCase);
         private bool _isLoadingCombos = false;
         private bool _wasPaused = false;
+        private bool _lastVisualActiveState = false;
 
         // Win32 API для режима "клик насквозь"
         private const int GWL_EXSTYLE = -20;
@@ -87,6 +88,9 @@ namespace pxlhunt.FORMS
             // Первоначальная синхронизация режима "клик насквозь"
             UpdateClickThroughState();
 
+            // Начальный цвет индикатора статуса — белый (пауза)
+            UpdateStatusVisuals(false);
+
             // Снятие выделения при клике по пустому пространству формы
             this.MouseDown += (s, e) => checkedListBoxCombo.ClearSelected();
 
@@ -131,6 +135,18 @@ namespace pxlhunt.FORMS
             // Кликабельно насквозь ТОЛЬКО если включен чекбокс прозрачности И включен мастер-статус активности
             bool enable = checkBoxTransparentClick.Checked && checkBoxStatus.Checked;
             SetClickThrough(enable);
+        }
+
+        /// <summary>
+        /// Меняет цвет индикатора статуса: красный — комбо активны, белый — пауза.
+        /// </summary>
+        private void UpdateStatusVisuals(bool isActive)
+        {
+            if (this.IsDisposed || groupBoxStatus.IsDisposed) return;
+
+            Color targetColor = isActive ? Color.Red : Color.White;
+            groupBoxStatus.BackColor = targetColor;
+            checkBoxStatus.BackColor = targetColor;
         }
 
         /// <summary>
@@ -481,9 +497,25 @@ namespace pxlhunt.FORMS
 
         private async Task OnFrameCapturedHandler(FrameBuffer frame)
         {
+            bool canRun = BotStateController.CanExecuteCombos;
+
+            // Обновляем цвет индикатора при смене состояния активности
+            if (canRun != _lastVisualActiveState)
+            {
+                _lastVisualActiveState = canRun;
+                if (this.InvokeRequired)
+                {
+                    this.BeginInvoke(() => UpdateStatusVisuals(canRun));
+                }
+                else
+                {
+                    UpdateStatusVisuals(canRun);
+                }
+            }
+
             // Тихая пауза: если окно активно или открыт редактор — просто пропускаем кадр,
             // не сбрасывая состояния комбо.
-            if (BotStateController.CanExecuteCombos)
+            if (canRun)
             {
                 _wasPaused = false;
                 await _orchestrator.ProcessFrameAsync(frame);
@@ -635,6 +667,10 @@ namespace pxlhunt.FORMS
 
             if (!checkBoxStatus.Checked)
             {
+                // Форсированно возвращаем белый цвет индикатора
+                _lastVisualActiveState = false;
+                UpdateStatusVisuals(false);
+
                 // При явном выключении — сбрасываем кулдауны всех комбо
                 _orchestrator.ResetAllStates();
 
