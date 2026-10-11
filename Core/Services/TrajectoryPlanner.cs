@@ -142,10 +142,9 @@ public static class TrajectoryPlanner
             dy -= chunkY;
         }
 
-        if (dx != 0 || dy != 0)
-        {
-            list.Add(new StepDelta((sbyte)dx, (sbyte)dy));
-        }
+        // ВАЖНО: Всегда добавляем финальный шаг, даже если это (0, 0).
+        // Это заставляет Arduino ждать 2 мс, сохраняя плавность человеческой кривой.
+        list.Add(new StepDelta((sbyte)dx, (sbyte)dy));
     }
 
     private static double RandomRange(double min, double max) => min + (_rng.NextDouble() * (max - min));

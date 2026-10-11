@@ -136,7 +136,7 @@ public static class MouseService
             // --- Фаза 4. Зрительная обратная связь и микрокоррекция (Closed-Loop) ---
             // Если из-за акселерации Windows курсор не попал точно в цель, доводим его
             int correctionAttempts = 0;
-            while (correctionAttempts < 3)
+            while (correctionAttempts < 5)
             {
                 Point current = Cursor.Position;
                 int errX = targetX - current.X;
@@ -194,8 +194,8 @@ public static class MouseService
                     throw new Exception("Потеряна связь с Arduino во время движения.");
 
                 // Arduino аппаратно проигрывает 16 шагов по 2 мс = 32 мс.
-                // Мы ждем 30 мс, чтобы сформировать следующий пакет чуть заранее и избежать рывков.
-                await Task.Delay(30, ct).ConfigureAwait(false);
+                // Ждем 28 мс, чтобы следующий пакет пришел ровно встык и буфер не опустел.
+                await Task.Delay(28, ct).ConfigureAwait(false);
 
                 // Очищаем батч для следующей партии
                 batch = new PacketBatch();

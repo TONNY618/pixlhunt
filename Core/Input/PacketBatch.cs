@@ -4,7 +4,7 @@ namespace PixelMacroEngine.Core.Input;
 
 public class PacketBatch
 {
-    // Буфер 65 байт (0-й байт всегда Report ID 0x00 для Windows, 1..64 - полезная нагрузка)
+    // 65 байт: [0] всегда 0x00 (Report ID), полезная нагрузка в [1..64]
     private readonly byte[] _buffer = new byte[65];
     private int _offset = 1;
 
