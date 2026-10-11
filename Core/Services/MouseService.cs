@@ -193,9 +193,9 @@ public static class MouseService
                 if (!ArduinoHidService.Send(batch))
                     throw new Exception("Потеряна связь с Arduino во время движения.");
 
-                // Arduino аппаратно проигрывает 16 шагов по 2 мс = 32 мс.
-                // Ждем 28 мс, чтобы следующий пакет пришел ровно встык и буфер не опустел.
-                await Task.Delay(28, ct).ConfigureAwait(false);
+                // Arduino аппаратно проигрывает 16 шагов по 2 мс = 32 мс + микронакладные расходы.
+                // Ждем 36 мс, чтобы гарантированно избежать переполнения USB-буфера Windows.
+                await Task.Delay(36, ct).ConfigureAwait(false);
 
                 // Очищаем батч для следующей партии
                 batch = new PacketBatch();
@@ -209,8 +209,8 @@ public static class MouseService
             if (!ArduinoHidService.Send(batch))
                 throw new Exception("Потеряна связь с Arduino в конце движения.");
 
-            // Ждем пропорционально количеству отправленных остатков
-            await Task.Delay(commandsInBatch * 2, ct).ConfigureAwait(false);
+            // Ждем пропорционально количеству отправленных остатков + 5 мс запаса
+            await Task.Delay(commandsInBatch * 2 + 5, ct).ConfigureAwait(false);
         }
     }
 }
