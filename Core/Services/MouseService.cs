@@ -65,28 +65,38 @@ public static class MouseService
 
     public static async Task MoveToAsync(int targetX, int targetY, int speedFactor, string comboName, CancellationToken ct)
     {
-        speedFactor = Math.Clamp(speedFactor, 1, 100);
+        ActionLogger.LogMouse($"Старт движения к [{targetX}, {targetY}]", targetX, targetY);
 
-        while (!ct.IsCancellationRequested)
+        speedFactor = Math.Clamp(speedFactor, 1, 100);
+        int maxStep = Math.Max(2, (int)(speedFactor * 0.4));
+        int iterations = 0;
+        const int maxIterations = 200; // Предохранитель от вечного цикла, если курсор не дошел
+
+        while (!ct.IsCancellationRequested && iterations < maxIterations)
         {
+            iterations++;
             Point current = Cursor.Position;
             int deltaX = targetX - current.X;
             int deltaY = targetY - current.Y;
 
-            if (Math.Abs(deltaX) <= 1 && Math.Abs(deltaY) <= 1)
+            // Достигли цели (погрешность 2 пикселя)
+            if (Math.Abs(deltaX) <= 2 && Math.Abs(deltaY) <= 2)
                 break;
 
-            int maxStep = Math.Max(2, (int)(speedFactor * 0.4));
             sbyte stepX = (sbyte)Math.Clamp(deltaX, -maxStep, maxStep);
             sbyte stepY = (sbyte)Math.Clamp(deltaY, -maxStep, maxStep);
 
             var batch = new PacketBatch();
             batch.AddMouseMove(stepX, stepY);
-            ArduinoHidService.Send(batch);
+
+            // Если отправка не удалась (плата отключилась на этом шаге) — мгновенно выходим
+            if (!ArduinoHidService.Send(batch))
+                break;
 
             await Task.Delay(_random.Next(7, 12), ct).ConfigureAwait(false);
         }
 
-        ActionLogger.LogMouse($"Move to [{targetX}, {targetY}]", targetX, targetY);
+        Point finalPos = Cursor.Position;
+        ActionLogger.LogMouse($"Завершено в [{finalPos.X}, {finalPos.Y}]", finalPos.X, finalPos.Y);
     }
 }
