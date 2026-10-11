@@ -84,7 +84,8 @@ public static class MouseService
     }
 
     /// <summary>
-    /// Прокрутка колесика с нарастающими и затухающими интервалами между шагами.
+    /// Прокрутка колесика с реалистичной биомеханикой пальца: 
+    /// преодоление трещотки колеса -> пик скорости -> нелинейное инерционное затухание.
     /// </summary>
     public static async Task ScrollAsync(int notches, bool scrollUp, string comboName, CancellationToken ct)
     {
@@ -94,15 +95,47 @@ public static class MouseService
         for (int i = 0; i < count; i++)
         {
             ct.ThrowIfCancellationRequested();
+
             var batch = new PacketBatch();
             batch.AddMouseMove(0, 0, direction);
             ArduinoHidService.Send(batch);
 
-            // Интервалы вращения колеса пальцем (30-60 мс)
-            await Task.Delay(_random.Next(28, 58), ct).ConfigureAwait(false);
+            // Нелинейный расчет интервала для текущего щелчка колесика
+            int stepDelay = CalculateScrollStepDelay(i, count);
+            await Task.Delay(stepDelay, ct).ConfigureAwait(false);
         }
 
         ActionLogger.LogMouse($"Scroll {(scrollUp ? "UP" : "DOWN")} x{count}", comboName: comboName);
+    }
+
+    /// <summary>
+    /// Рассчитывает межшаговый интервал скролла по кривой кинетической энергии пальца.
+    /// </summary>
+    private static int CalculateScrollStepDelay(int stepIndex, int totalSteps)
+    {
+        if (totalSteps <= 1)
+            return _random.Next(40, 75);
+
+        // Нормализованный прогресс прокрутки (0.0 .. 1.0)
+        double progress = (double)stepIndex / (totalSteps - 1);
+
+        double baseDelay;
+        if (progress < 0.28)
+        {
+            // ФАЗА 1: Срыв колеса с места и разгон фаланги пальца (с 38 мс вниз до 20 мс)
+            double t = progress / 0.28;
+            baseDelay = 38.0 - (18.0 * t);
+        }
+        else
+        {
+            // ФАЗА 2: Инерционное торможение пальца (с 20 мс вверх до 85 мс по степенной параболе)
+            double t = (progress - 0.28) / 0.72;
+            baseDelay = 20.0 + (65.0 * Math.Pow(t, 1.7));
+        }
+
+        // Физическая неравномерность зубьев колесика (+- 3-4 мс)
+        int detentJitter = _random.Next(-4, 5);
+        return Math.Clamp((int)Math.Round(baseDelay + detentJitter), 16, 110);
     }
 
     /// <summary>
