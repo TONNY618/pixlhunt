@@ -7,8 +7,8 @@ namespace PixelMacroEngine.Core.Services;
 
 public static class ArduinoHidService
 {
-    private const int VendorId = 0x04F2;
-    private const int ProductId = 0x0833;
+    private static int VendorId => AppConfigService.Instance.Usb_hwKeyClicker.GetVendorId();
+    private static int ProductId => AppConfigService.Instance.Usb_hwKeyClicker.GetProductId();
 
     private static HidDevice? _device;
     private static HidStream? _stream;
@@ -24,7 +24,8 @@ public static class ArduinoHidService
     {
         try
         {
-            return DeviceList.Local.GetHidDevices(VendorId, ProductId).Any();
+            return DeviceList.Local.GetHidDevices(VendorId, ProductId)
+                .Any(d => d.MaxOutputReportLength >= 64);
         }
         catch
         {
@@ -40,10 +41,18 @@ public static class ArduinoHidService
 
             try
             {
-                _device = DeviceList.Local.GetHidDevices(VendorId, ProductId).FirstOrDefault();
-                if (_device != null && _device.TryOpen(out _stream))
+                var devices = DeviceList.Local.GetHidDevices(VendorId, ProductId).ToList();
+                foreach (var dev in devices)
                 {
-                    return true;
+                    // Ищем строго RawHID интерфейс с буфером >= 64 байт
+                    if (dev.MaxOutputReportLength >= 64)
+                    {
+                        if (dev.TryOpen(out _stream))
+                        {
+                            _device = dev;
+                            return true;
+                        }
+                    }
                 }
             }
             catch (Exception ex)

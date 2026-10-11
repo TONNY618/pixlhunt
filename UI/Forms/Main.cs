@@ -712,21 +712,22 @@ namespace pxlhunt.FORMS
             }
             else
             {
-                // Попытки переподключения раз в 5 секунд
-                if (_reconnectAttempts < 5)
-                {
-                    _reconnectAttempts++;
-                    groupBoxStatus.Text = $"Статус - поиск платы ({_reconnectAttempts}/5)...";
+                _reconnectAttempts++;
 
-                    if (ArduinoHidService.Connect())
-                    {
-                        _reconnectAttempts = 0;
-                        groupBoxStatus.Text = "Статус - плата OK";
-                    }
+                if (_reconnectAttempts <= 5)
+                {
+                    groupBoxStatus.Text = $"Статус - поиск платы ({_reconnectAttempts}/5)...";
                 }
                 else
                 {
                     groupBoxStatus.Text = "Статус - плата НЕ НАЙДЕНА";
+                }
+
+                // Пробуем подключиться на каждом тике таймера
+                if (ArduinoHidService.Connect())
+                {
+                    _reconnectAttempts = 0;
+                    groupBoxStatus.Text = "Статус - плата OK";
                 }
             }
         }

@@ -5,6 +5,29 @@ using System.Text.Json;
 namespace PixelMacroEngine.Core.Services;
 
 /// <summary>
+/// Настройки USB HID-устройства (Arduino), читаемые из секции usb_hwKeyClicker.
+/// </summary>
+public class UsbHwKeyClickerConfig
+{
+    public string Vendor_id { get; set; } = "0x04F2";
+    public string Product_id { get; set; } = "0x0833";
+
+    public int GetVendorId() => ParseHexOrInt(Vendor_id, 0x04F2);
+    public int GetProductId() => ParseHexOrInt(Product_id, 0x0833);
+
+    private static int ParseHexOrInt(string? val, int fallback)
+    {
+        if (string.IsNullOrWhiteSpace(val)) return fallback;
+        val = val.Trim();
+        if (val.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+        {
+            return int.TryParse(val.Substring(2), System.Globalization.NumberStyles.HexNumber, null, out int hex) ? hex : fallback;
+        }
+        return int.TryParse(val, out int dec) ? dec : fallback;
+    }
+}
+
+/// <summary>
 /// Модель настроек приложения, читаемая из Config/appsettings.cfg.
 /// </summary>
 public class AppConfig
@@ -16,6 +39,7 @@ public class AppConfig
     public int HumanLatencyMinMs { get; set; } = 40;
     public int HumanLatencyMaxMs { get; set; } = 120;
     public int DisplayNumberForCapteruVideoFrame { get; set; } = 0;
+    public UsbHwKeyClickerConfig Usb_hwKeyClicker { get; set; } = new();
 }
 
 /// <summary>
