@@ -55,6 +55,7 @@
             TimerStarttextBox = new TextBox();
             TimerStartlabel1 = new Label();
             groupBoxCDtrigger = new GroupBox();
+            textBoxCDglobal = new TextBox();
             radioButtonSkillCooldownSingleHP = new RadioButton();
             radioButtonSkillCooldownGLOBAL = new RadioButton();
             groupBoxPriority = new GroupBox();
@@ -129,7 +130,6 @@
             checkBoxWASDpauseTrigger = new CheckBox();
             buttonLoad = new Button();
             checkBoxOnOff = new CheckBox();
-            textBoxCDglobal = new TextBox();
             GroupTriggerPreset.SuspendLayout();
             IFconditionsKEYgroupBox.SuspendLayout();
             groupBox1.SuspendLayout();
@@ -452,6 +452,16 @@
             groupBoxCDtrigger.TabIndex = 14;
             groupBoxCDtrigger.TabStop = false;
             groupBoxCDtrigger.Text = "CD триг.";
+            // 
+            // textBoxCDglobal
+            // 
+            textBoxCDglobal.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            textBoxCDglobal.Location = new Point(160, 0);
+            textBoxCDglobal.MaxLength = 4;
+            textBoxCDglobal.Name = "textBoxCDglobal";
+            textBoxCDglobal.Size = new Size(34, 23);
+            textBoxCDglobal.TabIndex = 16;
+            textBoxCDglobal.Text = "11";
             // 
             // radioButtonSkillCooldownSingleHP
             // 
@@ -1268,21 +1278,11 @@
             checkBoxOnOff.Text = "Вкл";
             checkBoxOnOff.UseVisualStyleBackColor = true;
             // 
-            // textBoxCDglobal
-            // 
-            textBoxCDglobal.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            textBoxCDglobal.Location = new Point(160, 0);
-            textBoxCDglobal.MaxLength = 4;
-            textBoxCDglobal.Name = "textBoxCDglobal";
-            textBoxCDglobal.Size = new Size(34, 23);
-            textBoxCDglobal.TabIndex = 16;
-            textBoxCDglobal.Text = "11";
-            // 
             // ComboEditorForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(714, 729);
+            ClientSize = new Size(955, 729);
             Controls.Add(label8);
             Controls.Add(checkBoxOnOff);
             Controls.Add(buttonLoad);
