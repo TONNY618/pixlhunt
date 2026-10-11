@@ -106,9 +106,11 @@ public static class MouseService
     }
 
     /// <summary>
-    /// Биомеханическое наведение: адаптируется под масштаб дистанции.
-    /// Короткие дистанции (<=120 px): плавный уверенный старт с глубоким затуханием (без пролетов).
-    /// Длинные дистанции (>350 px): баллистический бросок с размытым фокусом и лихорадочной доводкой.
+    /// Монолитное биомеханическое наведение: 
+    /// 1. Баллистический бросок (размытый фокус) -> 
+    /// 2. Серия резких поисковых рывков до зоны подлета (20-35 px) -> 
+    /// 3. Когнитивный "щелчок в мозгу" (пауза переключения внимания 45-85 мс) -> 
+    /// 4. Фирменный медленный доводчик (глубокий Ease-Out без пролетов).
     /// </summary>
     public static async Task MoveToAsync(int targetX, int targetY, int speedFactor, string comboName, CancellationToken ct)
     {
@@ -121,17 +123,15 @@ public static class MouseService
         if (distance < 2.0) return;
 
         // =========================================================================
-        // РЕЖИМ 1: КОРОТКАЯ ДИСТАНЦИЯ (<= 120 px) - Мелкая моторика пальцев/кисти
-        // Без промахов, без лихорадки: уверенный старт и медленное прогрессивное угасание
+        // ВЕТКА А: ДИСТАНЦИЯ УЖЕ БЛИЗКАЯ (<= 120 px)
+        // Сразу запускаем деликатный доводчик кисти без резких бросков
         // =========================================================================
         if (distance <= 120.0)
         {
-            ActionLogger.LogMouse($"Старт короткой подводки к [{targetX}, {targetY}] (D={Math.Round(distance)}px)", targetX, targetY);
+            ActionLogger.LogMouse($"Прямой доводчик к [{targetX}, {targetY}] (D={Math.Round(distance)}px)", targetX, targetY);
 
-            // Короткая естественная задержка реакции (35-70 мс)
             await Task.Delay(_random.Next(35, 70), ct).ConfigureAwait(false);
 
-            // Длительность движения: для 20 px ~ 210 мс, для 60 px ~ 270 мс, для 100 px ~ 310 мс
             double shortDuration = 135.0 + Math.Sqrt(distance) * 17.5;
             await ExecuteShortPrecisionApproachAsync(start, new Point(targetX, targetY), shortDuration, ct).ConfigureAwait(false);
 
@@ -142,16 +142,14 @@ public static class MouseService
         }
 
         // =========================================================================
-        // РЕЖИМ 2: СРЕДНЯЯ И ДЛИННАЯ ДИСТАНЦИЯ (> 120 px) - Крупная моторика руки
+        // ВЕТКА Б: СРЕДНЯЯ И ДЛИННАЯ ДИСТАНЦИЯ (> 120 px)
         // =========================================================================
         double autoSpeed = Math.Clamp(28.0 + Math.Sqrt(distance) * 2.25, 35.0, 95.0);
-        ActionLogger.LogMouse($"Старт к [{targetX}, {targetY}] (D={Math.Round(distance)}px, авто-скорость={Math.Round(autoSpeed)})", targetX, targetY);
+        ActionLogger.LogMouse($"Старт броска к [{targetX}, {targetY}] (D={Math.Round(distance)}px, авто-скорость={Math.Round(autoSpeed)})", targetX, targetY);
 
-        await Task.Delay(_random.Next(30, 65), ct).ConfigureAwait(false);
+        await Task.Delay(_random.Next(30, 60), ct).ConfigureAwait(false);
 
-        // Масштабируем величину промаха в зависимости от дистанции:
-        // Для 150-300 px: мягкий разброс 20-45 px
-        // Для 500-1000 px: широкий разброс 100-260 px
+        // 1. Баллистический бросок с размытым фокусом в сторону цели
         double scatterRatio = distance > 350.0 ? (_random.NextDouble() * 0.16 + 0.12) : 0.10;
         double scatterRadius = Math.Clamp(distance * scatterRatio, 18.0, 260.0);
 
@@ -166,12 +164,10 @@ public static class MouseService
         double ballisticDuration = Math.Clamp(Math.Sqrt(distance) * 10.5 * (100.0 / autoSpeed), 110.0, 460.0);
         await ExecuteCurvedFlightAsync(start, coarseTarget, ballisticDuration, ct).ConfigureAwait(false);
 
-        // Количество рывков зрительного захвата:
-        // Средняя дистанция: 2 аккуратных рывка
-        // Дальняя дистанция: 3-4 лихорадочных рывка
-        int numFlicks = distance > 350.0 ? _random.Next(3, 5) : 2;
+        // 2. Серия резких рывков (стягиваем курсор в ближнюю зону 20-35 px от цели)
+        int maxFlicks = distance > 350.0 ? _random.Next(2, 4) : 1;
 
-        for (int step = 1; step <= numFlicks; step++)
+        for (int step = 1; step <= maxFlicks; step++)
         {
             ct.ThrowIfCancellationRequested();
 
@@ -180,37 +176,49 @@ public static class MouseService
             double remDy = targetY - current.Y;
             double remDist = Math.Sqrt(remDx * remDx + remDy * remDy);
 
-            if (remDist <= 2.0) break;
+            // Если рывок уже привел курсор в зону доводчика (<= 30 px) — выходим к финалу!
+            if (remDist <= 30.0) break;
 
-            PointF flickTarget;
-            if (step < numFlicks && remDist > 8.0)
-            {
-                // На средней дистанции перелет минимален (15%), на дальней - заметный (25-45%)
-                double overRatio = distance > 350.0 ? (_random.NextDouble() * 0.20 + 0.25) : 0.15;
-                double latOffset = distance > 350.0 ? _random.Next(-20, 20) : _random.Next(-8, 8);
-                double nX = -remDy / remDist;
-                double nY = remDx / remDist;
+            // Рывок с перелетом через цель для имитации поиска
+            double overRatio = distance > 350.0 ? (_random.NextDouble() * 0.20 + 0.20) : 0.12;
+            double latOffset = distance > 350.0 ? _random.Next(-18, 18) : _random.Next(-8, 8);
+            double nX = -remDy / remDist;
+            double nY = remDx / remDist;
 
-                flickTarget = new PointF(
-                    (float)(targetX + (remDx / remDist) * (remDist * overRatio) + nX * latOffset),
-                    (float)(targetY + (remDy / remDist) * (remDist * overRatio) + nY * latOffset)
-                );
-            }
-            else
-            {
-                flickTarget = new PointF(targetX, targetY);
-            }
+            PointF flickTarget = new(
+                (float)(targetX + (remDx / remDist) * (remDist * overRatio) + nX * latOffset),
+                (float)(targetY + (remDy / remDist) * (remDist * overRatio) + nY * latOffset)
+            );
 
-            double flickDuration = Math.Clamp(remDist * 1.3 + _random.Next(40, 65), 40.0, 95.0);
+            double flickDuration = Math.Clamp(remDist * 1.2 + _random.Next(35, 60), 40.0, 85.0);
             await ExecuteSnappyFlickAsync(current, flickTarget, flickDuration, ct).ConfigureAwait(false);
 
-            if (step < numFlicks)
-            {
-                await Task.Delay(_random.Next(15, 30), ct).ConfigureAwait(false);
-            }
+            await Task.Delay(_random.Next(15, 30), ct).ConfigureAwait(false);
         }
 
-        await Task.Delay(_random.Next(30, 60), ct).ConfigureAwait(false);
+        // =========================================================================
+        // ЭТАП 3: "ЩЕЛЧОК В МОЗГУ" (Пауза переключения внимания, 45-85 мс)
+        // Рука остановилась после грубого подлета, взгляд сфокусировался на крестике,
+        // подключается мелкая моторика пальцев для финальной доводки
+        // =========================================================================
+        await Task.Delay(_random.Next(45, 85), ct).ConfigureAwait(false);
+
+        // =========================================================================
+        // ЭТАП 4: ФИНАЛЬНЫЙ МЕДЛЕННЫЙ ДОВОДЧИК (Ease-Out прямо в цель)
+        // =========================================================================
+        Point beforeDock = Cursor.Position;
+        double dockDx = targetX - beforeDock.X;
+        double dockDy = targetY - beforeDock.Y;
+        double dockDist = Math.Sqrt(dockDx * dockDx + dockDy * dockDy);
+
+        if (dockDist > 1.5)
+        {
+            double dockDuration = 125.0 + Math.Sqrt(dockDist) * 16.5;
+            await ExecuteShortPrecisionApproachAsync(beforeDock, new Point(targetX, targetY), dockDuration, ct).ConfigureAwait(false);
+        }
+
+        // Микрофиксация взгляда перед кликом
+        await Task.Delay(_random.Next(30, 55), ct).ConfigureAwait(false);
         Point finalPos = Cursor.Position;
         ActionLogger.LogMouse($"Завершено в [{finalPos.X}, {finalPos.Y}]", finalPos.X, finalPos.Y);
     }
