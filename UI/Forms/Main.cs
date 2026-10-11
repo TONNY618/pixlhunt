@@ -21,6 +21,17 @@ namespace pxlhunt.FORMS
         private bool _isLoadingCombos = false;
         private bool _wasPaused = false;
 
+        // Win32 API для режима "клик насквозь"
+        private const int GWL_EXSTYLE = -20;
+        private const int WS_EX_TRANSPARENT = 0x00000020;
+        private const int WS_EX_LAYERED = 0x00080000;
+
+        [System.Runtime.InteropServices.DllImport("user32.dll", SetLastError = true)]
+        private static extern int GetWindowLong(IntPtr hWnd, int nIndex);
+
+        [System.Runtime.InteropServices.DllImport("user32.dll", SetLastError = true)]
+        private static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
+
         public pxlHunt()
         {
             InitializeComponent();
@@ -68,9 +79,13 @@ namespace pxlhunt.FORMS
             // Привязка событий UI
             checkedListBoxCombo.ItemCheck += CheckedListBoxCombo_ItemCheck;
             checkBoxStatus.CheckedChanged += CheckBoxStatus_CheckedChanged;
+            checkBoxTransparentClick.CheckedChanged += (s, e) => UpdateClickThroughState();
 
             // Синхронизируем мастер-флаг с начальным состоянием галочки
             BotStateController.IsMasterEnabled = checkBoxStatus.Checked;
+
+            // Первоначальная синхронизация режима "клик насквозь"
+            UpdateClickThroughState();
 
             // Снятие выделения при клике по пустому пространству формы
             this.MouseDown += (s, e) => checkedListBoxCombo.ClearSelected();
@@ -90,6 +105,32 @@ namespace pxlhunt.FORMS
             trackBarTransparency.Scroll += TrackBarTransparency_Scroll;
 
             UpdateActiveTimeLabel();
+        }
+
+        /// <summary>
+        /// Включает или выключает режим "клик насквозь" для окна.
+        /// </summary>
+        private void SetClickThrough(bool enable)
+        {
+            int exStyle = GetWindowLong(this.Handle, GWL_EXSTYLE);
+            if (enable)
+            {
+                SetWindowLong(this.Handle, GWL_EXSTYLE, exStyle | WS_EX_TRANSPARENT | WS_EX_LAYERED);
+            }
+            else
+            {
+                SetWindowLong(this.Handle, GWL_EXSTYLE, exStyle & ~WS_EX_TRANSPARENT);
+            }
+        }
+
+        /// <summary>
+        /// Обновляет режим "клик насквозь" в зависимости от чекбокса прозрачности и мастер-статуса.
+        /// </summary>
+        private void UpdateClickThroughState()
+        {
+            // Кликабельно насквозь ТОЛЬКО если включен чекбокс прозрачности И включен мастер-статус активности
+            bool enable = checkBoxTransparentClick.Checked && checkBoxStatus.Checked;
+            SetClickThrough(enable);
         }
 
         /// <summary>
@@ -600,6 +641,9 @@ namespace pxlhunt.FORMS
                 // Стоп-кран: аварийно отпускаем все залипшие клавиши на плате
                 PixelMacroEngine.Core.Services.ArduinoHidService.EmergencyReset();
             }
+
+            // Обновляем режим "клик насквозь" при смене мастер-статуса
+            UpdateClickThroughState();
         }
 
         /// <summary>
