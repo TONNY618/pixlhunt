@@ -106,111 +106,93 @@ public static class MouseService
     }
 
     /// <summary>
-    /// Биомеханическое перемещение мыши: реакция -> кинематика Фиттса -> буферизованный стриминг 500 Гц -> микрокоррекция -> фиксация.
+    /// Непрерывное биомеханическое перемещение с динамической коррекцией (без остановок).
     /// </summary>
     public static async Task MoveToAsync(int targetX, int targetY, int speedFactor, string comboName, CancellationToken ct)
     {
         Point start = Cursor.Position;
-        Point target = new(targetX, targetY);
+        ActionLogger.LogMouse($"Старт к [{targetX}, {targetY}]", targetX, targetY);
 
-        ActionLogger.LogMouse($"Старт биомеханики к [{targetX}, {targetY}]", targetX, targetY);
+        if (!ArduinoHidService.IsConnected) return;
 
-        if (!ArduinoHidService.IsConnected)
+        // Быстрая реакция человека (более бодрая)
+        await Task.Delay(_random.Next(60, 140), ct).ConfigureAwait(false);
+
+        double distance = Math.Sqrt(Math.Pow(targetX - start.X, 2) + Math.Pow(targetY - start.Y, 2));
+        if (distance < 2) return;
+
+        // Ускоренный закон Фиттса
+        double a = _random.NextDouble() * 0.03 + 0.05; // 50-80 мс
+        double b = _random.NextDouble() * 0.03 + 0.07; // 70-100 мс/бит
+        double id = Math.Log2((2.0 * distance / 30.0) + 1.0);
+        double totalDurationMs = (a + b * id) * 1000.0;
+
+        // Легкий перелет (овершут) для дистанций > 150 px
+        bool willOvershoot = distance > 150 && _random.NextDouble() < 0.6;
+        double overX = willOvershoot ? (targetX - start.X) * (_random.NextDouble() * 0.04 + 0.02) : 0;
+        double overY = willOvershoot ? (targetY - start.Y) * (_random.NextDouble() * 0.04 + 0.02) : 0;
+
+        double elapsed = 0;
+        double remainderX = 0;
+        double remainderY = 0;
+
+        // Единый непрерывный цикл до достижения времени полета
+        while (elapsed <= totalDurationMs && !ct.IsCancellationRequested)
         {
-            ActionLogger.LogMouse("ОШИБКА: Arduino не подключена! Проверьте соединение.");
-            return;
-        }
+            double t = elapsed / totalDurationMs;
+            if (t > 1.0) t = 1.0;
 
-        // --- Фаза 1. Латентный период реакции человека (110-230 мс) ---
-        int reactionTime = _random.Next(110, 230);
-        await Task.Delay(reactionTime, ct).ConfigureAwait(false);
+            // Асимметричный Minimum Jerk (разгон быстрее торможения)
+            double u = Math.Pow(t, 0.85);
+            double progress = 10 * Math.Pow(u, 3) - 15 * Math.Pow(u, 4) + 6 * Math.Pow(u, 5);
 
-        // --- Фаза 2. Расчет основной траектории (частота 500 Гц = шаг dt 0.002 сек) ---
-        var deltas = TrajectoryPlanner.GenerateTrajectory(start, target, targetWidth: 24.0, dt: 0.002);
+            // Выпуклость овершута в последней трети траектории
+            double overshootFactor = willOvershoot ? Math.Sin(Math.PI * t) * progress : 0;
 
-        try
-        {
-            // --- Фаза 3. Буферизованный стриминг пакетов ---
-            await StreamDeltasToArduino(deltas, ct).ConfigureAwait(false);
+            // Идеальная точка, где мышь должна быть в данный миллисекундный срез
+            double idealX = start.X + (targetX - start.X) * progress + (overX * overshootFactor);
+            double idealY = start.Y + (targetY - start.Y) * progress + (overY * overshootFactor);
 
-            // --- Фаза 4. Зрительная обратная связь и микрокоррекция (Closed-Loop) ---
-            // Если из-за акселерации Windows курсор не попал точно в цель, доводим его
-            int correctionAttempts = 0;
-            while (correctionAttempts < 5)
+            // Легкий тремор руки
+            double tremor = Math.Sin(elapsed * 0.05) * 1.5 * Math.Sin(Math.PI * t);
+            idealX += tremor;
+
+            // ДИНАМИЧЕСКАЯ КОРРЕКЦИЯ: смотрим реальную позицию курсора на экране
+            Point current = Cursor.Position;
+            double neededX = idealX - current.X;
+            double neededY = idealY - current.Y;
+
+            // Упаковываем нужное смещение в пакет из 16 микрошагов для Arduino
+            var batch = new PacketBatch();
+            double stepX = neededX / 16.0;
+            double stepY = neededY / 16.0;
+
+            for (int i = 0; i < 16; i++)
             {
-                Point current = Cursor.Position;
-                int errX = targetX - current.X;
-                int errY = targetY - current.Y;
+                double exactX = stepX + remainderX;
+                double exactY = stepY + remainderY;
+                int intX = (int)Math.Round(exactX);
+                int intY = (int)Math.Round(exactY);
+                remainderX = exactX - intX;
+                remainderY = exactY - intY;
 
-                // Если попали в цель с допуском 1 px — выходим
-                if (Math.Abs(errX) <= 1 && Math.Abs(errY) <= 1)
-                    break;
-
-                correctionAttempts++;
-
-                // Генерируем короткую доводку с маленькой шириной цели (осторожное движение)
-                var correctionDeltas = TrajectoryPlanner.GenerateTrajectory(current, target, targetWidth: 4.0, dt: 0.002);
-                await StreamDeltasToArduino(correctionDeltas, ct).ConfigureAwait(false);
-
-                // Физиологическая пауза между микрокоррекциями (оценка глазами: 20-45 мс)
-                await Task.Delay(_random.Next(20, 45), ct).ConfigureAwait(false);
+                batch.AddMouseMove((sbyte)Math.Clamp(intX, -127, 127), (sbyte)Math.Clamp(intY, -127, 127));
             }
-        }
-        catch (Exception ex)
-        {
-            ActionLogger.LogMouse($"ОШИБКА: {ex.Message}");
-            return;
-        }
 
-        // --- Фаза 6. Предклик-фиксация (Ocular-Motor Fixation Pause) ---
-        int fixationPause = _random.Next(45, 120);
-        await Task.Delay(fixationPause, ct).ConfigureAwait(false);
-
-        Point finalPos = Cursor.Position;
-        int totalErr = Math.Abs(targetX - finalPos.X) + Math.Abs(targetY - finalPos.Y);
-        ActionLogger.LogMouse($"Завершено в [{finalPos.X}, {finalPos.Y}] (Ошибка: {totalErr} px)", finalPos.X, finalPos.Y);
-    }
-
-    /// <summary>
-    /// Упаковывает микро-движения по 16 штук (64 байта) и отправляет на Arduino,
-    /// выдерживая паузу, пока плата аппаратно интерполирует их с задержкой 2 мс на шаг.
-    /// </summary>
-    private static async Task StreamDeltasToArduino(System.Collections.Generic.List<TrajectoryPlanner.StepDelta> deltas, CancellationToken ct)
-    {
-        var batch = new PacketBatch();
-        int commandsInBatch = 0;
-
-        foreach (var delta in deltas)
-        {
-            ct.ThrowIfCancellationRequested();
-
-            batch.AddMouseMove(delta.Dx, delta.Dy);
-            commandsInBatch++;
-
-            // Как только пакет заполнен полностью (16 команд = 64 байта данных)
-            if (commandsInBatch == 16)
-            {
-                if (!ArduinoHidService.Send(batch))
-                    throw new Exception("Потеряна связь с Arduino во время движения.");
-
-                // Arduino аппаратно проигрывает 16 шагов по 2 мс = 32 мс + микронакладные расходы.
-                // Ждем 36 мс, чтобы гарантированно избежать переполнения USB-буфера Windows.
-                await Task.Delay(36, ct).ConfigureAwait(false);
-
-                // Очищаем батч для следующей партии
-                batch = new PacketBatch();
-                commandsInBatch = 0;
-            }
-        }
-
-        // Если в конце остались неупакованные команды (меньше 16)
-        if (commandsInBatch > 0)
-        {
             if (!ArduinoHidService.Send(batch))
-                throw new Exception("Потеряна связь с Arduino в конце движения.");
+            {
+                ActionLogger.LogMouse("ОШИБКА: Потеря связи.");
+                break;
+            }
 
-            // Ждем пропорционально количеству отправленных остатков + 5 мс запаса
-            await Task.Delay(commandsInBatch * 2 + 5, ct).ConfigureAwait(false);
+            // ПК спит 36 мс, пока Arduino плавно аппаратно воспроизводит 16 шагов
+            await Task.Delay(36, ct).ConfigureAwait(false);
+            elapsed += 32.0; // Время шага Arduino (16 * 2 мс)
         }
+
+        // Финальная фиксация взгляда/руки перед следующим действием
+        await Task.Delay(_random.Next(30, 80), ct).ConfigureAwait(false);
+        Point finalPos = Cursor.Position;
+        ActionLogger.LogMouse($"Завершено в [{finalPos.X}, {finalPos.Y}]", finalPos.X, finalPos.Y);
     }
 }
