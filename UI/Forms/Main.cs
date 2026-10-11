@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using PixelMacroEngine.Core.Input;
 using PixelMacroEngine.Core.Models;
 using PixelMacroEngine.Core.Services;
 using PixelMacroEngine.Engine;
@@ -31,9 +30,8 @@ namespace pxlhunt.FORMS
             // Главное окно всегда поверх остальных
             this.TopMost = true;
 
-            // Создаём оркестратор с очередью и диспетчером ввода
-            var queue = new SimpleTaskQueue();
-            _orchestrator = new Orchestrator(queue, new InputDispatcher(queue));
+            // Создаём оркестратор
+            _orchestrator = new Orchestrator();
 
             // Стартуем глобальный захват при запуске программы
             try

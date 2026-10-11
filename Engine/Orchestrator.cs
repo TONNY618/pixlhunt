@@ -6,7 +6,6 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using PixelMacroEngine.Core.Abstractions;
-using PixelMacroEngine.Core.Input;
 using PixelMacroEngine.Core.Models;
 using PixelMacroEngine.Core.Services;
 
@@ -20,18 +19,9 @@ public class Orchestrator
     /// <summary>Коллекция активных комбо, управляемых оркестратором.</summary>
     public List<ActiveCombo> Combos { get; } = new();
 
-    private readonly SimpleTaskQueue _queue;
-    private readonly InputDispatcher _dispatcher;
-
     // Часы для расчёта DeltaTime между кадрами (независимо от частоты вызовов).
     private readonly Stopwatch _frameClock = Stopwatch.StartNew();
     private TimeSpan _lastFrameTime = TimeSpan.Zero;
-
-    public Orchestrator(SimpleTaskQueue queue, InputDispatcher dispatcher)
-    {
-        _queue = queue;
-        _dispatcher = dispatcher;
-    }
 
     /// <summary>Регистрирует комбо в оркестраторе.</summary>
     public void RegisterCombo(ActiveCombo combo) => Combos.Add(combo);
