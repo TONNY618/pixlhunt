@@ -111,7 +111,7 @@ namespace pxlhunt.FORMS
                     TopMost = true,
                     ShowInTaskbar = false,
                     FormBorderStyle = FormBorderStyle.FixedDialog,
-                    StartPosition = FormStartPosition.Manual,
+                    StartPosition = FormStartPosition.CenterParent,
                     MaximizeBox = false,
                     MinimizeBox = false
                 };
@@ -137,7 +137,6 @@ namespace pxlhunt.FORMS
                 };
                 inputForm.Controls.Add(num);
                 inputForm.Controls.Add(btnOk);
-                CenterFormOnMain(inputForm);
                 inputForm.ShowDialog(this);
             };
             menu.Items.Add(priorityItem);
@@ -158,7 +157,49 @@ namespace pxlhunt.FORMS
             menu.Items.Add(new ToolStripSeparator());
 
             var deleteItem = new ToolStripMenuItem("Удалить");
-            deleteItem.Click += (s, e) => DeleteSelectedCombo();
+            deleteItem.Click += (s, e) =>
+            {
+                int index = checkedListBoxCombo.SelectedIndex;
+                if (index < 0 || index >= _orchestrator.Combos.Count) return;
+                var combo = _orchestrator.Combos[index];
+
+                Form confirmForm = new Form
+                {
+                    Text = "Удаление комбо",
+                    Size = new System.Drawing.Size(270, 130),
+                    StartPosition = FormStartPosition.CenterParent,
+                    TopMost = true,
+                    ShowInTaskbar = false,
+                    FormBorderStyle = FormBorderStyle.FixedDialog,
+                    MaximizeBox = false,
+                    MinimizeBox = false
+                };
+
+                Label lbl = new Label
+                {
+                    Text = $"Переместить комбо\n\"{combo.Name}\"\nв корзину?",
+                    Location = new System.Drawing.Point(12, 10),
+                    Size = new System.Drawing.Size(230, 45),
+                    TextAlign = ContentAlignment.MiddleCenter
+                };
+
+                Button btnYes = new Button { Text = "Удалить", Location = new System.Drawing.Point(35, 60), Size = new System.Drawing.Size(85, 26) };
+                Button btnNo = new Button { Text = "Отмена", Location = new System.Drawing.Point(135, 60), Size = new System.Drawing.Size(85, 26) };
+
+                btnYes.Click += (s1, e1) =>
+                {
+                    MoveToRecycleBin(combo.FilePath);
+                    LoadCombosFromConfig();
+                    confirmForm.Close();
+                };
+
+                btnNo.Click += (s1, e1) => confirmForm.Close();
+
+                confirmForm.Controls.Add(lbl);
+                confirmForm.Controls.Add(btnYes);
+                confirmForm.Controls.Add(btnNo);
+                confirmForm.ShowDialog(this);
+            };
             menu.Items.Add(deleteItem);
 
             checkedListBoxCombo.ContextMenuStrip = menu;
