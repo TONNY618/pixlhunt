@@ -106,146 +106,148 @@ public static class MouseService
     }
 
     /// <summary>
-    /// Биомеханическое перемещение с хаотическим овершутом, реактивным отскоком и двухслойным микротремором.
+    /// Двухфазное человеческое наведение: баллистический бросок с большим промахом (размытый фокус) 
+    /// + лихорадочный визуальный поиск цели (3-4 резких рывка туда-сюда с затуханием).
+    /// Скорость рассчитывается автоматически из дистанции.
     /// </summary>
     public static async Task MoveToAsync(int targetX, int targetY, int speedFactor, string comboName, CancellationToken ct)
     {
         Point start = Cursor.Position;
-        ActionLogger.LogMouse($"Старт к [{targetX}, {targetY}] (скорость {speedFactor})", targetX, targetY);
-
         if (!ArduinoHidService.IsConnected) return;
-
-        speedFactor = Math.Clamp(speedFactor, 1, 100);
-
-        // Латентное время реакции: чем выше скорость/агрессия, тем быстрее старт
-        int reactionTime = speedFactor > 70 ? _random.Next(25, 55) : _random.Next(50, 110);
-        await Task.Delay(reactionTime, ct).ConfigureAwait(false);
 
         double totalDx = targetX - start.X;
         double totalDy = targetY - start.Y;
         double distance = Math.Sqrt(totalDx * totalDx + totalDy * totalDy);
         if (distance < 2.0) return;
 
-        double dirX = totalDx / distance;
-        double dirY = totalDy / distance;
-        double normX = -dirY;
-        double normY = dirX;
+        // 1. АВТО-СКОРОСТЬ: динамический расчет скорости из дистанции (игнорируем ручной ввод)
+        // Длинный путь -> скорость 85-95, средний -> 60-75, близкий -> 30-45
+        double autoSpeed = Math.Clamp(28.0 + Math.Sqrt(distance) * 2.25, 30.0, 95.0);
+        ActionLogger.LogMouse($"Старт к [{targetX}, {targetY}] (D={Math.Round(distance)}px, авто-скорость={Math.Round(autoSpeed)})", targetX, targetY);
 
-        // --- Расчет длительности по Фиттсу с учетом speedFactor ---
-        double a = _random.NextDouble() * 0.02 + 0.035;
-        double b = _random.NextDouble() * 0.02 + 0.045;
-        double id = Math.Log2((2.0 * distance / 32.0) + 1.0);
-        double baseDurationMs = (a + b * id) * 1000.0;
+        // Короткая реакция человека перед началом движения (30-65 мс)
+        await Task.Delay(_random.Next(30, 65), ct).ConfigureAwait(false);
 
-        // Коэффициент ускорения: высокая скорость дает резкий бросок
-        double speedModifier = 1.5 - (speedFactor / 100.0 * 1.05);
-        double totalDurationMs = Math.Clamp(baseDurationMs * speedModifier, 130.0, 850.0);
+        // =========================================================================
+        // ФАЗА 1: ГРУБЫЙ БАЛЛИСТИЧЕСКИЙ БРОСОК (Размытый фокус)
+        // Летим не в саму цель, а в примерную область с существенным промахом (до 100-260 px)
+        // =========================================================================
+        double scatterRadius = Math.Clamp(distance * (_random.NextDouble() * 0.16 + 0.12), 20.0, 260.0);
+        double dirAngle = Math.Atan2(totalDy, totalDx);
+        // Конус разброса вокруг вектора направления
+        double scatterAngle = dirAngle + (_random.NextDouble() * 1.5 - 0.75);
 
-        // --- Построение сплайна контрольных точек (Кэтмулл-Ром) ---
-        var waypoints = new System.Collections.Generic.List<PointF>();
+        PointF coarseTarget = new(
+            (float)(targetX + Math.Cos(scatterAngle) * scatterRadius),
+            (float)(targetY + Math.Sin(scatterAngle) * scatterRadius)
+        );
+
+        // Время баллистического броска (очень быстрый полет по дуге)
+        double ballisticDuration = Math.Clamp(Math.Sqrt(distance) * 10.5 * (100.0 / autoSpeed), 110.0, 460.0);
+        await ExecuteCurvedFlightAsync(start, coarseTarget, ballisticDuration, ct).ConfigureAwait(false);
+
+        // =========================================================================
+        // ФАЗА 2: ЛИХОРАДОЧНЫЙ ВИЗУАЛЬНЫЙ ПОИСК (3-4 резких рывка "туда-сюда")
+        // Глаз увидел цель -> кисть делает быстрые рывки с перелетами и сменой направления
+        // =========================================================================
+        int numFlicks = distance > 400 ? _random.Next(3, 5) : (distance > 120 ? _random.Next(2, 4) : 2);
+
+        for (int step = 1; step <= numFlicks; step++)
+        {
+            ct.ThrowIfCancellationRequested();
+
+            Point current = Cursor.Position;
+            double remDx = targetX - current.X;
+            double remDy = targetY - current.Y;
+            double remDist = Math.Sqrt(remDx * remDx + remDy * remDy);
+
+            if (remDist <= 2.0) break;
+
+            PointF flickTarget;
+            // Если это не последний рывок — целенаправленно проскакиваем цель на другую сторону!
+            if (step < numFlicks && remDist > 6.0)
+            {
+                // Перелет через цель на 20-45% от оставшегося расстояния + боковое смещение ("чуть выше/ниже")
+                double overshootRatio = _random.NextDouble() * 0.25 + 0.20; 
+                double lateralOffset = _random.Next(-22, 22);
+                double nX = -remDy / remDist;
+                double nY = remDx / remDist;
+
+                flickTarget = new PointF(
+                    (float)(targetX + (remDx / remDist) * (remDist * overshootRatio) + nX * lateralOffset),
+                    (float)(targetY + (remDy / remDist) * (remDist * overshootRatio) + nY * lateralOffset)
+                );
+            }
+            else
+            {
+                // Финальный микро-шаг — точно в координаты цели
+                flickTarget = new PointF(targetX, targetY);
+            }
+
+            // Время каждого судорожного рывка (очень быстро: 40-85 мс)
+            double flickDuration = Math.Clamp(remDist * 1.3 + _random.Next(40, 65), 40.0, 95.0);
+            await ExecuteSnappyFlickAsync(current, flickTarget, flickDuration, ct).ConfigureAwait(false);
+
+            // Микро-пауза зрительной реакции между рывками (15-30 мс)
+            if (step < numFlicks)
+            {
+                await Task.Delay(_random.Next(15, 30), ct).ConfigureAwait(false);
+            }
+        }
+
+        // Финальная фиксация руки (30-60 мс)
+        await Task.Delay(_random.Next(30, 60), ct).ConfigureAwait(false);
+        Point finalPos = Cursor.Position;
+        ActionLogger.LogMouse($"Завершено в [{finalPos.X}, {finalPos.Y}]", finalPos.X, finalPos.Y);
+    }
+
+    /// <summary>
+    /// Выполняет плавный баллистический бросок по дуге с тремором (Фаза 1).
+    /// </summary>
+    private static async Task ExecuteCurvedFlightAsync(Point start, PointF target, double durationMs, CancellationToken ct)
+    {
+        double dx = target.X - start.X;
+        double dy = target.Y - start.Y;
+        double dist = Math.Sqrt(dx * dx + dy * dy);
+        if (dist < 2.0) return;
+
+        double normX = -dy / dist;
+        double normY = dx / dist;
         int sign = _random.Next(2) == 0 ? 1 : -1;
+        double swerve = dist * (_random.NextDouble() * 0.12 + 0.05) * sign;
 
-        PointF ptStart = new(start.X, start.Y);
-        PointF ptTarget = new(targetX, targetY);
+        // Контрольные точки сплайна
+        PointF p0 = new(start.X, start.Y);
+        PointF p1 = new((float)(start.X + dx * 0.40 + normX * swerve), (float)(start.Y + dy * 0.40 + normY * swerve));
+        PointF p2 = new((float)(start.X + dx * 0.75 + normX * swerve * 0.6), (float)(start.Y + dy * 0.75 + normY * swerve * 0.6));
+        PointF p3 = target;
 
-        bool isHighSpeedScatter = speedFactor >= 60 && distance > 100.0;
-        bool isLowSpeedWander = speedFactor <= 40;
-
-        if (isHighSpeedScatter)
+        var spline = new System.Collections.Generic.List<PointF>
         {
-            // РЕЖИМ ВЫСОКОЙ СКОРОСТИ: пролет насквозь в радиусе 40-90 px + судорожный отскок (чуть выше/вбок) + доводка
-            double overshootDist = Math.Clamp(distance * (0.07 + speedFactor / 450.0), 35.0, 95.0);
-            double lateralScatter = _random.Next(-45, 45); // Вынос в сторону
-
-            // Точка овершута (пролета цели)
-            PointF ptOvershoot = new(
-                (float)(targetX + dirX * overshootDist + normX * lateralScatter),
-                (float)(targetY + dirY * overshootDist + normY * lateralScatter)
-            );
-
-            // Реактивный отскок (судорожное движение назад, но со смещением "чуть выше/ниже")
-            double hookLateral = -lateralScatter * (_random.NextDouble() * 0.5 + 0.3) + _random.Next(-18, 18);
-            double hookLongitudinal = _random.Next(-15, 10);
-            PointF ptHook = new(
-                (float)(targetX + dirX * hookLongitudinal + normX * hookLateral),
-                (float)(targetY + dirY * hookLongitudinal + normY * hookLateral)
-            );
-
-            // Промежуточный изгиб на старте (ломаная дуга)
-            double midSwerve = distance * (_random.NextDouble() * 0.12 + 0.05) * sign;
-            PointF ptMid = new(
-                (float)(start.X + totalDx * 0.40 + normX * midSwerve),
-                (float)(start.Y + totalDy * 0.40 + normY * midSwerve)
-            );
-
-            // Путь: Старт -> Изгиб -> Пролет цели -> Отскок -> Точная цель
-            waypoints.Add(ptStart);
-            waypoints.Add(ptMid);
-            waypoints.Add(ptOvershoot);
-            waypoints.Add(ptHook);
-            waypoints.Add(ptTarget);
-        }
-        else if (isLowSpeedWander)
-        {
-            // РЕЖИМ МЕДЛЕННОЙ СКОРОСТИ: без проскоков, но больше волнообразного рыскания
-            double w1 = distance * (_random.NextDouble() * 0.08 + 0.03) * sign;
-            double w2 = distance * (_random.NextDouble() * 0.06 + 0.02) * -sign;
-
-            waypoints.Add(ptStart);
-            waypoints.Add(new PointF((float)(start.X + totalDx * 0.33 + normX * w1), (float)(start.Y + totalDy * 0.33 + normY * w1)));
-            waypoints.Add(new PointF((float)(start.X + totalDx * 0.68 + normX * w2), (float)(start.Y + totalDy * 0.68 + normY * w2)));
-            waypoints.Add(ptTarget);
-        }
-        else
-        {
-            // СРЕДНИЙ РЕЖИМ: умеренный перелет (15-25 px) с аккуратным возвратом
-            double over = Math.Clamp(distance * 0.05, 12.0, 26.0);
-            double side = _random.Next(-15, 15);
-            waypoints.Add(ptStart);
-            waypoints.Add(new PointF((float)(start.X + totalDx * 0.45 + normX * side * 0.7), (float)(start.Y + totalDy * 0.45 + normY * side * 0.7)));
-            waypoints.Add(new PointF((float)(targetX + dirX * over + normX * side), (float)(targetY + dirY * over + normY * side)));
-            waypoints.Add(ptTarget);
-        }
-
-        // Подготовка виртуальных точек сплайна Кэтмулла-Рома
-        var splinePoints = new System.Collections.Generic.List<PointF>();
-        PointF pFirst = waypoints[0];
-        PointF pSecond = waypoints[1];
-        PointF pLast = waypoints[^1];
-        PointF pPrevLast = waypoints[^2];
-
-        splinePoints.Add(new PointF(pFirst.X - (pSecond.X - pFirst.X), pFirst.Y - (pSecond.Y - pFirst.Y)));
-        splinePoints.AddRange(waypoints);
-        splinePoints.Add(new PointF(pLast.X + (pLast.X - pPrevLast.X), pLast.Y + (pLast.Y - pPrevLast.Y)));
+            new(p0.X - (p1.X - p0.X), p0.Y - (p1.Y - p0.Y)),
+            p0, p1, p2, p3,
+            new(p3.X + (p3.X - p2.X), p3.Y + (p3.Y - p2.Y))
+        };
 
         double elapsed = 0.0;
         double remainderX = 0.0;
         double remainderY = 0.0;
 
-        // Амплитуда макротремора: при медленном ведении дрожь выше (2.5-4.5 px), при резком - мельче (1.2-2.2 px)
-        double tremorBaseAmp = isLowSpeedWander ? (_random.NextDouble() * 1.5 + 2.5) : (_random.NextDouble() * 0.8 + 1.2);
-
-        while (elapsed <= totalDurationMs && !ct.IsCancellationRequested)
+        while (elapsed <= durationMs && !ct.IsCancellationRequested)
         {
-            double t = elapsed / totalDurationMs;
+            double t = elapsed / durationMs;
             if (t > 1.0) t = 1.0;
 
-            // Асимметричный профиль скорости: быстрый рывок, плавный вход
-            double u = Math.Pow(t, isHighSpeedScatter ? 0.75 : 0.85);
+            double u = Math.Pow(t, 0.75);
             double progress = 10 * Math.Pow(u, 3) - 15 * Math.Pow(u, 4) + 6 * Math.Pow(u, 5);
 
-            // Вычисляем координату по непрерывному сплайну
-            PointF splinePos = GetCatmullRomPoint(splinePoints, progress);
+            PointF pos = GetCatmullRomPoint(spline, progress);
 
-            // Двухосевой физиологический макротремор (8-12 Гц + низкочастотный дрейф)
-            double envelope = Math.Sin(Math.PI * t); // На старте и в самом конце мягко сходит на нет
-            double tremorX = (Math.Sin(elapsed * 0.065) * 0.7 + Math.Cos(elapsed * 0.023) * 0.3) * tremorBaseAmp * envelope;
-            double tremorY = (Math.Cos(elapsed * 0.058) * 0.7 + Math.Sin(elapsed * 0.031) * 0.3) * tremorBaseAmp * envelope;
+            // Двухосевой тремор
+            double tremor = Math.Sin(Math.PI * t) * 1.8;
+            double idealX = pos.X + (Math.Sin(elapsed * 0.06) * tremor);
+            double idealY = pos.Y + (Math.Cos(elapsed * 0.05) * tremor);
 
-            double idealX = splinePos.X + tremorX;
-            double idealY = splinePos.Y + tremorY;
-
-            // Динамический замер ошибки экрана
             Point current = Cursor.Position;
             double neededX = idealX - current.X;
             double neededY = idealY - current.Y;
@@ -256,9 +258,8 @@ public static class MouseService
 
             for (int i = 0; i < 16; i++)
             {
-                // Аппаратный микро-джиттер: случайные микроколебания ±1 px на отдельных шагах 500 Гц
-                int jitterX = (i % 5 == 0) ? _random.Next(-1, 2) : 0;
-                int jitterY = (i % 7 == 0) ? _random.Next(-1, 2) : 0;
+                int jitterX = (i % 4 == 0) ? _random.Next(-1, 2) : 0;
+                int jitterY = (i % 6 == 0) ? _random.Next(-1, 2) : 0;
 
                 double exactX = stepX + remainderX + jitterX;
                 double exactY = stepY + remainderY + jitterY;
@@ -275,15 +276,57 @@ public static class MouseService
             await Task.Delay(36, ct).ConfigureAwait(false);
             elapsed += 32.0;
         }
-
-        // Короткая микрофиксация взгляда
-        await Task.Delay(_random.Next(25, 50), ct).ConfigureAwait(false);
-        Point finalPos = Cursor.Position;
-        ActionLogger.LogMouse($"Завершено в [{finalPos.X}, {finalPos.Y}]", finalPos.X, finalPos.Y);
     }
 
     /// <summary>
-    /// Вычисляет точку на сплайне Кэтмулла-Рома для заданного глобального прогресса t (0..1).
+    /// Выполняет резкий судорожный микро-рывок (Фаза 2: лихорадочный поиск).
+    /// </summary>
+    private static async Task ExecuteSnappyFlickAsync(Point start, PointF target, double durationMs, CancellationToken ct)
+    {
+        double elapsed = 0.0;
+        double remainderX = 0.0;
+        double remainderY = 0.0;
+
+        while (elapsed <= durationMs && !ct.IsCancellationRequested)
+        {
+            double t = elapsed / durationMs;
+            if (t > 1.0) t = 1.0;
+
+            // Резкий агрессивный бросок
+            double progress = Math.Pow(t, 0.65);
+
+            double idealX = start.X + (target.X - start.X) * progress;
+            double idealY = start.Y + (target.Y - start.Y) * progress;
+
+            Point current = Cursor.Position;
+            double neededX = idealX - current.X;
+            double neededY = idealY - current.Y;
+
+            var batch = new PacketBatch();
+            double stepX = neededX / 16.0;
+            double stepY = neededY / 16.0;
+
+            for (int i = 0; i < 16; i++)
+            {
+                double exactX = stepX + remainderX;
+                double exactY = stepY + remainderY;
+                int intX = (int)Math.Round(exactX);
+                int intY = (int)Math.Round(exactY);
+                remainderX = exactX - intX;
+                remainderY = exactY - intY;
+
+                batch.AddMouseMove((sbyte)Math.Clamp(intX, -127, 127), (sbyte)Math.Clamp(intY, -127, 127));
+            }
+
+            if (!ArduinoHidService.Send(batch)) break;
+
+            await Task.Delay(36, ct).ConfigureAwait(false);
+            elapsed += 32.0;
+        }
+    }
+
+    /// <summary>
+    /// Сплайн Кэтмулла-Рома для непрерывной кривизны.
     /// </summary>
     private static PointF GetCatmullRomPoint(System.Collections.Generic.List<PointF> pts, double t)
     {
