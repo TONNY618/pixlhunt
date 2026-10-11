@@ -106,7 +106,7 @@ public static class MouseService
     }
 
     /// <summary>
-    /// Биомеханическое перемещение мыши: реакция -> кинематика Фиттса -> дискретизация 500 Гц -> фиксация.
+    /// Биомеханическое перемещение мыши: реакция -> кинематика Фиттса -> буферизованный стриминг 500 Гц -> микрокоррекция -> фиксация.
     /// </summary>
     public static async Task MoveToAsync(int targetX, int targetY, int speedFactor, string comboName, CancellationToken ct)
     {
@@ -115,49 +115,102 @@ public static class MouseService
 
         ActionLogger.LogMouse($"Старт биомеханики к [{targetX}, {targetY}]", targetX, targetY);
 
+        if (!ArduinoHidService.IsConnected)
+        {
+            ActionLogger.LogMouse("ОШИБКА: Arduino не подключена! Проверьте соединение.");
+            return;
+        }
+
         // --- Фаза 1. Латентный период реакции человека (110-230 мс) ---
         int reactionTime = _random.Next(110, 230);
         await Task.Delay(reactionTime, ct).ConfigureAwait(false);
 
-        // Расчет траектории (частота 500 Гц = шаг dt 0.002 сек)
+        // --- Фаза 2. Расчет основной траектории (частота 500 Гц = шаг dt 0.002 сек) ---
         var deltas = TrajectoryPlanner.GenerateTrajectory(start, target, targetWidth: 24.0, dt: 0.002);
 
-        var sw = Stopwatch.StartNew();
-        double tickDurationMs = 2.0; // 500 Гц
-        double nextTickTime = 0.0;
+        try
+        {
+            // --- Фаза 3. Буферизованный стриминг пакетов ---
+            await StreamDeltasToArduino(deltas, ct).ConfigureAwait(false);
+
+            // --- Фаза 4. Зрительная обратная связь и микрокоррекция (Closed-Loop) ---
+            // Если из-за акселерации Windows курсор не попал точно в цель, доводим его
+            int correctionAttempts = 0;
+            while (correctionAttempts < 3)
+            {
+                Point current = Cursor.Position;
+                int errX = targetX - current.X;
+                int errY = targetY - current.Y;
+
+                // Если попали в цель с допуском 1 px — выходим
+                if (Math.Abs(errX) <= 1 && Math.Abs(errY) <= 1)
+                    break;
+
+                correctionAttempts++;
+
+                // Генерируем короткую доводку с маленькой шириной цели (осторожное движение)
+                var correctionDeltas = TrajectoryPlanner.GenerateTrajectory(current, target, targetWidth: 4.0, dt: 0.002);
+                await StreamDeltasToArduino(correctionDeltas, ct).ConfigureAwait(false);
+
+                // Физиологическая пауза между микрокоррекциями (оценка глазами: 20-45 мс)
+                await Task.Delay(_random.Next(20, 45), ct).ConfigureAwait(false);
+            }
+        }
+        catch (Exception ex)
+        {
+            ActionLogger.LogMouse($"ОШИБКА: {ex.Message}");
+            return;
+        }
+
+        // --- Фаза 6. Предклик-фиксация (Ocular-Motor Fixation Pause) ---
+        int fixationPause = _random.Next(45, 120);
+        await Task.Delay(fixationPause, ct).ConfigureAwait(false);
+
+        Point finalPos = Cursor.Position;
+        int totalErr = Math.Abs(targetX - finalPos.X) + Math.Abs(targetY - finalPos.Y);
+        ActionLogger.LogMouse($"Завершено в [{finalPos.X}, {finalPos.Y}] (Ошибка: {totalErr} px)", finalPos.X, finalPos.Y);
+    }
+
+    /// <summary>
+    /// Упаковывает микро-движения по 16 штук (64 байта) и отправляет на Arduino,
+    /// выдерживая паузу, пока плата аппаратно интерполирует их с задержкой 2 мс на шаг.
+    /// </summary>
+    private static async Task StreamDeltasToArduino(System.Collections.Generic.List<TrajectoryPlanner.StepDelta> deltas, CancellationToken ct)
+    {
+        var batch = new PacketBatch();
+        int commandsInBatch = 0;
 
         foreach (var delta in deltas)
         {
             ct.ThrowIfCancellationRequested();
 
-            var batch = new PacketBatch();
             batch.AddMouseMove(delta.Dx, delta.Dy);
+            commandsInBatch++;
 
-            if (!ArduinoHidService.Send(batch))
-                break;
-
-            nextTickTime += tickDurationMs;
-
-            // Точный спин-вейт цикл для выдерживания идеальных 2 мс без пропуска кадров
-            while (sw.Elapsed.TotalMilliseconds < nextTickTime)
+            // Как только пакет заполнен полностью (16 команд = 64 байта данных)
+            if (commandsInBatch == 16)
             {
-                if (nextTickTime - sw.Elapsed.TotalMilliseconds > 2.0)
-                {
-                    await Task.Delay(1, ct).ConfigureAwait(false);
-                }
-                else
-                {
-                    Thread.SpinWait(10);
-                }
+                if (!ArduinoHidService.Send(batch))
+                    throw new Exception("Потеряна связь с Arduino во время движения.");
+
+                // Arduino аппаратно проигрывает 16 шагов по 2 мс = 32 мс.
+                // Мы ждем 30 мс, чтобы сформировать следующий пакет чуть заранее и избежать рывков.
+                await Task.Delay(30, ct).ConfigureAwait(false);
+
+                // Очищаем батч для следующей партии
+                batch = new PacketBatch();
+                commandsInBatch = 0;
             }
         }
 
-        // --- Фаза 6. Предклик-фиксация (Ocular-Motor Fixation Pause) ---
-        // Перед тем как совершить клик по прилету, глаз и кисть фиксируются на точке (45-120 мс)
-        int fixationPause = _random.Next(45, 120);
-        await Task.Delay(fixationPause, ct).ConfigureAwait(false);
+        // Если в конце остались неупакованные команды (меньше 16)
+        if (commandsInBatch > 0)
+        {
+            if (!ArduinoHidService.Send(batch))
+                throw new Exception("Потеряна связь с Arduino в конце движения.");
 
-        Point finalPos = Cursor.Position;
-        ActionLogger.LogMouse($"Завершено в [{finalPos.X}, {finalPos.Y}] (Ошибка: {Math.Abs(targetX - finalPos.X) + Math.Abs(targetY - finalPos.Y)} px)", finalPos.X, finalPos.Y);
+            // Ждем пропорционально количеству отправленных остатков
+            await Task.Delay(commandsInBatch * 2, ct).ConfigureAwait(false);
+        }
     }
 }
