@@ -106,9 +106,9 @@ public static class MouseService
     }
 
     /// <summary>
-    /// Двухфазное человеческое наведение: баллистический бросок с большим промахом (размытый фокус) 
-    /// + лихорадочный визуальный поиск цели (3-4 резких рывка туда-сюда с затуханием).
-    /// Скорость рассчитывается автоматически из дистанции.
+    /// Биомеханическое наведение: адаптируется под масштаб дистанции.
+    /// Короткие дистанции (<=120 px): плавный уверенный старт с глубоким затуханием (без пролетов).
+    /// Длинные дистанции (>350 px): баллистический бросок с размытым фокусом и лихорадочной доводкой.
     /// </summary>
     public static async Task MoveToAsync(int targetX, int targetY, int speedFactor, string comboName, CancellationToken ct)
     {
@@ -120,37 +120,56 @@ public static class MouseService
         double distance = Math.Sqrt(totalDx * totalDx + totalDy * totalDy);
         if (distance < 2.0) return;
 
-        // 1. АВТО-СКОРОСТЬ: динамический расчет скорости из дистанции (игнорируем ручной ввод)
-        // Длинный путь -> скорость 85-95, средний -> 60-75, близкий -> 30-45
-        double autoSpeed = Math.Clamp(28.0 + Math.Sqrt(distance) * 2.25, 30.0, 95.0);
+        // =========================================================================
+        // РЕЖИМ 1: КОРОТКАЯ ДИСТАНЦИЯ (<= 120 px) - Мелкая моторика пальцев/кисти
+        // Без промахов, без лихорадки: уверенный старт и медленное прогрессивное угасание
+        // =========================================================================
+        if (distance <= 120.0)
+        {
+            ActionLogger.LogMouse($"Старт короткой подводки к [{targetX}, {targetY}] (D={Math.Round(distance)}px)", targetX, targetY);
+
+            // Короткая естественная задержка реакции (35-70 мс)
+            await Task.Delay(_random.Next(35, 70), ct).ConfigureAwait(false);
+
+            // Длительность движения: для 20 px ~ 210 мс, для 60 px ~ 270 мс, для 100 px ~ 310 мс
+            double shortDuration = 135.0 + Math.Sqrt(distance) * 17.5;
+            await ExecuteShortPrecisionApproachAsync(start, new Point(targetX, targetY), shortDuration, ct).ConfigureAwait(false);
+
+            await Task.Delay(_random.Next(30, 60), ct).ConfigureAwait(false);
+            Point pEnd = Cursor.Position;
+            ActionLogger.LogMouse($"Завершено в [{pEnd.X}, {pEnd.Y}]", pEnd.X, pEnd.Y);
+            return;
+        }
+
+        // =========================================================================
+        // РЕЖИМ 2: СРЕДНЯЯ И ДЛИННАЯ ДИСТАНЦИЯ (> 120 px) - Крупная моторика руки
+        // =========================================================================
+        double autoSpeed = Math.Clamp(28.0 + Math.Sqrt(distance) * 2.25, 35.0, 95.0);
         ActionLogger.LogMouse($"Старт к [{targetX}, {targetY}] (D={Math.Round(distance)}px, авто-скорость={Math.Round(autoSpeed)})", targetX, targetY);
 
-        // Короткая реакция человека перед началом движения (30-65 мс)
         await Task.Delay(_random.Next(30, 65), ct).ConfigureAwait(false);
 
-        // =========================================================================
-        // ФАЗА 1: ГРУБЫЙ БАЛЛИСТИЧЕСКИЙ БРОСОК (Размытый фокус)
-        // Летим не в саму цель, а в примерную область с существенным промахом (до 100-260 px)
-        // =========================================================================
-        double scatterRadius = Math.Clamp(distance * (_random.NextDouble() * 0.16 + 0.12), 20.0, 260.0);
+        // Масштабируем величину промаха в зависимости от дистанции:
+        // Для 150-300 px: мягкий разброс 20-45 px
+        // Для 500-1000 px: широкий разброс 100-260 px
+        double scatterRatio = distance > 350.0 ? (_random.NextDouble() * 0.16 + 0.12) : 0.10;
+        double scatterRadius = Math.Clamp(distance * scatterRatio, 18.0, 260.0);
+
         double dirAngle = Math.Atan2(totalDy, totalDx);
-        // Конус разброса вокруг вектора направления
-        double scatterAngle = dirAngle + (_random.NextDouble() * 1.5 - 0.75);
+        double scatterAngle = dirAngle + (_random.NextDouble() * 1.4 - 0.7);
 
         PointF coarseTarget = new(
             (float)(targetX + Math.Cos(scatterAngle) * scatterRadius),
             (float)(targetY + Math.Sin(scatterAngle) * scatterRadius)
         );
 
-        // Время баллистического броска (очень быстрый полет по дуге)
         double ballisticDuration = Math.Clamp(Math.Sqrt(distance) * 10.5 * (100.0 / autoSpeed), 110.0, 460.0);
         await ExecuteCurvedFlightAsync(start, coarseTarget, ballisticDuration, ct).ConfigureAwait(false);
 
-        // =========================================================================
-        // ФАЗА 2: ЛИХОРАДОЧНЫЙ ВИЗУАЛЬНЫЙ ПОИСК (3-4 резких рывка "туда-сюда")
-        // Глаз увидел цель -> кисть делает быстрые рывки с перелетами и сменой направления
-        // =========================================================================
-        int numFlicks = distance > 400 ? _random.Next(3, 5) : (distance > 120 ? _random.Next(2, 4) : 2);
+        // Количество рывков зрительного захвата:
+        // Средняя дистанция: 2 аккуратных рывка
+        // Дальняя дистанция: 3-4 лихорадочных рывка
+        int numFlicks = distance > 350.0 ? _random.Next(3, 5) : 2;
 
         for (int step = 1; step <= numFlicks; step++)
         {
@@ -164,41 +183,108 @@ public static class MouseService
             if (remDist <= 2.0) break;
 
             PointF flickTarget;
-            // Если это не последний рывок — целенаправленно проскакиваем цель на другую сторону!
-            if (step < numFlicks && remDist > 6.0)
+            if (step < numFlicks && remDist > 8.0)
             {
-                // Перелет через цель на 20-45% от оставшегося расстояния + боковое смещение ("чуть выше/ниже")
-                double overshootRatio = _random.NextDouble() * 0.25 + 0.20; 
-                double lateralOffset = _random.Next(-22, 22);
+                // На средней дистанции перелет минимален (15%), на дальней - заметный (25-45%)
+                double overRatio = distance > 350.0 ? (_random.NextDouble() * 0.20 + 0.25) : 0.15;
+                double latOffset = distance > 350.0 ? _random.Next(-20, 20) : _random.Next(-8, 8);
                 double nX = -remDy / remDist;
                 double nY = remDx / remDist;
 
                 flickTarget = new PointF(
-                    (float)(targetX + (remDx / remDist) * (remDist * overshootRatio) + nX * lateralOffset),
-                    (float)(targetY + (remDy / remDist) * (remDist * overshootRatio) + nY * lateralOffset)
+                    (float)(targetX + (remDx / remDist) * (remDist * overRatio) + nX * latOffset),
+                    (float)(targetY + (remDy / remDist) * (remDist * overRatio) + nY * latOffset)
                 );
             }
             else
             {
-                // Финальный микро-шаг — точно в координаты цели
                 flickTarget = new PointF(targetX, targetY);
             }
 
-            // Время каждого судорожного рывка (очень быстро: 40-85 мс)
             double flickDuration = Math.Clamp(remDist * 1.3 + _random.Next(40, 65), 40.0, 95.0);
             await ExecuteSnappyFlickAsync(current, flickTarget, flickDuration, ct).ConfigureAwait(false);
 
-            // Микро-пауза зрительной реакции между рывками (15-30 мс)
             if (step < numFlicks)
             {
                 await Task.Delay(_random.Next(15, 30), ct).ConfigureAwait(false);
             }
         }
 
-        // Финальная фиксация руки (30-60 мс)
         await Task.Delay(_random.Next(30, 60), ct).ConfigureAwait(false);
         Point finalPos = Cursor.Position;
         ActionLogger.LogMouse($"Завершено в [{finalPos.X}, {finalPos.Y}]", finalPos.X, finalPos.Y);
+    }
+
+    /// <summary>
+    /// Деликатная подводка для коротких дистанций (<=120 px):
+    /// Уверенный старт + выраженное прогрессивное затухание скорости (Ease-Out) без пролетов.
+    /// </summary>
+    private static async Task ExecuteShortPrecisionApproachAsync(Point start, Point target, double durationMs, CancellationToken ct)
+    {
+        double totalDx = target.X - start.X;
+        double totalDy = target.Y - start.Y;
+        double dist = Math.Sqrt(totalDx * totalDx + totalDy * totalDy);
+        if (dist < 1.0) return;
+
+        double normX = -totalDy / dist;
+        double normY = totalDx / dist;
+
+        // Небольшой естественный дуговой изгиб кисти (всего 1.0 - 2.5 px в сторону)
+        double lateralCurve = (_random.NextDouble() * 1.5 + 1.0) * (_random.Next(2) == 0 ? 1 : -1);
+
+        double elapsed = 0.0;
+        double remainderX = 0.0;
+        double remainderY = 0.0;
+
+        while (elapsed <= durationMs && !ct.IsCancellationRequested)
+        {
+            double t = elapsed / durationMs;
+            if (t > 1.0) t = 1.0;
+
+            // Нелинейный закон скорости: уверенный старт (проходим первые 65% расстояния бодро),
+            // а оставшиеся 35% расстояния глубоко и мягко замедляемся прямо в цель
+            double progress = 1.0 - Math.Pow(1.0 - t, 2.6);
+
+            // Мягкий боковой изгиб (затухает к финишу)
+            double curveOffset = lateralCurve * Math.Sin(Math.PI * t);
+
+            double idealX = start.X + (totalDx * progress) + (normX * curveOffset);
+            double idealY = start.Y + (totalDy * progress) + (normY * curveOffset);
+
+            // Естественный микротремор пальцев (очень деликатный, не выбивающийся из колеи)
+            double tremor = Math.Sin(Math.PI * t) * (Math.Sin(elapsed * 0.05) * 0.8);
+            idealX += normX * tremor;
+            idealY += normY * tremor;
+
+            Point current = Cursor.Position;
+            double neededX = idealX - current.X;
+            double neededY = idealY - current.Y;
+
+            var batch = new PacketBatch();
+            double stepX = neededX / 16.0;
+            double stepY = neededY / 16.0;
+
+            for (int i = 0; i < 16; i++)
+            {
+                // На короткой дистанции джиттер включается реже, чтобы исключить механический шум
+                int jitterX = (i % 8 == 0) ? _random.Next(-1, 2) : 0;
+                int jitterY = (i % 8 == 0) ? _random.Next(-1, 2) : 0;
+
+                double exactX = stepX + remainderX + jitterX;
+                double exactY = stepY + remainderY + jitterY;
+                int intX = (int)Math.Round(exactX);
+                int intY = (int)Math.Round(exactY);
+                remainderX = exactX - intX;
+                remainderY = exactY - intY;
+
+                batch.AddMouseMove((sbyte)Math.Clamp(intX, -127, 127), (sbyte)Math.Clamp(intY, -127, 127));
+            }
+
+            if (!ArduinoHidService.Send(batch)) break;
+
+            await Task.Delay(36, ct).ConfigureAwait(false);
+            elapsed += 32.0;
+        }
     }
 
     /// <summary>
