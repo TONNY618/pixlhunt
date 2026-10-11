@@ -252,12 +252,17 @@ public static class MouseService
         double normY = totalDx / dist;
         double lateralCurve = (_random.NextDouble() * 1.4 + 0.6) * (_random.Next(2) == 0 ? 1 : -1);
 
-        double elapsed = 0.0;
         double remainderX = 0.0;
         double remainderY = 0.0;
+        double brownianJitterX = 0.0;
+        double brownianJitterY = 0.0;
 
-        while (elapsed <= durationMs && !ct.IsCancellationRequested)
+        var sw = Stopwatch.StartNew();
+        double elapsed = 0.0;
+
+        while (elapsed < durationMs && !ct.IsCancellationRequested)
         {
+            elapsed = sw.Elapsed.TotalMilliseconds;
             double t = elapsed / durationMs;
             if (t > 1.0) t = 1.0;
 
@@ -293,12 +298,21 @@ public static class MouseService
 
             for (int i = 0; i < 16; i++)
             {
-                // Аппаратный джиттер отключается на финальных 20% пути (t >= 0.8), чтобы курсор не дрожал
-                int jitterX = (t < 0.8 && i % 4 == 0) ? _random.Next(-1, 2) : 0;
-                int jitterY = (t < 0.8 && i % 5 == 0) ? _random.Next(-1, 2) : 0;
+                // Инерционный броуновский джиттер (Ornstein-Uhlenbeck) с затуханием 0.80.
+                // Отключается на финальных 20% пути (t >= 0.8), чтобы курсор не дрожал.
+                if (t < 0.8)
+                {
+                    brownianJitterX = (brownianJitterX * 0.80) + ((_random.NextDouble() * 1.6 - 0.8));
+                    brownianJitterY = (brownianJitterY * 0.80) + ((_random.NextDouble() * 1.6 - 0.8));
+                }
+                else
+                {
+                    brownianJitterX *= 0.80;
+                    brownianJitterY *= 0.80;
+                }
 
-                double exactX = stepX + remainderX + jitterX;
-                double exactY = stepY + remainderY + jitterY;
+                double exactX = stepX + remainderX + brownianJitterX;
+                double exactY = stepY + remainderY + brownianJitterY;
                 int intX = (int)Math.Round(exactX);
                 int intY = (int)Math.Round(exactY);
                 remainderX = exactX - intX;
@@ -310,7 +324,6 @@ public static class MouseService
             if (!ArduinoHidService.Send(batch)) break;
 
             await Task.Delay(36, ct).ConfigureAwait(false);
-            elapsed += 32.0;
         }
     }
 
@@ -342,12 +355,17 @@ public static class MouseService
             new(p3.X + (p3.X - p2.X), p3.Y + (p3.Y - p2.Y))
         };
 
-        double elapsed = 0.0;
         double remainderX = 0.0;
         double remainderY = 0.0;
+        double brownianJitterX = 0.0;
+        double brownianJitterY = 0.0;
 
-        while (elapsed <= durationMs && !ct.IsCancellationRequested)
+        var sw = Stopwatch.StartNew();
+        double elapsed = 0.0;
+
+        while (elapsed < durationMs && !ct.IsCancellationRequested)
         {
+            elapsed = sw.Elapsed.TotalMilliseconds;
             double t = elapsed / durationMs;
             if (t > 1.0) t = 1.0;
 
@@ -371,11 +389,12 @@ public static class MouseService
 
             for (int i = 0; i < 16; i++)
             {
-                int jitterX = (i % 4 == 0) ? _random.Next(-1, 2) : 0;
-                int jitterY = (i % 6 == 0) ? _random.Next(-1, 2) : 0;
+                // Инерционный броуновский джиттер (Ornstein-Uhlenbeck) с затуханием 0.80
+                brownianJitterX = (brownianJitterX * 0.80) + ((_random.NextDouble() * 1.6 - 0.8));
+                brownianJitterY = (brownianJitterY * 0.80) + ((_random.NextDouble() * 1.6 - 0.8));
 
-                double exactX = stepX + remainderX + jitterX;
-                double exactY = stepY + remainderY + jitterY;
+                double exactX = stepX + remainderX + brownianJitterX;
+                double exactY = stepY + remainderY + brownianJitterY;
                 int intX = (int)Math.Round(exactX);
                 int intY = (int)Math.Round(exactY);
                 remainderX = exactX - intX;
@@ -387,7 +406,6 @@ public static class MouseService
             if (!ArduinoHidService.Send(batch)) break;
 
             await Task.Delay(36, ct).ConfigureAwait(false);
-            elapsed += 32.0;
         }
     }
 
@@ -396,12 +414,17 @@ public static class MouseService
     /// </summary>
     private static async Task ExecuteSnappyFlickAsync(Point start, PointF target, double durationMs, CancellationToken ct)
     {
-        double elapsed = 0.0;
         double remainderX = 0.0;
         double remainderY = 0.0;
+        double brownianJitterX = 0.0;
+        double brownianJitterY = 0.0;
 
-        while (elapsed <= durationMs && !ct.IsCancellationRequested)
+        var sw = Stopwatch.StartNew();
+        double elapsed = 0.0;
+
+        while (elapsed < durationMs && !ct.IsCancellationRequested)
         {
+            elapsed = sw.Elapsed.TotalMilliseconds;
             double t = elapsed / durationMs;
             if (t > 1.0) t = 1.0;
 
@@ -421,8 +444,12 @@ public static class MouseService
 
             for (int i = 0; i < 16; i++)
             {
-                double exactX = stepX + remainderX;
-                double exactY = stepY + remainderY;
+                // Инерционный броуновский джиттер (Ornstein-Uhlenbeck) с затуханием 0.80
+                brownianJitterX = (brownianJitterX * 0.80) + ((_random.NextDouble() * 1.6 - 0.8));
+                brownianJitterY = (brownianJitterY * 0.80) + ((_random.NextDouble() * 1.6 - 0.8));
+
+                double exactX = stepX + remainderX + brownianJitterX;
+                double exactY = stepY + remainderY + brownianJitterY;
                 int intX = (int)Math.Round(exactX);
                 int intY = (int)Math.Round(exactY);
                 remainderX = exactX - intX;
@@ -434,7 +461,6 @@ public static class MouseService
             if (!ArduinoHidService.Send(batch)) break;
 
             await Task.Delay(36, ct).ConfigureAwait(false);
-            elapsed += 32.0;
         }
     }
 
