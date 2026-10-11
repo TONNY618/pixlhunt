@@ -34,10 +34,10 @@
             checkBoxStatus = new CheckBox();
             checkedListBoxCombo = new CheckedListBox();
             listBoxActiv = new ListBox();
-            labelEvents = new Label();
             buttonSettings = new Button();
             buttonComboForm = new Button();
             trackBarTransparency = new TrackBar();
+            checkBoxTransparentClick = new CheckBox();
             groupBoxActiveTime.SuspendLayout();
             groupBoxStatus.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)trackBarTransparency).BeginInit();
@@ -99,15 +99,6 @@
             listBoxActiv.Size = new Size(443, 154);
             listBoxActiv.TabIndex = 9;
             // 
-            // labelEvents
-            // 
-            labelEvents.AutoSize = true;
-            labelEvents.Location = new Point(12, 106);
-            labelEvents.Name = "labelEvents";
-            labelEvents.Size = new Size(56, 15);
-            labelEvents.TabIndex = 5;
-            labelEvents.Text = "События";
-            // 
             // buttonSettings
             // 
             buttonSettings.Location = new Point(12, 528);
@@ -140,17 +131,27 @@
             trackBarTransparency.TickFrequency = 10;
             trackBarTransparency.Value = 100;
             // 
+            // checkBoxTransparentClick
+            // 
+            checkBoxTransparentClick.AutoSize = true;
+            checkBoxTransparentClick.Location = new Point(12, 99);
+            checkBoxTransparentClick.Name = "checkBoxTransparentClick";
+            checkBoxTransparentClick.Size = new Size(171, 19);
+            checkBoxTransparentClick.TabIndex = 11;
+            checkBoxTransparentClick.Text = "Проницаемое для мышки";
+            checkBoxTransparentClick.UseVisualStyleBackColor = true;
+            // 
             // pxlHunt
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.Ivory;
             ClientSize = new Size(607, 614);
+            Controls.Add(checkBoxTransparentClick);
             Controls.Add(buttonComboForm);
             Controls.Add(buttonSettings);
             Controls.Add(listBoxActiv);
             Controls.Add(checkedListBoxCombo);
-            Controls.Add(labelEvents);
             Controls.Add(groupBoxStatus);
             Controls.Add(groupBoxActiveTime);
             Controls.Add(trackBarTransparency);
@@ -173,9 +174,9 @@
         private CheckBox checkBoxStatus;
         private CheckedListBox checkedListBoxCombo;
         private ListBox listBoxActiv;
-        private Label labelEvents;
         private Button buttonSettings;
         private Button buttonComboForm;
         private TrackBar trackBarTransparency;
+        private CheckBox checkBoxTransparentClick;
     }
 }
