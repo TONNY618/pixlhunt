@@ -215,6 +215,11 @@ public static class ComboFactory
             case "delayMs":
                 return new PixelMacroEngine.Triggers.Steps.DelayStep(elem.Parameters);
 
+            // ДОБАВЛЯЕМ ОБРАБОТКУ МЫШИ:
+            case "mooveCursor":
+            case "moveCursor":
+                return new MoveCursorStep(elem.Parameters);
+
             default:
                 return null;
         }
