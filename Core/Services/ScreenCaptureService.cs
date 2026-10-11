@@ -36,20 +36,37 @@ public static class ScreenCaptureService
             int intervalMs = AppConfigService.Instance.FrameCaptureIntervalMs;
             TargetFps = 1000 / Math.Max(1, intervalMs);
 
-            _capturer.Initialize(monitorIndex);
+            try
+            {
+                _capturer.Initialize(monitorIndex);
+            }
+            catch
+            {
+                // Если указанный монитор не найден и это не монитор 0, пытаемся откатиться на монитор 0
+                if (monitorIndex != 0)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[ScreenCaptureService] Монитор {monitorIndex} не найден. Откат на монитор 0.");
+                    _capturer.Initialize(0);
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
             _cts = new CancellationTokenSource();
             IsRunning = true;
 
             // Запускаем независимый фоновый поток обновления буфера
             _loopTask = Task.Run(() => CaptureLoopAsync(_cts.Token));
         }
-        catch
+        catch (Exception ex)
         {
-            // Ошибка инициализации видеокарты/дублирования не должна ронять приложение.
             IsRunning = false;
             _cts?.Dispose();
             _cts = null;
             _loopTask = null;
+            throw; // Пробрасываем ошибку наружу, чтобы Main.cs мог показать MessageBox
         }
     }
 
