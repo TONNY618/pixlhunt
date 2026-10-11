@@ -16,6 +16,22 @@ public static class ArduinoHidService
 
     public static bool IsConnected => _stream != null;
 
+    /// <summary>
+    /// Быстрая проверка физического присутствия устройства на шине USB.
+    /// Не открывает поток — только перечисляет HID-устройства.
+    /// </summary>
+    public static bool CheckDevicePresence()
+    {
+        try
+        {
+            return DeviceList.Local.GetHidDevices(VendorId, ProductId).Any();
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     public static bool Connect()
     {
         lock (_lock)

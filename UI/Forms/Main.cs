@@ -14,6 +14,8 @@ namespace pxlhunt.FORMS
     {
         private readonly Orchestrator _orchestrator;
         private System.Windows.Forms.Timer? _sessionTimer;
+        private System.Windows.Forms.Timer? _arduinoWatchdogTimer;
+        private int _reconnectAttempts = 0;
         private const string SessionFileName = "session.json";
         private readonly HashSet<string> _changedComboNames = new(StringComparer.OrdinalIgnoreCase);
         private bool _isLoadingCombos = false;
@@ -57,6 +59,11 @@ namespace pxlhunt.FORMS
             _sessionTimer = new System.Windows.Forms.Timer { Interval = 1000 };
             _sessionTimer.Tick += SessionTimer_Tick;
             _sessionTimer.Start();
+
+            // Watchdog Arduino: проверка подключения каждые 3 секунды
+            _arduinoWatchdogTimer = new System.Windows.Forms.Timer { Interval = 3000 };
+            _arduinoWatchdogTimer.Tick += ArduinoWatchdogTimer_Tick;
+            _arduinoWatchdogTimer.Start();
 
             // Привязка событий UI
             checkedListBoxCombo.ItemCheck += CheckedListBoxCombo_ItemCheck;
@@ -595,6 +602,48 @@ namespace pxlhunt.FORMS
             }
         }
 
+        /// <summary>
+        /// Периодически проверяет физическое присутствие платы и переподключается при потере связи.
+        /// </summary>
+        private void ArduinoWatchdogTimer_Tick(object? sender, EventArgs e)
+        {
+            if (ArduinoHidService.IsConnected)
+            {
+                // Проверяем, физически ли на месте девайс
+                if (!ArduinoHidService.CheckDevicePresence())
+                {
+                    ArduinoHidService.Disconnect();
+                    _reconnectAttempts = 0;
+                    groupBoxStatus.Text = "Статус - связь потеряна";
+                }
+                else
+                {
+                    _reconnectAttempts = 0;
+                    if (groupBoxStatus.Text != "Статус - плата OK")
+                        groupBoxStatus.Text = "Статус - плата OK";
+                }
+            }
+            else
+            {
+                // Попытки переподключения раз в 5 секунд
+                if (_reconnectAttempts < 5)
+                {
+                    _reconnectAttempts++;
+                    groupBoxStatus.Text = $"Статус - поиск платы ({_reconnectAttempts}/5)...";
+
+                    if (ArduinoHidService.Connect())
+                    {
+                        _reconnectAttempts = 0;
+                        groupBoxStatus.Text = "Статус - плата OK";
+                    }
+                }
+                else
+                {
+                    groupBoxStatus.Text = "Статус - плата НЕ НАЙДЕНА";
+                }
+            }
+        }
+
         private void SessionTimer_Tick(object? sender, EventArgs e)
         {
             // Время активной игры накручиваем только когда комбо реально могут работать
@@ -735,6 +784,10 @@ namespace pxlhunt.FORMS
                 _sessionTimer?.Stop();
                 _sessionTimer?.Dispose();
                 _sessionTimer = null;
+
+                _arduinoWatchdogTimer?.Stop();
+                _arduinoWatchdogTimer?.Dispose();
+                _arduinoWatchdogTimer = null;
 
                 SaveSessionTime();
 

@@ -136,5 +136,5 @@ public static class BotStateController
     /// Итоговое разрешение на выполнение комбо.
     /// </summary>
     public static bool CanExecuteCombos
-        => IsMasterEnabled && !HasOpenChildForms() && !IsMainFormFocused();
+        => IsMasterEnabled && !HasOpenChildForms() && !IsMainFormFocused() && ArduinoHidService.IsConnected;
 }
