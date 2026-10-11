@@ -34,4 +34,17 @@ public static class ActionLogger
 
         Log($"{prefix}Key {(isDown ? "DOWN" : "UP")}: {keyName}{hex}");
     }
+
+    /// <summary>Логирует действие мыши (клик, скролл).</summary>
+    public static void LogMouse(string text, string? comboName = null)
+    {
+        string prefix = string.IsNullOrEmpty(comboName) ? "" : $"[{comboName}] ";
+        Log($"{prefix}Mouse: {text}");
+    }
+
+    /// <summary>Логирует перемещение курсора к целевой точке.</summary>
+    public static void LogMouse(string text, int targetX, int targetY)
+    {
+        Log($"Mouse: {text} [{targetX}, {targetY}]");
+    }
 }
