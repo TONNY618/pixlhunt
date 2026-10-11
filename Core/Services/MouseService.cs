@@ -106,63 +106,123 @@ public static class MouseService
     }
 
     /// <summary>
-    /// Непрерывное биомеханическое перемещение с динамической коррекцией (без остановок).
+    /// Биомеханическое перемещение с вариативным хаосом (S-дуги, овершуты с возвратом, боковые заходы).
     /// </summary>
     public static async Task MoveToAsync(int targetX, int targetY, int speedFactor, string comboName, CancellationToken ct)
     {
         Point start = Cursor.Position;
-        ActionLogger.LogMouse($"Старт к [{targetX}, {targetY}]", targetX, targetY);
+        ActionLogger.LogMouse($"Старт к [{targetX}, {targetY}] (скорость {speedFactor})", targetX, targetY);
 
         if (!ArduinoHidService.IsConnected) return;
 
-        // Быстрая реакция человека (более бодрая)
-        await Task.Delay(_random.Next(60, 140), ct).ConfigureAwait(false);
+        // Быстрая реакция человека (30-80 мс)
+        await Task.Delay(_random.Next(30, 80), ct).ConfigureAwait(false);
 
-        double distance = Math.Sqrt(Math.Pow(targetX - start.X, 2) + Math.Pow(targetY - start.Y, 2));
-        if (distance < 2) return;
+        double totalDx = targetX - start.X;
+        double totalDy = targetY - start.Y;
+        double distance = Math.Sqrt(totalDx * totalDx + totalDy * totalDy);
+        if (distance < 2.0) return;
 
-        // Ускоренный закон Фиттса
-        double a = _random.NextDouble() * 0.03 + 0.05; // 50-80 мс
-        double b = _random.NextDouble() * 0.03 + 0.07; // 70-100 мс/бит
-        double id = Math.Log2((2.0 * distance / 30.0) + 1.0);
-        double totalDurationMs = (a + b * id) * 1000.0;
+        // Нормализованные векторы: направления (dir) и перпендикуляра (norm)
+        double dirX = totalDx / distance;
+        double dirY = totalDy / distance;
+        double normX = -dirY;
+        double normY = dirX;
 
-        // Легкий перелет (овершут) для дистанций > 150 px
-        bool willOvershoot = distance > 150 && _random.NextDouble() < 0.6;
-        double overX = willOvershoot ? (targetX - start.X) * (_random.NextDouble() * 0.04 + 0.02) : 0;
-        double overY = willOvershoot ? (targetY - start.Y) * (_random.NextDouble() * 0.04 + 0.02) : 0;
+        // --- Учет скорости из настроек (speedFactor 1..100) и закона Фиттса ---
+        speedFactor = Math.Clamp(speedFactor, 1, 100);
+        double a = _random.NextDouble() * 0.02 + 0.04; // 40-60 мс
+        double b = _random.NextDouble() * 0.02 + 0.05; // 50-70 мс/бит
+        double id = Math.Log2((2.0 * distance / 32.0) + 1.0);
+        double baseDurationMs = (a + b * id) * 1000.0;
 
-        double elapsed = 0;
-        double remainderX = 0;
-        double remainderY = 0;
+        // Коэффициент ускорения: на скорости 80-90 полет занимает всего ~200-350 мс
+        double speedModifier = 1.45 - (speedFactor / 100.0 * 0.95);
+        double totalDurationMs = Math.Clamp(baseDurationMs * speedModifier, 120.0, 750.0);
 
-        // Единый непрерывный цикл до достижения времени полета
+        // --- Выбор сценария хаоса траектории (3 варианта) ---
+        // Сценарий 0: Дуга с легким смещением (~35%)
+        // Сценарий 1: "Ломаная" S-образная дуга с перегибом (~35%)
+        // Сценарий 2: Перелет цели насквозь и резкий возврат назад (~30%)
+        int scenario = _random.Next(3);
+        int sign = _random.Next(2) == 0 ? 1 : -1;
+
+        PointF p0 = new(start.X, start.Y);
+        PointF p1;
+        PointF p2;
+        PointF p3 = new(targetX, targetY);
+
+        if (scenario == 1 && distance > 80.0)
+        {
+            // СЦЕНАРИЙ 1: S-образная дуга (сначала улетает в одну сторону, затем доворачивает обратно)
+            double h1 = distance * (_random.NextDouble() * 0.12 + 0.08) * sign;
+            double h2 = distance * (_random.NextDouble() * 0.10 + 0.05) * -sign;
+
+            p1 = new PointF((float)(start.X + totalDx * 0.30 + normX * h1),
+                            (float)(start.Y + totalDy * 0.30 + normY * h1));
+
+            p2 = new PointF((float)(start.X + totalDx * 0.70 + normX * h2),
+                            (float)(start.Y + totalDy * 0.70 + normY * h2));
+        }
+        else if (scenario == 2 && distance > 100.0)
+        {
+            // СЦЕНАРИЙ 2: Перелет (проскакивает цель на 15-40 px вперед или вбок, затем одергивает назад)
+            double overshootDist = Math.Clamp(distance * 0.08, 14.0, 38.0);
+            double lateralOffset = _random.Next(-18, 18);
+
+            p1 = new PointF((float)(start.X + totalDx * 0.40 + normX * lateralOffset * 0.5),
+                            (float)(start.Y + totalDy * 0.40 + normY * lateralOffset * 0.5));
+
+            // Контрольная точка вынесена ЗА цель
+            p2 = new PointF((float)(targetX + dirX * overshootDist + normX * lateralOffset),
+                            (float)(targetY + dirY * overshootDist + normY * lateralOffset));
+        }
+        else
+        {
+            // СЦЕНАРИЙ 0: Плавная человеческая дуга
+            double curve = distance * (_random.NextDouble() * 0.06 + 0.02) * sign;
+
+            p1 = new PointF((float)(start.X + totalDx * 0.35 + normX * curve),
+                            (float)(start.Y + totalDy * 0.35 + normY * curve));
+
+            p2 = new PointF((float)(start.X + totalDx * 0.70 + normX * curve * 0.7),
+                            (float)(start.Y + totalDy * 0.70 + normY * curve * 0.7));
+        }
+
+        double elapsed = 0.0;
+        double remainderX = 0.0;
+        double remainderY = 0.0;
+
+        // Непрерывный стриминг без пауз
         while (elapsed <= totalDurationMs && !ct.IsCancellationRequested)
         {
             double t = elapsed / totalDurationMs;
             if (t > 1.0) t = 1.0;
 
-            // Асимметричный Minimum Jerk (разгон быстрее торможения)
-            double u = Math.Pow(t, 0.85);
+            // Асимметричный закон скорости: резкий старт, контролируемое торможение
+            double u = Math.Pow(t, 0.82);
             double progress = 10 * Math.Pow(u, 3) - 15 * Math.Pow(u, 4) + 6 * Math.Pow(u, 5);
 
-            // Выпуклость овершута в последней трети траектории
-            double overshootFactor = willOvershoot ? Math.Sin(Math.PI * t) * progress : 0;
+            // Кубическая интерполяция Безье для гладкого обхода контрольных точек
+            double inv = 1.0 - progress;
+            double b0 = inv * inv * inv;
+            double b1 = 3 * inv * inv * progress;
+            double b2 = 3 * inv * progress * progress;
+            double b3 = progress * progress * progress;
 
-            // Идеальная точка, где мышь должна быть в данный миллисекундный срез
-            double idealX = start.X + (targetX - start.X) * progress + (overX * overshootFactor);
-            double idealY = start.Y + (targetY - start.Y) * progress + (overY * overshootFactor);
+            double idealX = b0 * p0.X + b1 * p1.X + b2 * p2.X + b3 * p3.X;
+            double idealY = b0 * p0.Y + b1 * p1.Y + b2 * p2.Y + b3 * p3.Y;
 
-            // Легкий тремор руки
-            double tremor = Math.Sin(elapsed * 0.05) * 1.5 * Math.Sin(Math.PI * t);
-            idealX += tremor;
+            // Физиологический микротремор (затухает в конце пути)
+            double tremor = (Math.Sin(elapsed * 0.06) * 1.2 + Math.Cos(elapsed * 0.02) * 0.8) * Math.Sin(Math.PI * t);
+            idealX += normX * tremor;
+            idealY += normY * tremor;
 
-            // ДИНАМИЧЕСКАЯ КОРРЕКЦИЯ: смотрим реальную позицию курсора на экране
+            // Динамический замер ошибки
             Point current = Cursor.Position;
             double neededX = idealX - current.X;
             double neededY = idealY - current.Y;
 
-            // Упаковываем нужное смещение в пакет из 16 микрошагов для Arduino
             var batch = new PacketBatch();
             double stepX = neededX / 16.0;
             double stepY = neededY / 16.0;
@@ -179,19 +239,14 @@ public static class MouseService
                 batch.AddMouseMove((sbyte)Math.Clamp(intX, -127, 127), (sbyte)Math.Clamp(intY, -127, 127));
             }
 
-            if (!ArduinoHidService.Send(batch))
-            {
-                ActionLogger.LogMouse("ОШИБКА: Потеря связи.");
-                break;
-            }
+            if (!ArduinoHidService.Send(batch)) break;
 
-            // ПК спит 36 мс, пока Arduino плавно аппаратно воспроизводит 16 шагов
             await Task.Delay(36, ct).ConfigureAwait(false);
-            elapsed += 32.0; // Время шага Arduino (16 * 2 мс)
+            elapsed += 32.0;
         }
 
-        // Финальная фиксация взгляда/руки перед следующим действием
-        await Task.Delay(_random.Next(30, 80), ct).ConfigureAwait(false);
+        // Микрофиксация (30-65 мс)
+        await Task.Delay(_random.Next(30, 65), ct).ConfigureAwait(false);
         Point finalPos = Cursor.Position;
         ActionLogger.LogMouse($"Завершено в [{finalPos.X}, {finalPos.Y}]", finalPos.X, finalPos.Y);
     }
