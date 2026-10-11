@@ -106,11 +106,7 @@ public static class MouseService
     }
 
     /// <summary>
-    /// Монолитное биомеханическое наведение: 
-    /// 1. Баллистический бросок (размытый фокус) -> 
-    /// 2. Серия резких поисковых рывков до зоны подлета (20-35 px) -> 
-    /// 3. Когнитивный "щелчок в мозгу" (пауза переключения внимания 45-85 мс) -> 
-    /// 4. Фирменный медленный доводчик (глубокий Ease-Out без пролетов).
+    /// Биомеханическое наведение с глубоким контрастом скоростей, 2D-хаосом поиска и медленной финальной доводкой.
     /// </summary>
     public static async Task MoveToAsync(int targetX, int targetY, int speedFactor, string comboName, CancellationToken ct)
     {
@@ -123,51 +119,55 @@ public static class MouseService
         if (distance < 2.0) return;
 
         // =========================================================================
-        // ВЕТКА А: ДИСТАНЦИЯ УЖЕ БЛИЗКАЯ (<= 120 px)
-        // Сразу запускаем деликатный доводчик кисти без резких бросков
+        // РЕЖИМ 1: КОРОТКАЯ ДИСТАНЦИЯ (<= 120 px) - Медленная, выверенная подводка
+        // Уверенный старт (100 мс) + глубокое, выраженное замедление (ползет в точку)
         // =========================================================================
         if (distance <= 120.0)
         {
-            ActionLogger.LogMouse($"Прямой доводчик к [{targetX}, {targetY}] (D={Math.Round(distance)}px)", targetX, targetY);
+            ActionLogger.LogMouse($"Точная подводка к [{targetX}, {targetY}] (D={Math.Round(distance)}px)", targetX, targetY);
 
-            await Task.Delay(_random.Next(35, 70), ct).ConfigureAwait(false);
+            await Task.Delay(_random.Next(35, 75), ct).ConfigureAwait(false);
 
-            double shortDuration = 135.0 + Math.Sqrt(distance) * 17.5;
+            // Растянутое время для заметного человеческого замедления (350-550 мс)
+            double shortDuration = 280.0 + Math.Sqrt(distance) * 26.0;
             await ExecuteShortPrecisionApproachAsync(start, new Point(targetX, targetY), shortDuration, ct).ConfigureAwait(false);
 
-            await Task.Delay(_random.Next(30, 60), ct).ConfigureAwait(false);
+            await Task.Delay(_random.Next(35, 70), ct).ConfigureAwait(false);
             Point pEnd = Cursor.Position;
             ActionLogger.LogMouse($"Завершено в [{pEnd.X}, {pEnd.Y}]", pEnd.X, pEnd.Y);
             return;
         }
 
         // =========================================================================
-        // ВЕТКА Б: СРЕДНЯЯ И ДЛИННАЯ ДИСТАНЦИЯ (> 120 px)
+        // РЕЖИМ 2: СРЕДНЯЯ И ДЛИННАЯ ДИСТАНЦИЯ (> 120 px)
+        // Взрывной бросок -> серия разнонаправленных 2D-рывков -> пауза -> медленный доводчик
         // =========================================================================
-        double autoSpeed = Math.Clamp(28.0 + Math.Sqrt(distance) * 2.25, 35.0, 95.0);
-        ActionLogger.LogMouse($"Старт броска к [{targetX}, {targetY}] (D={Math.Round(distance)}px, авто-скорость={Math.Round(autoSpeed)})", targetX, targetY);
+        double autoSpeed = Math.Clamp(30.0 + Math.Sqrt(distance) * 2.3, 40.0, 95.0);
+        ActionLogger.LogMouse($"Старт броска к [{targetX}, {targetY}] (D={Math.Round(distance)}px)", targetX, targetY);
 
-        await Task.Delay(_random.Next(30, 60), ct).ConfigureAwait(false);
+        await Task.Delay(_random.Next(25, 55), ct).ConfigureAwait(false);
 
-        // 1. Баллистический бросок с размытым фокусом в сторону цели
-        double scatterRatio = distance > 350.0 ? (_random.NextDouble() * 0.16 + 0.12) : 0.10;
-        double scatterRadius = Math.Clamp(distance * scatterRatio, 18.0, 260.0);
+        // 1. ВЗРЫВНОЙ БАЛЛИСТИЧЕСКИЙ БРОСОК с размытым фокусом
+        double scatterRatio = distance > 350.0 ? (_random.NextDouble() * 0.16 + 0.14) : 0.12;
+        double scatterRadius = Math.Clamp(distance * scatterRatio, 25.0, 260.0);
 
         double dirAngle = Math.Atan2(totalDy, totalDx);
-        double scatterAngle = dirAngle + (_random.NextDouble() * 1.4 - 0.7);
+        double scatterAngle = dirAngle + (_random.NextDouble() * 1.6 - 0.8);
 
         PointF coarseTarget = new(
             (float)(targetX + Math.Cos(scatterAngle) * scatterRadius),
             (float)(targetY + Math.Sin(scatterAngle) * scatterRadius)
         );
 
-        double ballisticDuration = Math.Clamp(Math.Sqrt(distance) * 10.5 * (100.0 / autoSpeed), 110.0, 460.0);
+        // Очень быстрый первый бросок
+        double ballisticDuration = Math.Clamp(Math.Sqrt(distance) * 9.5 * (100.0 / autoSpeed), 100.0, 420.0);
         await ExecuteCurvedFlightAsync(start, coarseTarget, ballisticDuration, ct).ConfigureAwait(false);
 
-        // 2. Серия резких рывков (стягиваем курсор в ближнюю зону 20-35 px от цели)
-        int maxFlicks = distance > 350.0 ? _random.Next(2, 4) : 1;
+        // 2. СЕРИЯ РАЗНОНАПРАВЛЕННЫХ 2D-РЫВКОВ (Вверх, вниз, влево, вправо вокруг цели)
+        int numFlicks = distance > 350.0 ? _random.Next(3, 5) : _random.Next(2, 3);
+        double lastAngle = scatterAngle;
 
-        for (int step = 1; step <= maxFlicks; step++)
+        for (int step = 1; step <= numFlicks; step++)
         {
             ct.ThrowIfCancellationRequested();
 
@@ -176,35 +176,43 @@ public static class MouseService
             double remDy = targetY - current.Y;
             double remDist = Math.Sqrt(remDx * remDx + remDy * remDy);
 
-            // Если рывок уже привел курсор в зону доводчика (<= 30 px) — выходим к финалу!
-            if (remDist <= 30.0) break;
+            // Если уже подошли вплотную (<= 25 px) — передаем управление медленному доводчику
+            if (remDist <= 25.0) break;
 
-            // Рывок с перелетом через цель для имитации поиска
-            double overRatio = distance > 350.0 ? (_random.NextDouble() * 0.20 + 0.20) : 0.12;
-            double latOffset = distance > 350.0 ? _random.Next(-18, 18) : _random.Next(-8, 8);
-            double nX = -remDy / remDist;
-            double nY = remDx / remDist;
+            PointF flickTarget;
+            if (step < numFlicks && remDist > 10.0)
+            {
+                // Затухающий радиус промаха для каждого шага
+                double flickRadius = Math.Clamp(remDist * (0.65 - step * 0.12), 15.0, 90.0);
+                
+                // РАЗВОРОТ В 2D: каждый следующий рывок бросает курсор в противоположный квадрант
+                lastAngle += Math.PI + (_random.NextDouble() * 1.8 - 0.9); // Смена направления ~180° с разбросом
 
-            PointF flickTarget = new(
-                (float)(targetX + (remDx / remDist) * (remDist * overRatio) + nX * latOffset),
-                (float)(targetY + (remDy / remDist) * (remDist * overRatio) + nY * latOffset)
-            );
+                flickTarget = new PointF(
+                    (float)(targetX + Math.Cos(lastAngle) * flickRadius),
+                    (float)(targetY + Math.Sin(lastAngle) * flickRadius)
+                );
+            }
+            else
+            {
+                flickTarget = new PointF(targetX, targetY);
+            }
 
-            double flickDuration = Math.Clamp(remDist * 1.2 + _random.Next(35, 60), 40.0, 85.0);
+            // Быстрый резкий рывок (40-75 мс)
+            double flickDuration = Math.Clamp(remDist * 1.1 + _random.Next(35, 55), 40.0, 80.0);
             await ExecuteSnappyFlickAsync(current, flickTarget, flickDuration, ct).ConfigureAwait(false);
 
             await Task.Delay(_random.Next(15, 30), ct).ConfigureAwait(false);
         }
 
         // =========================================================================
-        // ЭТАП 3: "ЩЕЛЧОК В МОЗГУ" (Пауза переключения внимания, 45-85 мс)
-        // Рука остановилась после грубого подлета, взгляд сфокусировался на крестике,
-        // подключается мелкая моторика пальцев для финальной доводки
+        // 3. КОГНИТИВНЫЙ "ЩЕЛЧОК В МОЗГУ" (Пауза переключения внимания 50-85 мс)
+        // Рука замерла, глаза зафиксировали цель, подключается точный доводчик пальцев
         // =========================================================================
-        await Task.Delay(_random.Next(45, 85), ct).ConfigureAwait(false);
+        await Task.Delay(_random.Next(50, 85), ct).ConfigureAwait(false);
 
         // =========================================================================
-        // ЭТАП 4: ФИНАЛЬНЫЙ МЕДЛЕННЫЙ ДОВОДЧИК (Ease-Out прямо в цель)
+        // 4. МЕДЛЕННЫЙ ФИНАЛЬНЫЙ ДОВОДЧИК (Глубокий Ease-Out прямо в пиксель)
         // =========================================================================
         Point beforeDock = Cursor.Position;
         double dockDx = targetX - beforeDock.X;
@@ -213,19 +221,18 @@ public static class MouseService
 
         if (dockDist > 1.5)
         {
-            double dockDuration = 125.0 + Math.Sqrt(dockDist) * 16.5;
+            // Растянутое время для мягкого, вкрадчивого причаливания к цели (320-480 мс)
+            double dockDuration = 260.0 + Math.Sqrt(dockDist) * 24.0;
             await ExecuteShortPrecisionApproachAsync(beforeDock, new Point(targetX, targetY), dockDuration, ct).ConfigureAwait(false);
         }
 
-        // Микрофиксация взгляда перед кликом
-        await Task.Delay(_random.Next(30, 55), ct).ConfigureAwait(false);
+        await Task.Delay(_random.Next(35, 65), ct).ConfigureAwait(false);
         Point finalPos = Cursor.Position;
         ActionLogger.LogMouse($"Завершено в [{finalPos.X}, {finalPos.Y}]", finalPos.X, finalPos.Y);
     }
 
     /// <summary>
-    /// Деликатная подводка для коротких дистанций (<=120 px):
-    /// Уверенный старт + выраженное прогрессивное затухание скорости (Ease-Out) без пролетов.
+    /// Деликатная доводка с выраженным нелинейным затуханием (Ease-Out) и высоким тремором пальцев.
     /// </summary>
     private static async Task ExecuteShortPrecisionApproachAsync(Point start, Point target, double durationMs, CancellationToken ct)
     {
@@ -236,9 +243,7 @@ public static class MouseService
 
         double normX = -totalDy / dist;
         double normY = totalDx / dist;
-
-        // Небольшой естественный дуговой изгиб кисти (всего 1.0 - 2.5 px в сторону)
-        double lateralCurve = (_random.NextDouble() * 1.5 + 1.0) * (_random.Next(2) == 0 ? 1 : -1);
+        double lateralCurve = (_random.NextDouble() * 1.8 + 0.8) * (_random.Next(2) == 0 ? 1 : -1);
 
         double elapsed = 0.0;
         double remainderX = 0.0;
@@ -249,20 +254,24 @@ public static class MouseService
             double t = elapsed / durationMs;
             if (t > 1.0) t = 1.0;
 
-            // Нелинейный закон скорости: уверенный старт (проходим первые 65% расстояния бодро),
-            // а оставшиеся 35% расстояния глубоко и мягко замедляемся прямо в цель
-            double progress = 1.0 - Math.Pow(1.0 - t, 2.6);
+            // СТЕПЕННАЯ КРИВАЯ ГЛУБОКОГО ЗАТУХАНИЯ:
+            // t=0.3 -> 70% пути пройдено (уверенно)
+            // t=0.6 -> 95% пути пройдено
+            // t=0.6..1.0 -> последние 5% расстояния ползет медленно и аккуратно
+            double progress = 1.0 - Math.Pow(1.0 - t, 3.5);
 
-            // Мягкий боковой изгиб (затухает к финишу)
             double curveOffset = lateralCurve * Math.Sin(Math.PI * t);
 
             double idealX = start.X + (totalDx * progress) + (normX * curveOffset);
             double idealY = start.Y + (totalDy * progress) + (normY * curveOffset);
 
-            // Естественный микротремор пальцев (очень деликатный, не выбивающийся из колеи)
-            double tremor = Math.Sin(Math.PI * t) * (Math.Sin(elapsed * 0.05) * 0.8);
-            idealX += normX * tremor;
-            idealY += normY * tremor;
+            // УСИЛЕННЫЙ ТРЕМОР ПАЛЬЦЕВ (рука напряжена, амплитуда 2.2 - 3.8 px, не угасает в ноль)
+            double tremorAmp = 1.8 + _random.NextDouble() * 1.5;
+            double tremorX = (Math.Sin(elapsed * 0.070) * 0.7 + Math.Cos(elapsed * 0.025) * 0.3) * tremorAmp;
+            double tremorY = (Math.Cos(elapsed * 0.062) * 0.7 + Math.Sin(elapsed * 0.030) * 0.3) * tremorAmp;
+
+            idealX += tremorX;
+            idealY += tremorY;
 
             Point current = Cursor.Position;
             double neededX = idealX - current.X;
@@ -274,9 +283,9 @@ public static class MouseService
 
             for (int i = 0; i < 16; i++)
             {
-                // На короткой дистанции джиттер включается реже, чтобы исключить механический шум
-                int jitterX = (i % 8 == 0) ? _random.Next(-1, 2) : 0;
-                int jitterY = (i % 8 == 0) ? _random.Next(-1, 2) : 0;
+                // Повышенный аппаратный джиттер на уровне 500 Гц (каждый 3-й и 4-й микрошаг)
+                int jitterX = (i % 3 == 0) ? _random.Next(-1, 2) : 0;
+                int jitterY = (i % 4 == 0) ? _random.Next(-1, 2) : 0;
 
                 double exactX = stepX + remainderX + jitterX;
                 double exactY = stepY + remainderY + jitterY;
