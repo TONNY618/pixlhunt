@@ -15,6 +15,7 @@ public class AppConfig
     public int FrameCaptureIntervalMs { get; set; } = 33;
     public int HumanLatencyMinMs { get; set; } = 40;
     public int HumanLatencyMaxMs { get; set; } = 120;
+    public int DisplayNumberForCapteruVideoFrame { get; set; } = 0;
 }
 
 /// <summary>

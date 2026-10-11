@@ -56,7 +56,23 @@ namespace pxlhunt.FORMS
             // Стартуем глобальный захват при запуске программы
             try
             {
-                ScreenCaptureService.Start(monitorIndex: 0);
+                int targetMonitor = AppConfigService.Instance.DisplayNumberForCapteruVideoFrame;
+                try
+                {
+                    ScreenCaptureService.Start(targetMonitor);
+                }
+                catch
+                {
+                    // Если указанный монитор не найден (например, отключен), откатываемся на монитор 0 по умолчанию
+                    if (targetMonitor != 0)
+                    {
+                        ScreenCaptureService.Start(0);
+                    }
+                    else
+                    {
+                        throw;
+                    }
+                }
             }
             catch (Exception ex)
             {
