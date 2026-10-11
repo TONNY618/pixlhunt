@@ -215,10 +215,22 @@ public static class ComboFactory
             case "delayMs":
                 return new PixelMacroEngine.Triggers.Steps.DelayStep(elem.Parameters);
 
-            // ДОБАВЛЯЕМ ОБРАБОТКУ МЫШИ:
+            // === БЛОКИ МЫШИ ===
+            case "groupBox2": // ЛКМ (кнопка 1, суффикс 1)
+                return new MouseClickStep(1, elem.Parameters, "1");
+
+            case "groupBox3": // ПКМ (кнопка 2, суффикс 2)
+                return new MouseClickStep(2, elem.Parameters, "2");
+
+            case "groupBox4": // СКМ (кнопка 3, суффикс 3)
+                return new MouseClickStep(3, elem.Parameters, "3");
+
+            case "groupBox5": // Колесико мыши
+                return new MouseScrollStep(elem.Parameters);
+
             case "mooveCursor":
-            case "moveCursor":
-                return new MoveCursorStep(elem.Parameters);
+            case "moveCursor": // Перемещение курсора
+                return new MouseMoveStep(elem.Parameters);
 
             default:
                 return null;

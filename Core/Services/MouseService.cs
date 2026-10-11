@@ -68,9 +68,8 @@ public static class MouseService
         ActionLogger.LogMouse($"Старт движения к [{targetX}, {targetY}]", targetX, targetY);
 
         speedFactor = Math.Clamp(speedFactor, 1, 100);
-        int maxStep = Math.Max(2, (int)(speedFactor * 0.4));
         int iterations = 0;
-        const int maxIterations = 200; // Предохранитель от вечного цикла, если курсор не дошел
+        const int maxIterations = 300;
 
         while (!ct.IsCancellationRequested && iterations < maxIterations)
         {
@@ -79,21 +78,28 @@ public static class MouseService
             int deltaX = targetX - current.X;
             int deltaY = targetY - current.Y;
 
-            // Достигли цели (погрешность 2 пикселя)
-            if (Math.Abs(deltaX) <= 2 && Math.Abs(deltaY) <= 2)
+            double distance = Math.Sqrt(deltaX * deltaX + deltaY * deltaY);
+            if (distance <= 2.0)
                 break;
 
-            sbyte stepX = (sbyte)Math.Clamp(deltaX, -maxStep, maxStep);
-            sbyte stepY = (sbyte)Math.Clamp(deltaY, -maxStep, maxStep);
+            // Плавное замедление при приближении к цели (Ease-Out)
+            // Чем ближе к цели, тем меньше шаг, чтобы не проскакивать мимо
+            double stepSize = Math.Min(distance, Math.Max(2.0, (speedFactor * 0.35) * Math.Min(1.0, distance / 40.0)));
+
+            sbyte stepX = (sbyte)Math.Clamp((int)Math.Round((deltaX / distance) * stepSize), -127, 127);
+            sbyte stepY = (sbyte)Math.Clamp((int)Math.Round((deltaY / distance) * stepSize), -127, 127);
+
+            if (stepX == 0 && deltaX != 0) stepX = (sbyte)Math.Sign(deltaX);
+            if (stepY == 0 && deltaY != 0) stepY = (sbyte)Math.Sign(deltaY);
 
             var batch = new PacketBatch();
             batch.AddMouseMove(stepX, stepY);
 
-            // Если отправка не удалась (плата отключилась на этом шаге) — мгновенно выходим
             if (!ArduinoHidService.Send(batch))
                 break;
 
-            await Task.Delay(_random.Next(7, 12), ct).ConfigureAwait(false);
+            // Микропауза между шагами
+            await Task.Delay(_random.Next(5, 9), ct).ConfigureAwait(false);
         }
 
         Point finalPos = Cursor.Position;
