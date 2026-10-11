@@ -238,57 +238,62 @@ public static class MouseService
     }
 
     /// <summary>
-    /// Деликатная доводка: уверенный старт, выраженное глубокое затухание 
-    /// и идеальное успокоение тремора в ноль пикселей (без паразитных метаний в конце).
+    /// Деликатная доводка: плавное затухание скорости и монолитная фиксация в цели 
+    /// без автоколебаний, паразитного джиттера и круговых метаний.
     /// </summary>
     private static async Task ExecuteShortPrecisionApproachAsync(Point start, Point target, double durationMs, CancellationToken ct)
     {
         double totalDx = target.X - start.X;
         double totalDy = target.Y - start.Y;
-        double dist = Math.Sqrt(totalDx * totalDx + totalDy * totalDy);
-        if (dist < 1.0) return;
+        double initialDist = Math.Sqrt(totalDx * totalDx + totalDy * totalDy);
+        if (initialDist < 1.0) return;
 
-        double normX = -totalDy / dist;
-        double normY = totalDx / dist;
-        double lateralCurve = (_random.NextDouble() * 1.4 + 0.6) * (_random.Next(2) == 0 ? 1 : -1);
+        double normX = -totalDy / initialDist;
+        double normY = totalDx / initialDist;
+
+        // Едва заметная мягкая дуга (не более 0.8 px)
+        double lateralCurve = (_random.NextDouble() * 0.6 + 0.3) * (_random.Next(2) == 0 ? 1 : -1);
 
         double remainderX = 0.0;
         double remainderY = 0.0;
-        double brownianJitterX = 0.0;
-        double brownianJitterY = 0.0;
 
         var sw = Stopwatch.StartNew();
-        double elapsed = 0.0;
 
-        while (elapsed < durationMs && !ct.IsCancellationRequested)
+        while (!ct.IsCancellationRequested)
         {
-            elapsed = sw.Elapsed.TotalMilliseconds;
-            double t = elapsed / durationMs;
-            if (t > 1.0) t = 1.0;
+            double elapsed = sw.Elapsed.TotalMilliseconds;
+            double t = Math.Clamp(elapsed / durationMs, 0.0, 1.0);
 
-            // СТЕПЕННАЯ КРИВАЯ ЗАМЕДЛЕНИЯ:
-            // Быстро проходит первые 60% расстояния, затем плавно ползет в цель
-            double progress = 1.0 - Math.Pow(1.0 - t, 3.2);
+            // Замеряем физическое расстояние до цели на экране
+            Point current = Cursor.Position;
+            double realDx = target.X - current.X;
+            double realDy = target.Y - current.Y;
+            double realDist = Math.Sqrt(realDx * realDx + realDy * realDy);
 
-            // Боковая дуга (затухает к цели)
+            // СТОП: Если курсор уже сел в цель (погрешность <= 1.5 px) во второй половине времени —
+            // МГНОВЕННО ВЫХОДИМ! Никаких лишних кругов и болтанки вокруг точки.
+            if (realDist <= 1.5 && t > 0.45)
+                break;
+
+            // Глубокое нелинейное замедление (Ease-Out)
+            double progress = 1.0 - Math.Pow(1.0 - t, 2.9);
+
+            // Плавное затухание дуги
             double curveOffset = lateralCurve * Math.Sin(Math.PI * t);
 
             double idealX = start.X + (totalDx * progress) + (normX * curveOffset);
             double idealY = start.Y + (totalDy * progress) + (normY * curveOffset);
 
-            // КВАДРАТИЧНЫЙ ДЕМПФЕР ТРЕМОРА:
-            // На старте и в середине тремор есть, но по мере приближения к цели (t -> 1.0)
-            // он плавно и строго затухает в 0.0, устраняя любые колебания на финише!
-            double tremorFade = Math.Pow(1.0 - t, 2.0);
-            double tremorAmp = (1.6 + _random.NextDouble() * 1.2) * tremorFade;
+            // ТРЕМОР: Мягко затухает и полностью обнуляется уже к t >= 0.55
+            // В финальной фазе посадки рука стабилизируется, колебания равны строго 0.0
+            double tremorFade = Math.Clamp((0.55 - t) / 0.55, 0.0, 1.0);
+            if (tremorFade > 0.0)
+            {
+                double tremor = Math.Sin(elapsed * 0.04) * 0.7 * tremorFade;
+                idealX += normX * tremor;
+                idealY += normY * tremor;
+            }
 
-            double tremorX = (Math.Sin(elapsed * 0.065) * 0.7 + Math.Cos(elapsed * 0.025) * 0.3) * tremorAmp;
-            double tremorY = (Math.Cos(elapsed * 0.058) * 0.7 + Math.Sin(elapsed * 0.030) * 0.3) * tremorAmp;
-
-            idealX += tremorX;
-            idealY += tremorY;
-
-            Point current = Cursor.Position;
             double neededX = idealX - current.X;
             double neededY = idealY - current.Y;
 
@@ -298,21 +303,10 @@ public static class MouseService
 
             for (int i = 0; i < 16; i++)
             {
-                // Инерционный броуновский джиттер (Ornstein-Uhlenbeck) с затуханием 0.80.
-                // Отключается на финальных 20% пути (t >= 0.8), чтобы курсор не дрожал.
-                if (t < 0.8)
-                {
-                    brownianJitterX = (brownianJitterX * 0.80) + ((_random.NextDouble() * 1.6 - 0.8));
-                    brownianJitterY = (brownianJitterY * 0.80) + ((_random.NextDouble() * 1.6 - 0.8));
-                }
-                else
-                {
-                    brownianJitterX *= 0.80;
-                    brownianJitterY *= 0.80;
-                }
-
-                double exactX = stepX + remainderX + brownianJitterX;
-                double exactY = stepY + remainderY + brownianJitterY;
+                // Исключен случайный джиттер внутри микрошагов: 
+                // именно он вызывал рассинхрон с обратной связью и круговую болтанку
+                double exactX = stepX + remainderX;
+                double exactY = stepY + remainderY;
                 int intX = (int)Math.Round(exactX);
                 int intY = (int)Math.Round(exactY);
                 remainderX = exactX - intX;
@@ -322,6 +316,8 @@ public static class MouseService
             }
 
             if (!ArduinoHidService.Send(batch)) break;
+
+            if (t >= 1.0) break;
 
             await Task.Delay(36, ct).ConfigureAwait(false);
         }
