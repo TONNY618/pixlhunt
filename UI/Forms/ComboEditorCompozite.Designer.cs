@@ -30,6 +30,7 @@
         {
             GroupActionPreset = new GroupBox();
             triggerOrAnd = new pxlhunt.UI.Forms.ComboEditorCompoziteControls.TriggerOrAnd();
+            triggerTimer = new pxlhunt.UI.Forms.ComboEditorCompoziteControls.TriggerTimer();
             groupBoxMouseKey = new GroupBox();
             comboBoxMouseKeyList = new ComboBox();
             checkBoxMouseKey2 = new CheckBox();
@@ -143,6 +144,7 @@
             // 
             GroupActionPreset.BackColor = Color.LightSkyBlue;
             GroupActionPreset.Controls.Add(triggerOrAnd);
+            GroupActionPreset.Controls.Add(triggerTimer);
             GroupActionPreset.Controls.Add(groupBoxMouseKey);
             GroupActionPreset.Controls.Add(groupBoxCurMoove);
             GroupActionPreset.Controls.Add(groupBoxIMAGE);
@@ -168,6 +170,14 @@
             triggerOrAnd.Name = "triggerOrAnd";
             triggerOrAnd.Size = new Size(101, 44);
             triggerOrAnd.TabIndex = 24;
+            // 
+            // triggerTimer
+            // 
+            triggerTimer.BackColor = Color.Transparent;
+            triggerTimer.Location = new Point(118, 25);
+            triggerTimer.Name = "triggerTimer";
+            triggerTimer.Size = new Size(155, 44);
+            triggerTimer.TabIndex = 23;
             // 
             // groupBoxMouseKey
             // 
@@ -1168,6 +1178,7 @@
 
         private GroupBox GroupActionPreset;
         private pxlhunt.UI.Forms.ComboEditorCompoziteControls.TriggerOrAnd triggerOrAnd;
+        private pxlhunt.UI.Forms.ComboEditorCompoziteControls.TriggerTimer triggerTimer;
         private GroupBox groupBoxMouseScroll;
         private Label labelMouseScrollStep;
         private TextBox textBoxStepWhell;

@@ -39,17 +39,17 @@
             groupBoxTriggerTimer.BackColor = SystemColors.Info;
             groupBoxTriggerTimer.Controls.Add(textBoxTriggerTimer);
             groupBoxTriggerTimer.Controls.Add(labelTriggerTimer);
-            groupBoxTriggerTimer.Location = new Point(-2, 53);
+            groupBoxTriggerTimer.Location = new Point(0, 0);
             groupBoxTriggerTimer.Name = "groupBoxTriggerTimer";
             groupBoxTriggerTimer.Size = new Size(155, 44);
-            groupBoxTriggerTimer.TabIndex = 24;
+            groupBoxTriggerTimer.TabIndex = 0;
             groupBoxTriggerTimer.TabStop = false;
             groupBoxTriggerTimer.Text = "Таймер";
             // 
             // textBoxTriggerTimer
             // 
             textBoxTriggerTimer.Location = new Point(97, 11);
-            textBoxTriggerTimer.MaxLength = 5;
+            textBoxTriggerTimer.MaxLength = 6;
             textBoxTriggerTimer.Name = "textBoxTriggerTimer";
             textBoxTriggerTimer.Size = new Size(50, 23);
             textBoxTriggerTimer.TabIndex = 1;
@@ -68,8 +68,10 @@
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
+            BackColor = Color.Transparent;
             Controls.Add(groupBoxTriggerTimer);
             Name = "TriggerTimer";
+            Size = new Size(155, 44);
             groupBoxTriggerTimer.ResumeLayout(false);
             groupBoxTriggerTimer.PerformLayout();
             ResumeLayout(false);
@@ -77,8 +79,8 @@
 
         #endregion
 
-        private GroupBox groupBoxTriggerTimer;
-        private TextBox textBoxTriggerTimer;
-        private Label labelTriggerTimer;
+        public GroupBox groupBoxTriggerTimer;
+        public TextBox textBoxTriggerTimer;
+        public Label labelTriggerTimer;
     }
 }
