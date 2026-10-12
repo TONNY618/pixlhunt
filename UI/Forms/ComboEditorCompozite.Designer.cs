@@ -29,6 +29,7 @@
         private void InitializeComponent()
         {
             GroupActionPreset = new GroupBox();
+            triggerOrAnd = new pxlhunt.UI.Forms.ComboEditorCompoziteControls.TriggerOrAnd();
             groupBoxMouseKey = new GroupBox();
             comboBoxMouseKeyList = new ComboBox();
             checkBoxMouseKey2 = new CheckBox();
@@ -84,12 +85,6 @@
             groupBoxSound = new GroupBox();
             buttonSoundAddCustom = new Button();
             comboBoxSoundList = new ComboBox();
-            groupBoxTriggerOrAnd = new GroupBox();
-            radioButtonTriggerOrAnd2 = new RadioButton();
-            radioButtonTriggerOrAnd1 = new RadioButton();
-            groupBoxTriggerTimer = new GroupBox();
-            textBoxTriggerTimer = new TextBox();
-            labelTriggerTimer = new Label();
             groupBoxMouseScroll = new GroupBox();
             labelMouseScrollStep = new Label();
             textBoxStepWhell = new TextBox();
@@ -136,8 +131,6 @@
             panel3.SuspendLayout();
             groupBoxTextTo.SuspendLayout();
             groupBoxSound.SuspendLayout();
-            groupBoxTriggerOrAnd.SuspendLayout();
-            groupBoxTriggerTimer.SuspendLayout();
             groupBoxMouseScroll.SuspendLayout();
             groupBoxdelayMs.SuspendLayout();
             groupBoxKey.SuspendLayout();
@@ -149,14 +142,13 @@
             // GroupActionPreset
             // 
             GroupActionPreset.BackColor = Color.LightSkyBlue;
+            GroupActionPreset.Controls.Add(triggerOrAnd);
             GroupActionPreset.Controls.Add(groupBoxMouseKey);
             GroupActionPreset.Controls.Add(groupBoxCurMoove);
             GroupActionPreset.Controls.Add(groupBoxIMAGE);
             GroupActionPreset.Controls.Add(groupBoxPixSqua);
             GroupActionPreset.Controls.Add(groupBoxTextTo);
             GroupActionPreset.Controls.Add(groupBoxSound);
-            GroupActionPreset.Controls.Add(groupBoxTriggerOrAnd);
-            GroupActionPreset.Controls.Add(groupBoxTriggerTimer);
             GroupActionPreset.Controls.Add(groupBoxMouseScroll);
             GroupActionPreset.Controls.Add(groupBoxdelayMs);
             GroupActionPreset.Controls.Add(groupBoxKey);
@@ -168,6 +160,14 @@
             GroupActionPreset.TabIndex = 10;
             GroupActionPreset.TabStop = false;
             GroupActionPreset.Text = "КОНТРОЛЫ";
+            // 
+            // triggerOrAnd
+            // 
+            triggerOrAnd.BackColor = Color.Transparent;
+            triggerOrAnd.Location = new Point(8, 25);
+            triggerOrAnd.Name = "triggerOrAnd";
+            triggerOrAnd.Size = new Size(101, 44);
+            triggerOrAnd.TabIndex = 24;
             // 
             // groupBoxMouseKey
             // 
@@ -782,70 +782,6 @@
             comboBoxSoundList.Size = new Size(183, 23);
             comboBoxSoundList.TabIndex = 16;
             // 
-            // groupBoxTriggerOrAnd
-            // 
-            groupBoxTriggerOrAnd.BackColor = SystemColors.Info;
-            groupBoxTriggerOrAnd.Controls.Add(radioButtonTriggerOrAnd2);
-            groupBoxTriggerOrAnd.Controls.Add(radioButtonTriggerOrAnd1);
-            groupBoxTriggerOrAnd.Location = new Point(8, 25);
-            groupBoxTriggerOrAnd.Name = "groupBoxTriggerOrAnd";
-            groupBoxTriggerOrAnd.Size = new Size(101, 44);
-            groupBoxTriggerOrAnd.TabIndex = 24;
-            groupBoxTriggerOrAnd.TabStop = false;
-            groupBoxTriggerOrAnd.Text = "И / ИЛИ";
-            // 
-            // radioButtonTriggerOrAnd2
-            // 
-            radioButtonTriggerOrAnd2.AutoSize = true;
-            radioButtonTriggerOrAnd2.Location = new Point(49, 16);
-            radioButtonTriggerOrAnd2.Name = "radioButtonTriggerOrAnd2";
-            radioButtonTriggerOrAnd2.Size = new Size(46, 19);
-            radioButtonTriggerOrAnd2.TabIndex = 1;
-            radioButtonTriggerOrAnd2.Text = "and";
-            radioButtonTriggerOrAnd2.UseVisualStyleBackColor = true;
-            // 
-            // radioButtonTriggerOrAnd1
-            // 
-            radioButtonTriggerOrAnd1.AutoSize = true;
-            radioButtonTriggerOrAnd1.Checked = true;
-            radioButtonTriggerOrAnd1.Location = new Point(6, 16);
-            radioButtonTriggerOrAnd1.Name = "radioButtonTriggerOrAnd1";
-            radioButtonTriggerOrAnd1.Size = new Size(37, 19);
-            radioButtonTriggerOrAnd1.TabIndex = 0;
-            radioButtonTriggerOrAnd1.TabStop = true;
-            radioButtonTriggerOrAnd1.Text = "or";
-            radioButtonTriggerOrAnd1.UseVisualStyleBackColor = true;
-            // 
-            // groupBoxTriggerTimer
-            // 
-            groupBoxTriggerTimer.BackColor = SystemColors.Info;
-            groupBoxTriggerTimer.Controls.Add(textBoxTriggerTimer);
-            groupBoxTriggerTimer.Controls.Add(labelTriggerTimer);
-            groupBoxTriggerTimer.Location = new Point(118, 25);
-            groupBoxTriggerTimer.Name = "groupBoxTriggerTimer";
-            groupBoxTriggerTimer.Size = new Size(155, 44);
-            groupBoxTriggerTimer.TabIndex = 23;
-            groupBoxTriggerTimer.TabStop = false;
-            groupBoxTriggerTimer.Text = "Таймер";
-            // 
-            // textBoxTriggerTimer
-            // 
-            textBoxTriggerTimer.Location = new Point(97, 11);
-            textBoxTriggerTimer.MaxLength = 5;
-            textBoxTriggerTimer.Name = "textBoxTriggerTimer";
-            textBoxTriggerTimer.Size = new Size(50, 23);
-            textBoxTriggerTimer.TabIndex = 1;
-            textBoxTriggerTimer.Text = "1000";
-            // 
-            // labelTriggerTimer
-            // 
-            labelTriggerTimer.AutoSize = true;
-            labelTriggerTimer.Location = new Point(6, 14);
-            labelTriggerTimer.Name = "labelTriggerTimer";
-            labelTriggerTimer.Size = new Size(89, 15);
-            labelTriggerTimer.TabIndex = 0;
-            labelTriggerTimer.Text = "Каждые ~X, мс";
-            // 
             // groupBoxMouseScroll
             // 
             groupBoxMouseScroll.BackColor = Color.Gainsboro;
@@ -1212,10 +1148,6 @@
             groupBoxTextTo.ResumeLayout(false);
             groupBoxTextTo.PerformLayout();
             groupBoxSound.ResumeLayout(false);
-            groupBoxTriggerOrAnd.ResumeLayout(false);
-            groupBoxTriggerOrAnd.PerformLayout();
-            groupBoxTriggerTimer.ResumeLayout(false);
-            groupBoxTriggerTimer.PerformLayout();
             groupBoxMouseScroll.ResumeLayout(false);
             groupBoxMouseScroll.PerformLayout();
             groupBoxdelayMs.ResumeLayout(false);
@@ -1235,6 +1167,7 @@
         #endregion
 
         private GroupBox GroupActionPreset;
+        private pxlhunt.UI.Forms.ComboEditorCompoziteControls.TriggerOrAnd triggerOrAnd;
         private GroupBox groupBoxMouseScroll;
         private Label labelMouseScrollStep;
         private TextBox textBoxStepWhell;
@@ -1265,12 +1198,6 @@
         private Button buttonSave;
         private GroupBox groupBoxSound;
         private ComboBox comboBoxSoundList;
-        private GroupBox groupBoxTriggerOrAnd;
-        private RadioButton radioButtonTriggerOrAnd2;
-        private RadioButton radioButtonTriggerOrAnd1;
-        private GroupBox groupBoxTriggerTimer;
-        private TextBox textBoxTriggerTimer;
-        private Label labelTriggerTimer;
         private GroupBox groupBoxTextTo;
         private TextBox textBoxTextToEdit;
         private GroupBox groupBoxPixSqua;
