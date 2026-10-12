@@ -39,6 +39,7 @@
             trackBarTransparency = new TrackBar();
             checkBoxTransparentClick = new CheckBox();
             label1 = new Label();
+            button1 = new Button();
             groupBoxActiveTime.SuspendLayout();
             groupBoxStatus.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)trackBarTransparency).BeginInit();
@@ -152,6 +153,16 @@
             label1.TabIndex = 12;
             label1.Text = "прозрачность";
             // 
+            // button1
+            // 
+            button1.Location = new Point(202, 546);
+            button1.Name = "button1";
+            button1.Size = new Size(110, 23);
+            button1.TabIndex = 13;
+            button1.Text = "Compozite Edit";
+            button1.UseVisualStyleBackColor = true;
+            button1.Click += button1_Click;
+            // 
             // pxlHunt
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -159,6 +170,7 @@
             AutoSize = true;
             BackColor = Color.Ivory;
             ClientSize = new Size(607, 614);
+            Controls.Add(button1);
             Controls.Add(label1);
             Controls.Add(checkBoxTransparentClick);
             Controls.Add(buttonComboForm);
@@ -192,5 +204,6 @@
         private TrackBar trackBarTransparency;
         private CheckBox checkBoxTransparentClick;
         private Label label1;
+        private Button button1;
     }
 }

@@ -1,12 +1,13 @@
-﻿using System;
+﻿using PixelMacroEngine.Core.Models;
+using PixelMacroEngine.Core.Services;
+using PixelMacroEngine.Engine;
+using pxlhunt.UI.Forms;
+using System;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using PixelMacroEngine.Core.Models;
-using PixelMacroEngine.Core.Services;
-using PixelMacroEngine.Engine;
 
 namespace pxlhunt.FORMS
 {
@@ -912,6 +913,13 @@ namespace pxlhunt.FORMS
             public int TransparencyPercent { get; set; } = 100;
             public int? WindowX { get; set; }
             public int? WindowY { get; set; }
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            ComboEditorCompozite settingsForm = new ComboEditorCompozite();
+            CenterFormOnMain(settingsForm);
+            settingsForm.Show(this);
         }
     }
 }
