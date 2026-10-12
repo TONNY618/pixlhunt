@@ -13,7 +13,7 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
         private static extern short GetAsyncKeyState(int vKey);
         private const int VK_CAPITAL = 0x14; // Caps Lock
 
-        private Timer _evalTimer;
+        private System.Windows.Forms.Timer _evalTimer;
 
         public PixSquaControl()
         {
@@ -28,7 +28,7 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
             pictureBoxPixSquaSample.MouseDown += PictureBoxPixSquaSample_MouseDown;
 
             // Инициализация фонового таймера для риал-тайм проверки (10 Гц)
-            _evalTimer = new Timer { Interval = 100 };
+            _evalTimer = new System.Windows.Forms.Timer { Interval = 100 };
             _evalTimer.Tick += EvalTimer_Tick;
             _evalTimer.Start();
 
