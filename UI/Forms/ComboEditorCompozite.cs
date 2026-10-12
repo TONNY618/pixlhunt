@@ -251,7 +251,7 @@ namespace pxlhunt.UI.Forms
         private static bool IsConditionControl(Control ctrl)
         {
             string name = ctrl.Name;
-            if (string.Equals(name, "groupBoxPixSqua", StringComparison.OrdinalIgnoreCase) ||
+            if (string.Equals(name, "pixSquaControl", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(name, "groupBoxIMAGE", StringComparison.OrdinalIgnoreCase))
             {
                 return true;
@@ -282,6 +282,10 @@ namespace pxlhunt.UI.Forms
             if (string.Equals(presetName, "triggerTimer", StringComparison.OrdinalIgnoreCase))
             {
                 return new TriggerTimer();
+            }
+            if (string.Equals(presetName, "pixSquaControl", StringComparison.OrdinalIgnoreCase))
+            {
+                return new PixSquaControl();
             }
 
             // 2. Временная обратная совместимость для GroupBox'ов
