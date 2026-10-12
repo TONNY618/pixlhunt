@@ -62,22 +62,6 @@
             pictureBoxIMAGEExample = new PictureBox();
             radioButtonIMAGENotEqu = new RadioButton();
             radioButtonIMAGEEqu = new RadioButton();
-            groupBoxPixSqua = new GroupBox();
-            groupBoxPixSquaVol = new GroupBox();
-            trackBarPixSqua = new TrackBar();
-            textBoxPixSquaVolNumber = new TextBox();
-            checkBoxPixSquaOverlay = new CheckBox();
-            labelPixSquaBool = new Label();
-            textBoxPixSquaXY2 = new TextBox();
-            pictureBoxPixSquaSample = new PictureBox();
-            buttonPixSquaView = new Button();
-            textBoxPixSquaColor = new TextBox();
-            textBoxPixSquaXY1 = new TextBox();
-            radioButtonPixSquaNotEqu = new RadioButton();
-            radioButtonPixSquaEqu = new RadioButton();
-            panel3 = new Panel();
-            radioButtonPixSquaXY = new RadioButton();
-            radioButtonPixSquaSqua = new RadioButton();
             groupBoxTextTo = new GroupBox();
             radioButtonTextToTelegtamm = new RadioButton();
             radioButtonTextToContext = new RadioButton();
@@ -125,11 +109,6 @@
             groupBoxIMAGEVol.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)trackBarIMAGE).BeginInit();
             ((System.ComponentModel.ISupportInitialize)pictureBoxIMAGEExample).BeginInit();
-            groupBoxPixSqua.SuspendLayout();
-            groupBoxPixSquaVol.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)trackBarPixSqua).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)pictureBoxPixSquaSample).BeginInit();
-            panel3.SuspendLayout();
             groupBoxTextTo.SuspendLayout();
             groupBoxSound.SuspendLayout();
             groupBoxMouseScroll.SuspendLayout();
@@ -148,7 +127,6 @@
             GroupActionPreset.Controls.Add(groupBoxMouseKey);
             GroupActionPreset.Controls.Add(groupBoxCurMoove);
             GroupActionPreset.Controls.Add(groupBoxIMAGE);
-            GroupActionPreset.Controls.Add(groupBoxPixSqua);
             GroupActionPreset.Controls.Add(groupBoxTextTo);
             GroupActionPreset.Controls.Add(groupBoxSound);
             GroupActionPreset.Controls.Add(groupBoxMouseScroll);
@@ -522,186 +500,6 @@
             radioButtonIMAGEEqu.Tag = "";
             radioButtonIMAGEEqu.Text = "=";
             radioButtonIMAGEEqu.UseVisualStyleBackColor = true;
-            // 
-            // groupBoxPixSqua
-            // 
-            groupBoxPixSqua.BackColor = Color.Cyan;
-            groupBoxPixSqua.Controls.Add(groupBoxPixSquaVol);
-            groupBoxPixSqua.Controls.Add(checkBoxPixSquaOverlay);
-            groupBoxPixSqua.Controls.Add(labelPixSquaBool);
-            groupBoxPixSqua.Controls.Add(textBoxPixSquaXY2);
-            groupBoxPixSqua.Controls.Add(pictureBoxPixSquaSample);
-            groupBoxPixSqua.Controls.Add(buttonPixSquaView);
-            groupBoxPixSqua.Controls.Add(textBoxPixSquaColor);
-            groupBoxPixSqua.Controls.Add(textBoxPixSquaXY1);
-            groupBoxPixSqua.Controls.Add(radioButtonPixSquaNotEqu);
-            groupBoxPixSqua.Controls.Add(radioButtonPixSquaEqu);
-            groupBoxPixSqua.Controls.Add(panel3);
-            groupBoxPixSqua.Location = new Point(8, 77);
-            groupBoxPixSqua.Name = "groupBoxPixSqua";
-            groupBoxPixSqua.Size = new Size(300, 107);
-            groupBoxPixSqua.TabIndex = 48;
-            groupBoxPixSqua.TabStop = false;
-            groupBoxPixSqua.Text = "? IF Pixel OR square ?";
-            // 
-            // groupBoxPixSquaVol
-            // 
-            groupBoxPixSquaVol.BackColor = Color.FromArgb(224, 224, 224);
-            groupBoxPixSquaVol.Controls.Add(trackBarPixSqua);
-            groupBoxPixSquaVol.Controls.Add(textBoxPixSquaVolNumber);
-            groupBoxPixSquaVol.Location = new Point(10, 72);
-            groupBoxPixSquaVol.Name = "groupBoxPixSquaVol";
-            groupBoxPixSquaVol.Size = new Size(281, 29);
-            groupBoxPixSquaVol.TabIndex = 54;
-            groupBoxPixSquaVol.TabStop = false;
-            groupBoxPixSquaVol.Text = "%отклонения";
-            // 
-            // trackBarPixSqua
-            // 
-            trackBarPixSqua.AutoSize = false;
-            trackBarPixSqua.Location = new Point(11, 14);
-            trackBarPixSqua.Maximum = 100;
-            trackBarPixSqua.Minimum = 5;
-            trackBarPixSqua.Name = "trackBarPixSqua";
-            trackBarPixSqua.Size = new Size(239, 18);
-            trackBarPixSqua.TabIndex = 53;
-            trackBarPixSqua.Value = 95;
-            // 
-            // textBoxPixSquaVolNumber
-            // 
-            textBoxPixSquaVolNumber.Enabled = false;
-            textBoxPixSquaVolNumber.Location = new Point(250, 4);
-            textBoxPixSquaVolNumber.MaxLength = 3;
-            textBoxPixSquaVolNumber.Name = "textBoxPixSquaVolNumber";
-            textBoxPixSquaVolNumber.Size = new Size(23, 23);
-            textBoxPixSquaVolNumber.TabIndex = 20;
-            textBoxPixSquaVolNumber.Text = "0";
-            // 
-            // checkBoxPixSquaOverlay
-            // 
-            checkBoxPixSquaOverlay.AutoSize = true;
-            checkBoxPixSquaOverlay.Font = new Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, 204);
-            checkBoxPixSquaOverlay.Location = new Point(204, 51);
-            checkBoxPixSquaOverlay.Name = "checkBoxPixSquaOverlay";
-            checkBoxPixSquaOverlay.Size = new Size(65, 18);
-            checkBoxPixSquaOverlay.TabIndex = 53;
-            checkBoxPixSquaOverlay.Text = "overlay";
-            checkBoxPixSquaOverlay.UseVisualStyleBackColor = true;
-            // 
-            // labelPixSquaBool
-            // 
-            labelPixSquaBool.AutoSize = true;
-            labelPixSquaBool.Font = new Font("Calibri", 9.75F, FontStyle.Bold | FontStyle.Italic, GraphicsUnit.Point, 204);
-            labelPixSquaBool.Location = new Point(255, 5);
-            labelPixSquaBool.Name = "labelPixSquaBool";
-            labelPixSquaBool.Size = new Size(34, 15);
-            labelPixSquaBool.TabIndex = 52;
-            labelPixSquaBool.Text = "False";
-            labelPixSquaBool.TextAlign = ContentAlignment.TopRight;
-            // 
-            // textBoxPixSquaXY2
-            // 
-            textBoxPixSquaXY2.Enabled = false;
-            textBoxPixSquaXY2.Location = new Point(114, 46);
-            textBoxPixSquaXY2.MaxLength = 10;
-            textBoxPixSquaXY2.Multiline = true;
-            textBoxPixSquaXY2.Name = "textBoxPixSquaXY2";
-            textBoxPixSquaXY2.Size = new Size(70, 23);
-            textBoxPixSquaXY2.TabIndex = 16;
-            textBoxPixSquaXY2.Text = "200, 200";
-            // 
-            // pictureBoxPixSquaSample
-            // 
-            pictureBoxPixSquaSample.BackColor = Color.White;
-            pictureBoxPixSquaSample.Location = new Point(245, 22);
-            pictureBoxPixSquaSample.Name = "pictureBoxPixSquaSample";
-            pictureBoxPixSquaSample.Size = new Size(20, 23);
-            pictureBoxPixSquaSample.TabIndex = 8;
-            pictureBoxPixSquaSample.TabStop = false;
-            // 
-            // buttonPixSquaView
-            // 
-            buttonPixSquaView.Location = new Point(268, 21);
-            buttonPixSquaView.Name = "buttonPixSquaView";
-            buttonPixSquaView.Size = new Size(23, 24);
-            buttonPixSquaView.TabIndex = 7;
-            buttonPixSquaView.Text = "Показать";
-            buttonPixSquaView.UseVisualStyleBackColor = true;
-            // 
-            // textBoxPixSquaColor
-            // 
-            textBoxPixSquaColor.Location = new Point(190, 22);
-            textBoxPixSquaColor.MaxLength = 8;
-            textBoxPixSquaColor.Name = "textBoxPixSquaColor";
-            textBoxPixSquaColor.Size = new Size(54, 23);
-            textBoxPixSquaColor.TabIndex = 5;
-            textBoxPixSquaColor.Text = "#FFFFFF";
-            // 
-            // textBoxPixSquaXY1
-            // 
-            textBoxPixSquaXY1.Location = new Point(114, 22);
-            textBoxPixSquaXY1.MaxLength = 10;
-            textBoxPixSquaXY1.Multiline = true;
-            textBoxPixSquaXY1.Name = "textBoxPixSquaXY1";
-            textBoxPixSquaXY1.Size = new Size(70, 23);
-            textBoxPixSquaXY1.TabIndex = 3;
-            textBoxPixSquaXY1.Text = "100, 100";
-            // 
-            // radioButtonPixSquaNotEqu
-            // 
-            radioButtonPixSquaNotEqu.AutoSize = true;
-            radioButtonPixSquaNotEqu.Location = new Point(209, 3);
-            radioButtonPixSquaNotEqu.Name = "radioButtonPixSquaNotEqu";
-            radioButtonPixSquaNotEqu.Size = new Size(35, 19);
-            radioButtonPixSquaNotEqu.TabIndex = 1;
-            radioButtonPixSquaNotEqu.Tag = "";
-            radioButtonPixSquaNotEqu.Text = "!=";
-            radioButtonPixSquaNotEqu.UseVisualStyleBackColor = true;
-            // 
-            // radioButtonPixSquaEqu
-            // 
-            radioButtonPixSquaEqu.AutoSize = true;
-            radioButtonPixSquaEqu.Checked = true;
-            radioButtonPixSquaEqu.Location = new Point(177, 3);
-            radioButtonPixSquaEqu.Name = "radioButtonPixSquaEqu";
-            radioButtonPixSquaEqu.Size = new Size(31, 19);
-            radioButtonPixSquaEqu.TabIndex = 0;
-            radioButtonPixSquaEqu.TabStop = true;
-            radioButtonPixSquaEqu.Tag = "";
-            radioButtonPixSquaEqu.Text = "=";
-            radioButtonPixSquaEqu.UseVisualStyleBackColor = true;
-            // 
-            // panel3
-            // 
-            panel3.BackColor = Color.Transparent;
-            panel3.Controls.Add(radioButtonPixSquaXY);
-            panel3.Controls.Add(radioButtonPixSquaSqua);
-            panel3.Location = new Point(10, 22);
-            panel3.Name = "panel3";
-            panel3.Size = new Size(106, 47);
-            panel3.TabIndex = 14;
-            // 
-            // radioButtonPixSquaXY
-            // 
-            radioButtonPixSquaXY.AutoSize = true;
-            radioButtonPixSquaXY.Checked = true;
-            radioButtonPixSquaXY.Location = new Point(37, 4);
-            radioButtonPixSquaXY.Name = "radioButtonPixSquaXY";
-            radioButtonPixSquaXY.Size = new Size(38, 19);
-            radioButtonPixSquaXY.TabIndex = 15;
-            radioButtonPixSquaXY.TabStop = true;
-            radioButtonPixSquaXY.Text = "XY";
-            radioButtonPixSquaXY.UseVisualStyleBackColor = true;
-            // 
-            // radioButtonPixSquaSqua
-            // 
-            radioButtonPixSquaSqua.AutoSize = true;
-            radioButtonPixSquaSqua.Location = new Point(37, 24);
-            radioButtonPixSquaSqua.Name = "radioButtonPixSquaSqua";
-            radioButtonPixSquaSqua.Size = new Size(63, 19);
-            radioButtonPixSquaSqua.TabIndex = 14;
-            radioButtonPixSquaSqua.Text = "Square";
-            radioButtonPixSquaSqua.UseVisualStyleBackColor = true;
             // 
             // groupBoxTextTo
             // 
@@ -1147,14 +945,6 @@
             groupBoxIMAGEVol.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)trackBarIMAGE).EndInit();
             ((System.ComponentModel.ISupportInitialize)pictureBoxIMAGEExample).EndInit();
-            groupBoxPixSqua.ResumeLayout(false);
-            groupBoxPixSqua.PerformLayout();
-            groupBoxPixSquaVol.ResumeLayout(false);
-            groupBoxPixSquaVol.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)trackBarPixSqua).EndInit();
-            ((System.ComponentModel.ISupportInitialize)pictureBoxPixSquaSample).EndInit();
-            panel3.ResumeLayout(false);
-            panel3.PerformLayout();
             groupBoxTextTo.ResumeLayout(false);
             groupBoxTextTo.PerformLayout();
             groupBoxSound.ResumeLayout(false);
@@ -1211,18 +1001,6 @@
         private ComboBox comboBoxSoundList;
         private GroupBox groupBoxTextTo;
         private TextBox textBoxTextToEdit;
-        private GroupBox groupBoxPixSqua;
-        private TextBox textBoxPixSquaVolNumber;
-        private TextBox textBoxPixSquaXY2;
-        private PictureBox pictureBoxPixSquaSample;
-        private Button buttonPixSquaView;
-        private TextBox textBoxPixSquaColor;
-        private TextBox textBoxPixSquaXY1;
-        private RadioButton radioButtonPixSquaNotEqu;
-        private RadioButton radioButtonPixSquaEqu;
-        private Panel panel3;
-        private RadioButton radioButtonPixSquaXY;
-        private RadioButton radioButtonPixSquaSqua;
         private Button buttonSoundAddCustom;
         private RadioButton radioButtonTextToTelegtamm;
         private RadioButton radioButtonTextToContext;
@@ -1231,7 +1009,6 @@
         private PictureBox pictureBoxIMAGEExample;
         private RadioButton radioButtonIMAGENotEqu;
         private RadioButton radioButtonIMAGEEqu;
-        private Label labelPixSquaBool;
         private GroupBox groupBoxCurMoove;
         private Label labelCurMoove3;
         private TextBox textBoxCurMoove2;
@@ -1242,10 +1019,7 @@
         private Label labelCurMoove2;
         private RadioButton radioButtonCurMooveXY;
         private RadioButton radioButtonCurMooveVol;
-        private CheckBox checkBoxPixSquaOverlay;
         private CheckBox checkBoxCurMooveOverlay;
-        private TrackBar trackBarPixSqua;
-        private GroupBox groupBoxPixSquaVol;
         private TextBox textBoxIMAGEXY2;
         private TextBox textBoxIMAGEXY1;
         private PictureBox pictureBoxIMAGESample;
