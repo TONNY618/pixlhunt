@@ -163,7 +163,7 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
 
         public void SetDtoFromElement(System.Text.Json.JsonElement element)
         {
-            var dto = element.Deserialize<CursorMoveDto>();
+            var dto = System.Text.Json.JsonSerializer.Deserialize<CursorMoveDto>(element.GetRawText());
             if (dto == null) return;
 
             radioButtonCurMooveGetXY.Checked = dto.Mode == 0;

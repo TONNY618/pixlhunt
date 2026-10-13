@@ -92,8 +92,6 @@
             checkBoxTakeXY = new CheckBox();
             GroupActionPreset.SuspendLayout();
             groupBoxMouseKey.SuspendLayout();
-            groupBoxCurMoove.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)pictureBoxCurMooveSample).BeginInit();
             groupBoxIMAGE.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)pictureBoxIMAGESample).BeginInit();
             groupBoxIMAGEVol.SuspendLayout();
