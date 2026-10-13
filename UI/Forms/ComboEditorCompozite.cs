@@ -476,6 +476,11 @@ namespace pxlhunt.UI.Forms
             return list;
         }
 
+        private void buttonLoad_Click(object sender, EventArgs e)
+        {
+            LoadProfileFromConfig(textBoxNameCOMBO.Text.Trim(), true);
+        }
+
         private void buttonSave_Click(object sender, EventArgs e)
         {
             string comboName = textBoxNameCOMBO.Text.Trim();

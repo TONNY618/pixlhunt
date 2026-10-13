@@ -545,6 +545,7 @@
             buttonLoad.TabIndex = 42;
             buttonLoad.Text = "Load";
             buttonLoad.UseVisualStyleBackColor = true;
+            buttonLoad.Click += buttonLoad_Click;
             // 
             // groupBoxPauseIfMooved
             // 
