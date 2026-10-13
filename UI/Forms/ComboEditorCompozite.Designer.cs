@@ -201,10 +201,6 @@
             checkBoxMouseKey1.Text = "down";
             checkBoxMouseKey1.UseVisualStyleBackColor = true;
             // 
-            // groupBoxCurMoove
-            // 
-            groupBoxCurMoove.BackColor = Color.Gainsboro;
-            // 
             // cursorMoveControl
             // 
             cursorMoveControl.Location = new Point(22, 429);
