@@ -170,9 +170,9 @@ namespace PixelMacroEngine.Core.Services
                 if (raw.header.dwType == RIM_TYPEMOUSE)
                 {
                     // Защита от спама перемещений: чистое движение курсора не несёт кнопочных флагов.
-                    if (raw.mouse.usButtonFlags == 0) return;
+                    if (raw.data.mouse.usButtonFlags == 0) return;
 
-                    ushort flags = raw.mouse.usButtonFlags;
+                    ushort flags = raw.data.mouse.usButtonFlags;
 
                     if ((flags & RI_MOUSE_LEFT_BUTTON_DOWN) != 0) _isLmbDown = true;
                     if ((flags & RI_MOUSE_LEFT_BUTTON_UP) != 0) _isLmbDown = false;
@@ -183,11 +183,11 @@ namespace PixelMacroEngine.Core.Services
                 }
                 else if (raw.header.dwType == RIM_TYPEKEYBOARD)
                 {
-                    ushort vKey = raw.keyboard.VKey;
+                    ushort vKey = raw.data.keyboard.VKey;
                     // 0/0xFFFF — служебные "фейковые" коды, игнорируем.
                     if (vKey == 0 || vKey == 0xFFFF) return;
 
-                    bool isUp = (raw.keyboard.Flags & RI_KEY_BREAK) != 0;
+                    bool isUp = (raw.data.keyboard.Flags & RI_KEY_BREAK) != 0;
                     _keyStates[vKey] = !isUp;
                 }
             }
