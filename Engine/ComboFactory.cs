@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Text.Json;
 using PixelMacroEngine.Core.Abstractions;
 using PixelMacroEngine.Core.Models;
+using PixelMacroEngine.Triggers;
+using PixelMacroEngine.Triggers.Steps;
 
 namespace PixelMacroEngine.Engine;
 
@@ -20,9 +23,67 @@ public static class ComboFactory
 
     static ComboFactory()
     {
-        // Здесь в будущем будут регистрироваться сборщики (когда файлы шагов будут адаптированы)
-        // Пример (пока закомментирован, чтобы не было ошибок компиляции):
-        // RegisterTrigger("TriggerTimer", data => new TimerTriggerEvaluator(data.Deserialize<TriggerTimerDto>().IntervalMs));
+        RegisterTrigger("TriggerTimer", data =>
+        {
+            var dto = data.Deserialize<pxlhunt.UI.Forms.ComboEditorCompoziteControls.TriggerTimerDto>();
+            return dto != null && dto.IntervalMs > 0 ? new TimerTriggerEvaluator(dto.IntervalMs) : null;
+        });
+
+        RegisterTrigger("PixSquaControl", data =>
+        {
+            var dto = data.Deserialize<pxlhunt.UI.Forms.ComboEditorCompoziteControls.PixSquaDto>();
+            return dto != null ? CreateColorEvaluator(dto) : null;
+        });
+
+        RegisterTrigger("BoxKeyControl", data =>
+        {
+            var dto = data.Deserialize<pxlhunt.UI.Forms.ComboEditorCompoziteControls.BoxKeyDto>();
+            return dto != null ? new KeyTriggerEvaluator(dto.KeyName) : null;
+        });
+
+        RegisterStep("BoxKeyControl", data =>
+        {
+            var dto = data.Deserialize<pxlhunt.UI.Forms.ComboEditorCompoziteControls.BoxKeyDto>();
+            if (dto == null) return null;
+            return new PressKeyStep(new Dictionary<string, string>
+            {
+                ["comboBoxKeyList"] = dto.KeyName,
+                ["checkBoxUpDownKey1_1"] = dto.PressDown.ToString(),
+                ["checkBoxUpDownKey1_2"] = dto.PressUp.ToString()
+            });
+        });
+
+        RegisterStep("PixSquaControl", data =>
+        {
+            var dto = data.Deserialize<pxlhunt.UI.Forms.ComboEditorCompoziteControls.PixSquaDto>();
+            if (dto == null) return null;
+            return new ConditionStep(CreateColorEvaluator(dto));
+        });
+    }
+
+    private static ColorTriggerEvaluator CreateColorEvaluator(pxlhunt.UI.Forms.ComboEditorCompoziteControls.PixSquaDto dto)
+    {
+        Point p1 = ParsePoint(dto.Point1);
+        Point p2 = ParsePoint(dto.Point2);
+        Color expected = HexToColor(dto.ColorHex);
+        int deviant = Math.Max(0, 100 - dto.Accuracy);
+        return new ColorTriggerEvaluator(p1, p2, expected, deviant, !dto.IsEqualLogic, dto.IsSquareMode);
+    }
+
+    private static Point ParsePoint(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return Point.Empty;
+        var parts = text.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (parts.Length < 2) return Point.Empty;
+        int.TryParse(parts[0], out int x);
+        int.TryParse(parts[1], out int y);
+        return new Point(x, y);
+    }
+
+    private static Color HexToColor(string? hex)
+    {
+        if (string.IsNullOrWhiteSpace(hex)) return Color.Black;
+        try { return ColorTranslator.FromHtml(hex); } catch { return Color.Black; }
     }
 
     public static void RegisterTrigger(string componentType, Func<JsonElement, ITriggerEvaluator?> builder)
@@ -39,7 +100,9 @@ public static class ComboFactory
     {
         if (profile == null) throw new ArgumentNullException(nameof(profile));
 
-        int cooldownMs = profile.IsCooldownGlobal ? 1100 : 1500; // Fallbacks
+        int cooldownMs = profile.IsCooldownGlobal
+            ? PixelMacroEngine.Core.Services.AppConfigService.Instance.GlobalCooldownDefaultMs
+            : PixelMacroEngine.Core.Services.AppConfigService.Instance.InstantComboDefaultCooldownMs;
         int priority = int.TryParse(profile.Priority, out int p) ? p : 50;
 
         var combo = new ActiveCombo
@@ -94,7 +157,10 @@ public static class ComboFactory
 
                 if (elem.Indent > 0 && lastCondition != null)
                 {
-                    // Вложенность (в будущем: lastCondition.TrueSteps.Add(step))
+                    if (lastCondition is ConditionStep condStep)
+                    {
+                        condStep.TrueSteps.Add(step);
+                    }
                 }
                 else
                 {

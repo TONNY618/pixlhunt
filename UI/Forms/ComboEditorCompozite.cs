@@ -31,6 +31,9 @@ namespace pxlhunt.UI.Forms
 
             // Инициализация Drag-and-Drop механики
             SetupDragAndDrop();
+
+            textBoxCDglobal.Text = PixelMacroEngine.Core.Services.AppConfigService.Instance.GlobalCooldownDefaultMs.ToString();
+            textBoxCDglobal.ReadOnly = true;
         }
 
         /// <summary>
