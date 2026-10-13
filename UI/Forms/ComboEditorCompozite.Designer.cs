@@ -77,6 +77,7 @@
             radioButtonWhellUp = new RadioButton();
             radioButtonWhellDown = new RadioButton();
             groupBoxdelayMs = new GroupBox();
+            textBoxdelayMsMax = new TextBox();
             textBoxdelayMin = new TextBox();
             boxKeyControl = new pxlhunt.UI.Forms.ComboEditorCompoziteControls.BoxKeyControl();
             label7 = new Label();
@@ -98,7 +99,6 @@
             radioButtonSkillCooldownGLOBAL = new RadioButton();
             buttonSave = new Button();
             textBoxHelp = new TextBox();
-            textBoxdelayMsMax = new TextBox();
             GroupActionPreset.SuspendLayout();
             groupBoxMouseKey.SuspendLayout();
             groupBoxCurMoove.SuspendLayout();
@@ -153,7 +153,7 @@
             triggerTimer.BackColor = Color.Transparent;
             triggerTimer.Location = new Point(118, 25);
             triggerTimer.Name = "triggerTimer";
-            triggerTimer.Size = new Size(155, 44);
+            triggerTimer.Size = new Size(190, 44);
             triggerTimer.TabIndex = 23;
             // 
             // pixSquaControl
@@ -664,6 +664,15 @@
             groupBoxdelayMs.TabStop = false;
             groupBoxdelayMs.Text = "Задержка, ~мс";
             // 
+            // textBoxdelayMsMax
+            // 
+            textBoxdelayMsMax.Location = new Point(214, 0);
+            textBoxdelayMsMax.MaxLength = 5;
+            textBoxdelayMsMax.Name = "textBoxdelayMsMax";
+            textBoxdelayMsMax.Size = new Size(96, 23);
+            textBoxdelayMsMax.TabIndex = 3;
+            textBoxdelayMsMax.Text = "500";
+            // 
             // textBoxdelayMin
             // 
             textBoxdelayMin.Location = new Point(103, 0);
@@ -876,15 +885,6 @@
             textBoxHelp.Size = new Size(353, 38);
             textBoxHelp.TabIndex = 63;
             textBoxHelp.Text = "— Фиксация XY: LKM+Потянуть => CapsLock - под курсором \r\n— ЖЕЛТЫЙ - Триггер, ГОЛУБОЙ и то и то, СЕРЫЙ - actions";
-            // 
-            // textBoxdelayMsMax
-            // 
-            textBoxdelayMsMax.Location = new Point(214, 0);
-            textBoxdelayMsMax.MaxLength = 5;
-            textBoxdelayMsMax.Name = "textBoxdelayMsMax";
-            textBoxdelayMsMax.Size = new Size(96, 23);
-            textBoxdelayMsMax.TabIndex = 3;
-            textBoxdelayMsMax.Text = "500";
             // 
             // ComboEditorCompozite
             // 

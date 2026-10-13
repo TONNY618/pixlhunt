@@ -72,6 +72,7 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
         private void button1_Click(object sender, EventArgs e)
         {
             string helpText =
+                "Задержка между значениями, вероятность колокол\n" +
                 "1 000 мс = 1 секунда\n" +
                 "10 000 мс = 10 секунд\n" +
                 "60 000 мс = 1 минута\n" +

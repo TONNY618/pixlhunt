@@ -67,7 +67,7 @@
             textBoxTriggerTimerMax.Name = "textBoxTriggerTimerMax";
             textBoxTriggerTimerMax.Size = new Size(64, 23);
             textBoxTriggerTimerMax.TabIndex = 2;
-            textBoxTriggerTimerMax.Text = "12345678";
+            textBoxTriggerTimerMax.Text = "1100";
             // 
             // textBoxTriggerTimer
             // 
@@ -76,9 +76,9 @@
             textBoxTriggerTimer.Name = "textBoxTriggerTimer";
             textBoxTriggerTimer.Size = new Size(61, 23);
             textBoxTriggerTimer.TabIndex = 1;
-            textBoxTriggerTimer.Text = "12345678";
-            textBoxTriggerTimer.Leave += textBoxTriggerTimer_Leave;
+            textBoxTriggerTimer.Text = "1000";
             textBoxTriggerTimer.KeyDown += textBoxTriggerTimer_KeyDown;
+            textBoxTriggerTimer.Leave += textBoxTriggerTimer_Leave;
             // 
             // TriggerTimer
             // 
