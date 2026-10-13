@@ -199,6 +199,39 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
 
             labelPixSquaBool.Text = finalResult ? "True" : "False";
             labelPixSquaBool.ForeColor = finalResult ? Color.Green : Color.Red;
+
+            UpdateCurrentColorPreview(p1);
+        }
+
+        // =====================================================================
+        // РИАЛ-ТАЙМ ОТРИСОВКА ТЕКУЩЕГО ЦВЕТА (XY или средний по региону)
+        // =====================================================================
+        private void UpdateCurrentColorPreview(Point? p1)
+        {
+            if (ScreenCaptureService.CurrentBuffer == null) return;
+
+            if (radioButtonPixSquaXY.Checked && p1.HasValue)
+            {
+                Color c = ScreenCaptureService.CurrentBuffer.GetPixelColor(p1.Value.X, p1.Value.Y);
+                pictureBoxPixSquaCurrent.BackColor = c;
+            }
+            else if (radioButtonPixSquaSqua.Checked)
+            {
+                Point? p2 = ParsePoint(textBoxPixSquaXY2.Text);
+                if (p1.HasValue && p2.HasValue)
+                {
+                    int left = Math.Min(p1.Value.X, p2.Value.X);
+                    int right = Math.Max(p1.Value.X, p2.Value.X);
+                    int top = Math.Min(p1.Value.Y, p2.Value.Y);
+                    int bottom = Math.Max(p1.Value.Y, p2.Value.Y);
+
+                    if (right > left && bottom > top)
+                    {
+                        Color avg = ScreenCaptureService.CurrentBuffer.GetAverageColor(left, top, right, bottom);
+                        pictureBoxPixSquaCurrent.BackColor = avg;
+                    }
+                }
+            }
         }
 
         private bool IsColorMatch(Color c1, Color c2, int accuracyPct)
