@@ -38,6 +38,9 @@ namespace pxlhunt.FORMS
         {
             InitializeComponent();
 
+            // Запускаем глобальный перехват физического ввода (Raw Input)
+            PixelMacroEngine.Core.Services.RawInputService.Initialize();
+
             // Заголовок окна из централизованного конфига
             if (!string.IsNullOrWhiteSpace(AppConfigService.Instance.PxlhuntNameMainForm))
             {

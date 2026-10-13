@@ -15,8 +15,6 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
         object IComboComponentControl.GetDto() => GetDto();
 
         public void SetDtoFromElement(JsonElement element) => SetDto(element.Deserialize<PixSquaDto>());
-        [DllImport("user32.dll")]
-        private static extern short GetAsyncKeyState(int vKey);
         private const int VK_CAPITAL = 0x14; // Caps Lock
 
         private System.Windows.Forms.Timer _evalTimer;
@@ -91,7 +89,7 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
                     if (!colorLocked)
                         pictureBoxPixSquaSample.BackColor = currentColor;
 
-                    bool capsIsPressed = (GetAsyncKeyState(VK_CAPITAL) & 0x8000) != 0;
+                    bool capsIsPressed = PixelMacroEngine.Core.Services.RawInputService.IsKeyDown(VK_CAPITAL);
 
                     if (capsIsPressed && !capsWasPressed)
                     {

@@ -85,7 +85,7 @@ public static class ArduinoKeyMap
 
     /// <summary>
     /// Системные коды Windows Virtual Keys (VK).
-    /// Используются для проверки состояния клавиш через GetAsyncKeyState.
+    /// Используются для проверки физического состояния клавиш через RawInputService.
     /// </summary>
     public static readonly Dictionary<string, int> WindowsVkMap = new(StringComparer.OrdinalIgnoreCase)
     {

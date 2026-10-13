@@ -9,8 +9,6 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
 {
     public partial class CursorMoveControl : UserControl, IComboComponentControl
     {
-        [DllImport("user32.dll")]
-        private static extern short GetAsyncKeyState(int vKey);
         private const int VK_CAPITAL = 0x14;
 
         public CursorMoveControl()
@@ -64,7 +62,7 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
             {
                 while (Control.MouseButtons == MouseButtons.Left)
                 {
-                    bool capsIsPressed = (GetAsyncKeyState(VK_CAPITAL) & 0x8000) != 0;
+                    bool capsIsPressed = PixelMacroEngine.Core.Services.RawInputService.IsKeyDown(VK_CAPITAL);
 
                     if (capsIsPressed && !capsWasPressed)
                     {
