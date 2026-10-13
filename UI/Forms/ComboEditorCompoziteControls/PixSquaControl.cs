@@ -14,6 +14,7 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
         private const int VK_CAPITAL = 0x14; // Caps Lock
 
         private System.Windows.Forms.Timer _evalTimer;
+        private readonly ToolTip _toolTip = new ToolTip();
 
         public PixSquaControl()
         {
@@ -26,6 +27,12 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
             trackBarPixSqua.ValueChanged += TrackBarPixSqua_ValueChanged;
             buttonPixSquaView.Click += ButtonPixSquaView_Click;
             pictureBoxPixSquaSample.MouseDown += PictureBoxPixSquaSample_MouseDown;
+
+            // Синхронизация плашки образца с текстовым полем цвета
+            textBoxPixSquaColor.TextChanged += (s, e) =>
+            {
+                pictureBoxPixSquaSample.BackColor = HexToColor(textBoxPixSquaColor.Text);
+            };
 
             // Инициализация фонового таймера для риал-тайм проверки (10 Гц)
             _evalTimer = new System.Windows.Forms.Timer { Interval = 100 };
@@ -174,10 +181,12 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
             int accuracy = trackBarPixSqua.Value; // 5..100%
 
             bool isMatch = false;
+            Color? currentColor = null;
 
             if (radioButtonPixSquaXY.Checked && p1.HasValue)
             {
                 Color screenColor = ScreenCaptureService.CurrentBuffer.GetPixelColor(p1.Value.X, p1.Value.Y);
+                currentColor = screenColor;
                 isMatch = IsColorMatch(screenColor, targetColor, accuracy);
             }
             else if (radioButtonPixSquaSqua.Checked)
@@ -191,6 +200,7 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
                     int bottom = Math.Max(p1.Value.Y, p2.Value.Y);
 
                     Color avgColor = ScreenCaptureService.CurrentBuffer.GetAverageColor(left, top, right, bottom);
+                    currentColor = avgColor;
                     isMatch = IsColorMatch(avgColor, targetColor, accuracy);
                 }
             }
@@ -199,6 +209,27 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
 
             labelPixSquaBool.Text = finalResult ? "True" : "False";
             labelPixSquaBool.ForeColor = finalResult ? Color.Green : Color.Red;
+
+            // Всплывающая подсказка с точными RGB-значениями и процентом расхождения
+            if (currentColor.HasValue)
+            {
+                Color cc = currentColor.Value;
+                double distance = Math.Sqrt(
+                    Math.Pow(cc.R - targetColor.R, 2) +
+                    Math.Pow(cc.G - targetColor.G, 2) +
+                    Math.Pow(cc.B - targetColor.B, 2));
+                double diffPct = (distance / 441.67295593) * 100.0;
+
+                _toolTip.SetToolTip(labelPixSquaBool,
+                    $"Цель: RGB({targetColor.R},{targetColor.G},{targetColor.B})\n" +
+                    $"Факт: RGB({cc.R},{cc.G},{cc.B})\n" +
+                    $"Разница: {diffPct:F1}%\n" +
+                    $"Требуется: <= {100 - accuracy}%");
+            }
+            else
+            {
+                _toolTip.SetToolTip(labelPixSquaBool, "Нет данных для сравнения");
+            }
 
             UpdateCurrentColorPreview(p1);
         }
