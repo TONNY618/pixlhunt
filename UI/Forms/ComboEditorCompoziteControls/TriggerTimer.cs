@@ -83,6 +83,7 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
                 helpForm.Text = "Справка: миллисекунды";
                 helpForm.FormBorderStyle = FormBorderStyle.FixedDialog;
                 helpForm.StartPosition = FormStartPosition.CenterParent;
+                helpForm.TopMost = true;
                 helpForm.MinimizeBox = false;
                 helpForm.MaximizeBox = false;
                 helpForm.ShowInTaskbar = false;
@@ -97,11 +98,16 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
                 };
                 helpForm.Controls.Add(label);
 
-                var parentForm = this.FindForm();
+                Form? parentForm = this.FindForm();
                 if (parentForm != null)
+                {
                     helpForm.ShowDialog(parentForm);
+                }
                 else
+                {
+                    helpForm.StartPosition = FormStartPosition.CenterScreen;
                     helpForm.ShowDialog();
+                }
             }
         }
     }
