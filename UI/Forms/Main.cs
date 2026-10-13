@@ -564,7 +564,7 @@ namespace pxlhunt.FORMS
                         try
                         {
                             string json = File.ReadAllText(file);
-                            var profile = JsonSerializer.Deserialize<ComboProfile>(json,
+                            var profile = JsonSerializer.Deserialize<ComboProfileDto>(json,
                                 new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
                             if (profile == null) continue;
