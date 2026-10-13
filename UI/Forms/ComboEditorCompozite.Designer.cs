@@ -36,17 +36,7 @@
             comboBoxMouseKeyList = new ComboBox();
             checkBoxMouseKey2 = new CheckBox();
             checkBoxMouseKey1 = new CheckBox();
-            groupBoxCurMoove = new GroupBox();
-            labelCurMoove3 = new Label();
-            textBoxCurMoove2 = new TextBox();
-            radioButtonCurMooveGetXY = new RadioButton();
-            pictureBoxCurMooveSample = new PictureBox();
-            buttonCurMooveView = new Button();
-            textBoxCurMoove1 = new TextBox();
-            labelCurMoove2 = new Label();
-            radioButtonCurMooveXY = new RadioButton();
-            radioButtonCurMooveVol = new RadioButton();
-            checkBoxCurMooveOverlay = new CheckBox();
+            cursorMoveControl = new pxlhunt.UI.Forms.ComboEditorCompoziteControls.CursorMoveControl();
             groupBoxIMAGE = new GroupBox();
             labelIMAGE2 = new Label();
             labelIMAGE1 = new Label();
@@ -125,7 +115,7 @@
             GroupActionPreset.Controls.Add(triggerTimer);
             GroupActionPreset.Controls.Add(pixSquaControl);
             GroupActionPreset.Controls.Add(groupBoxMouseKey);
-            GroupActionPreset.Controls.Add(groupBoxCurMoove);
+            GroupActionPreset.Controls.Add(cursorMoveControl);
             GroupActionPreset.Controls.Add(groupBoxIMAGE);
             GroupActionPreset.Controls.Add(groupBoxTextTo);
             GroupActionPreset.Controls.Add(groupBoxSound);
@@ -216,121 +206,13 @@
             // groupBoxCurMoove
             // 
             groupBoxCurMoove.BackColor = Color.Gainsboro;
-            groupBoxCurMoove.Controls.Add(labelCurMoove3);
-            groupBoxCurMoove.Controls.Add(textBoxCurMoove2);
-            groupBoxCurMoove.Controls.Add(radioButtonCurMooveGetXY);
-            groupBoxCurMoove.Controls.Add(pictureBoxCurMooveSample);
-            groupBoxCurMoove.Controls.Add(buttonCurMooveView);
-            groupBoxCurMoove.Controls.Add(textBoxCurMoove1);
-            groupBoxCurMoove.Controls.Add(labelCurMoove2);
-            groupBoxCurMoove.Controls.Add(radioButtonCurMooveXY);
-            groupBoxCurMoove.Controls.Add(radioButtonCurMooveVol);
-            groupBoxCurMoove.Controls.Add(checkBoxCurMooveOverlay);
-            groupBoxCurMoove.ForeColor = SystemColors.HotTrack;
-            groupBoxCurMoove.Location = new Point(22, 429);
-            groupBoxCurMoove.Name = "groupBoxCurMoove";
-            groupBoxCurMoove.Size = new Size(300, 74);
-            groupBoxCurMoove.TabIndex = 48;
-            groupBoxCurMoove.TabStop = false;
-            groupBoxCurMoove.Text = "-> Курсор на коорд двиг ->";
             // 
-            // labelCurMoove3
+            // cursorMoveControl
             // 
-            labelCurMoove3.Location = new Point(145, 48);
-            labelCurMoove3.Name = "labelCurMoove3";
-            labelCurMoove3.Size = new Size(25, 18);
-            labelCurMoove3.TabIndex = 20;
-            labelCurMoove3.Text = "x, y";
-            // 
-            // textBoxCurMoove2
-            // 
-            textBoxCurMoove2.Enabled = false;
-            textBoxCurMoove2.Location = new Point(69, 45);
-            textBoxCurMoove2.MaxLength = 10;
-            textBoxCurMoove2.Multiline = true;
-            textBoxCurMoove2.Name = "textBoxCurMoove2";
-            textBoxCurMoove2.Size = new Size(70, 23);
-            textBoxCurMoove2.TabIndex = 18;
-            textBoxCurMoove2.Text = "200, 200";
-            // 
-            // radioButtonCurMooveGetXY
-            // 
-            radioButtonCurMooveGetXY.AutoSize = true;
-            radioButtonCurMooveGetXY.Location = new Point(176, 4);
-            radioButtonCurMooveGetXY.Name = "radioButtonCurMooveGetXY";
-            radioButtonCurMooveGetXY.Size = new Size(116, 19);
-            radioButtonCurMooveGetXY.TabIndex = 11;
-            radioButtonCurMooveGetXY.Text = "XY взять выше /\\";
-            radioButtonCurMooveGetXY.UseVisualStyleBackColor = true;
-            // 
-            // pictureBoxCurMooveSample
-            // 
-            pictureBoxCurMooveSample.BackColor = Color.White;
-            pictureBoxCurMooveSample.Location = new Point(41, 18);
-            pictureBoxCurMooveSample.Name = "pictureBoxCurMooveSample";
-            pictureBoxCurMooveSample.Size = new Size(18, 23);
-            pictureBoxCurMooveSample.TabIndex = 10;
-            pictureBoxCurMooveSample.TabStop = false;
-            // 
-            // buttonCurMooveView
-            // 
-            buttonCurMooveView.Location = new Point(6, 18);
-            buttonCurMooveView.Name = "buttonCurMooveView";
-            buttonCurMooveView.Size = new Size(29, 23);
-            buttonCurMooveView.TabIndex = 7;
-            buttonCurMooveView.Text = "Показать";
-            buttonCurMooveView.UseVisualStyleBackColor = true;
-            // 
-            // textBoxCurMoove1
-            // 
-            textBoxCurMoove1.Location = new Point(69, 19);
-            textBoxCurMoove1.MaxLength = 10;
-            textBoxCurMoove1.Multiline = true;
-            textBoxCurMoove1.Name = "textBoxCurMoove1";
-            textBoxCurMoove1.Size = new Size(70, 23);
-            textBoxCurMoove1.TabIndex = 3;
-            textBoxCurMoove1.Text = "100, 100";
-            // 
-            // labelCurMoove2
-            // 
-            labelCurMoove2.Location = new Point(145, 22);
-            labelCurMoove2.Name = "labelCurMoove2";
-            labelCurMoove2.Size = new Size(25, 18);
-            labelCurMoove2.TabIndex = 2;
-            labelCurMoove2.Text = "x, y";
-            // 
-            // radioButtonCurMooveXY
-            // 
-            radioButtonCurMooveXY.AutoSize = true;
-            radioButtonCurMooveXY.Location = new Point(176, 48);
-            radioButtonCurMooveXY.Name = "radioButtonCurMooveXY";
-            radioButtonCurMooveXY.Size = new Size(124, 19);
-            radioButtonCurMooveXY.TabIndex = 13;
-            radioButtonCurMooveXY.Text = "Позиция XYне рек";
-            radioButtonCurMooveXY.UseVisualStyleBackColor = true;
-            // 
-            // radioButtonCurMooveVol
-            // 
-            radioButtonCurMooveVol.AutoSize = true;
-            radioButtonCurMooveVol.Checked = true;
-            radioButtonCurMooveVol.Location = new Point(176, 27);
-            radioButtonCurMooveVol.Name = "radioButtonCurMooveVol";
-            radioButtonCurMooveVol.Size = new Size(124, 19);
-            radioButtonCurMooveVol.TabIndex = 12;
-            radioButtonCurMooveVol.TabStop = true;
-            radioButtonCurMooveVol.Text = "Регион примерно";
-            radioButtonCurMooveVol.UseVisualStyleBackColor = true;
-            // 
-            // checkBoxCurMooveOverlay
-            // 
-            checkBoxCurMooveOverlay.AutoSize = true;
-            checkBoxCurMooveOverlay.Font = new Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, 204);
-            checkBoxCurMooveOverlay.Location = new Point(8, 48);
-            checkBoxCurMooveOverlay.Name = "checkBoxCurMooveOverlay";
-            checkBoxCurMooveOverlay.Size = new Size(65, 18);
-            checkBoxCurMooveOverlay.TabIndex = 52;
-            checkBoxCurMooveOverlay.Text = "overlay";
-            checkBoxCurMooveOverlay.UseVisualStyleBackColor = true;
+            cursorMoveControl.Location = new Point(22, 429);
+            cursorMoveControl.Name = "cursorMoveControl";
+            cursorMoveControl.Size = new Size(300, 74);
+            cursorMoveControl.TabIndex = 48;
             // 
             // groupBoxIMAGE
             // 
@@ -923,9 +805,6 @@
             GroupActionPreset.PerformLayout();
             groupBoxMouseKey.ResumeLayout(false);
             groupBoxMouseKey.PerformLayout();
-            groupBoxCurMoove.ResumeLayout(false);
-            groupBoxCurMoove.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)pictureBoxCurMooveSample).EndInit();
             groupBoxIMAGE.ResumeLayout(false);
             groupBoxIMAGE.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)pictureBoxIMAGESample).EndInit();
@@ -993,17 +872,7 @@
         private PictureBox pictureBoxIMAGEExample;
         private RadioButton radioButtonIMAGENotEqu;
         private RadioButton radioButtonIMAGEEqu;
-        private GroupBox groupBoxCurMoove;
-        private Label labelCurMoove3;
-        private TextBox textBoxCurMoove2;
-        private RadioButton radioButtonCurMooveGetXY;
-        private PictureBox pictureBoxCurMooveSample;
-        private Button buttonCurMooveView;
-        private TextBox textBoxCurMoove1;
-        private Label labelCurMoove2;
-        private RadioButton radioButtonCurMooveXY;
-        private RadioButton radioButtonCurMooveVol;
-        private CheckBox checkBoxCurMooveOverlay;
+        private pxlhunt.UI.Forms.ComboEditorCompoziteControls.CursorMoveControl cursorMoveControl;
         private TextBox textBoxIMAGEXY2;
         private TextBox textBoxIMAGEXY1;
         private PictureBox pictureBoxIMAGESample;

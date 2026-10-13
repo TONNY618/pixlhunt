@@ -62,6 +62,13 @@ public static class ComboFactory
             Point p2 = ParsePoint(dto.Point2);
             return new ConditionStep(CreateColorEvaluator(dto), p1, p2, dto.IsSquareMode);
         });
+
+        RegisterStep("CursorMoveControl", data =>
+        {
+            var dto = data.Deserialize<pxlhunt.UI.Forms.ComboEditorCompoziteControls.CursorMoveDto>();
+            if (dto == null) return null;
+            return new MouseMoveStep(dto);
+        });
     }
 
     private static ColorTriggerEvaluator CreateColorEvaluator(pxlhunt.UI.Forms.ComboEditorCompoziteControls.PixSquaDto dto)

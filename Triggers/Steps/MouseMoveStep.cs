@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,52 +8,66 @@ using PixelMacroEngine.Core.Services;
 
 namespace PixelMacroEngine.Triggers.Steps;
 
-/// <summary>
-/// Шаг комбо: перемещение курсора мыши к координатам из UI.
-/// </summary>
 public class MouseMoveStep : IComboStep
 {
-    public Point Target { get; }
-    public int Speed { get; }
+    private readonly pxlhunt.UI.Forms.ComboEditorCompoziteControls.CursorMoveDto _dto;
+    private static readonly Random _rnd = new();
 
-    public MouseMoveStep(Dictionary<string, string>? p)
+    public MouseMoveStep(pxlhunt.UI.Forms.ComboEditorCompoziteControls.CursorMoveDto dto)
     {
-        if (p == null)
-        {
-            Target = Point.Empty;
-            Speed = 80;
-            return;
-        }
-
-        string rawCoords = p.GetValueOrDefault("textBoxXY4_1", "0, 0");
-        Target = ParsePoint(rawCoords);
-
-        if (int.TryParse(p.GetValueOrDefault("textBoxSpeedCursor", "80"), out int sp))
-        {
-            Speed = sp;
-        }
-        else
-        {
-            Speed = 80;
-        }
+        _dto = dto;
     }
 
     public async Task ExecuteAsync(TriggerExecutionContext context, CancellationToken ct)
     {
-        if (Target.IsEmpty) return;
+        Point target = Point.Empty;
 
-        await MouseService.MoveToAsync(Target.X, Target.Y, Speed, context.ComboName ?? "Unknown", ct)
-                          .ConfigureAwait(false);
+        if (_dto.Mode == 0) // Взять из переменных выше
+        {
+            if (RuntimeVariables.IsRegion && RuntimeVariables.TargetPoint1.HasValue && RuntimeVariables.TargetPoint2.HasValue)
+            {
+                target = GetRandomPointInRegion(RuntimeVariables.TargetPoint1.Value, RuntimeVariables.TargetPoint2.Value);
+            }
+            else if (RuntimeVariables.TargetPoint1.HasValue)
+            {
+                target = RuntimeVariables.TargetPoint1.Value;
+            }
+            else return; // Ошибка: данных нет
+        }
+        else if (_dto.Mode == 1) // Свой регион
+        {
+            Point p1 = ParsePoint(_dto.Point1);
+            Point p2 = ParsePoint(_dto.Point2);
+            if (p1.IsEmpty && p2.IsEmpty) return;
+            target = GetRandomPointInRegion(p1, p2);
+        }
+        else // Своя точная точка (Mode 2)
+        {
+            target = ParsePoint(_dto.Point1);
+            if (target.IsEmpty) return;
+        }
+
+        // Параметр speedFactor в MouseService игнорируется алгоритмом Фиттса, передаем 50
+        await MouseService.MoveToAsync(target.X, target.Y, 50, context.ComboName ?? "Unknown", ct).ConfigureAwait(false);
     }
 
-    private static Point ParsePoint(string? value)
+    private Point GetRandomPointInRegion(Point p1, Point p2)
     {
-        if (string.IsNullOrWhiteSpace(value)) return Point.Empty;
-        var parts = value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        if (parts.Length < 2) return Point.Empty;
+        int minX = Math.Min(p1.X, p2.X);
+        int maxX = Math.Max(p1.X, p2.X);
+        int minY = Math.Min(p1.Y, p2.Y);
+        int maxY = Math.Max(p1.Y, p2.Y);
+        
+        // В будущем здесь будет нормальное распределение Гаусса
+        return new Point(_rnd.Next(minX, maxX + 1), _rnd.Next(minY, maxY + 1));
+    }
 
-        int.TryParse(parts[0], out int x);
-        int.TryParse(parts[1], out int y);
-        return new Point(x, y);
+    private static Point ParsePoint(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return Point.Empty;
+        var parts = text.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (parts.Length == 2 && int.TryParse(parts[0], out int x) && int.TryParse(parts[1], out int y))
+            return new Point(x, y);
+        return Point.Empty;
     }
 }
