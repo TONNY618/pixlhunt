@@ -918,6 +918,7 @@ namespace pxlhunt.FORMS
         private void button1_Click(object sender, EventArgs e)
         {
             ComboEditorCompozite settingsForm = new ComboEditorCompozite();
+            settingsForm.FormClosed += (s, args) => LoadCombosFromConfig();
             CenterFormOnMain(settingsForm);
             settingsForm.Show(this);
         }

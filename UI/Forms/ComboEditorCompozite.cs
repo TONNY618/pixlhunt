@@ -31,10 +31,6 @@ namespace pxlhunt.UI.Forms
 
             // Инициализация Drag-and-Drop механики
             SetupDragAndDrop();
-
-            // Подписка кнопок сохранения/загрузки
-            buttonSave.Click += buttonSave_Click;
-            buttonLoad.Click += buttonLoad_Click;
         }
 
         /// <summary>
@@ -486,9 +482,6 @@ namespace pxlhunt.UI.Forms
                 string path = Path.Combine(GetConfigDirectory(), comboName + ".json");
                 string json = JsonSerializer.Serialize(profile, JsonOptions);
                 File.WriteAllText(path, json);
-
-                MessageBox.Show($"Комбо \"{comboName}\" успешно сохранено.\n{path}", "Сохранение",
-                    MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception ex)
             {
@@ -545,9 +538,6 @@ namespace pxlhunt.UI.Forms
 
                 RestoreElements(flowLayoutPanelTrigger, profile.Triggers);
                 RestoreElements(flowLayoutPanelActions, profile.Actions);
-
-                MessageBox.Show($"Комбо \"{comboName}\" успешно загружено.", "Загрузка",
-                    MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception ex)
             {
