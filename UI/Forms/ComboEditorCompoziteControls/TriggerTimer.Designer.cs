@@ -30,7 +30,7 @@
         {
             groupBoxTriggerTimer = new GroupBox();
             button1 = new Button();
-            textBoxtextBoxTriggerTimer2 = new TextBox();
+            textBoxTriggerTimerMax = new TextBox();
             textBoxTriggerTimer = new TextBox();
             groupBoxTriggerTimer.SuspendLayout();
             SuspendLayout();
@@ -39,7 +39,7 @@
             // 
             groupBoxTriggerTimer.BackColor = SystemColors.Info;
             groupBoxTriggerTimer.Controls.Add(button1);
-            groupBoxTriggerTimer.Controls.Add(textBoxtextBoxTriggerTimer2);
+            groupBoxTriggerTimer.Controls.Add(textBoxTriggerTimerMax);
             groupBoxTriggerTimer.Controls.Add(textBoxTriggerTimer);
             groupBoxTriggerTimer.Location = new Point(0, 0);
             groupBoxTriggerTimer.Name = "groupBoxTriggerTimer";
@@ -58,15 +58,16 @@
             button1.Text = "?";
             button1.TextAlign = ContentAlignment.TopCenter;
             button1.UseVisualStyleBackColor = true;
+            button1.Click += button1_Click;
             // 
-            // textBoxtextBoxTriggerTimer2
+            // textBoxTriggerTimerMax
             // 
-            textBoxtextBoxTriggerTimer2.Location = new Point(73, 14);
-            textBoxtextBoxTriggerTimer2.MaxLength = 8;
-            textBoxtextBoxTriggerTimer2.Name = "textBoxtextBoxTriggerTimer2";
-            textBoxtextBoxTriggerTimer2.Size = new Size(64, 23);
-            textBoxtextBoxTriggerTimer2.TabIndex = 2;
-            textBoxtextBoxTriggerTimer2.Text = "12345678";
+            textBoxTriggerTimerMax.Location = new Point(73, 14);
+            textBoxTriggerTimerMax.MaxLength = 8;
+            textBoxTriggerTimerMax.Name = "textBoxTriggerTimerMax";
+            textBoxTriggerTimerMax.Size = new Size(64, 23);
+            textBoxTriggerTimerMax.TabIndex = 2;
+            textBoxTriggerTimerMax.Text = "12345678";
             // 
             // textBoxTriggerTimer
             // 
@@ -76,6 +77,8 @@
             textBoxTriggerTimer.Size = new Size(61, 23);
             textBoxTriggerTimer.TabIndex = 1;
             textBoxTriggerTimer.Text = "12345678";
+            textBoxTriggerTimer.Leave += textBoxTriggerTimer_Leave;
+            textBoxTriggerTimer.KeyDown += textBoxTriggerTimer_KeyDown;
             // 
             // TriggerTimer
             // 
@@ -94,7 +97,7 @@
 
         public GroupBox groupBoxTriggerTimer;
         public TextBox textBoxTriggerTimer;
-        public TextBox textBoxtextBoxTriggerTimer2;
+        public TextBox textBoxTriggerTimerMax;
         private Button button1;
     }
 }

@@ -26,7 +26,7 @@ public static class ComboFactory
         RegisterTrigger("TriggerTimer", data =>
         {
             var dto = data.Deserialize<pxlhunt.UI.Forms.ComboEditorCompoziteControls.TriggerTimerDto>();
-            return dto != null && dto.IntervalMs > 0 ? new TimerTriggerEvaluator(dto.IntervalMs) : null;
+            return dto != null ? new TimerTriggerEvaluator(dto.MinIntervalMs, dto.MaxIntervalMs) : null;
         });
 
         RegisterTrigger("PixSquaControl", data =>
