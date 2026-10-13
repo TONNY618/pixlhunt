@@ -57,8 +57,8 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
         {
             if (e.Button != MouseButtons.Left) return;
 
+            pictureBoxPixSquaSample.Capture = true;
             bool isSquare = radioButtonPixSquaSqua.Checked;
-            string originalTitle = groupBoxPixSqua.Text;
 
             Point? p1 = null;
             Point? p2 = null;
@@ -67,64 +67,66 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
             if (isSquare) groupBoxPixSqua.Text = "Укажите первый угол (Нажмите CapsLock)";
             else groupBoxPixSqua.Text = "Наведите и нажмите CapsLock";
 
-            // Пока зажата ЛКМ
-            while (Control.MouseButtons == MouseButtons.Left)
+            try
             {
-                Point currentPos = Cursor.Position;
-                Color currentColor = ScreenCaptureService.GetPixel(currentPos.X, currentPos.Y);
-
-                // Визуальное отображение под курсором в реальном времени
-                pictureBoxPixSquaSample.BackColor = currentColor;
-
-                bool capsIsPressed = (GetAsyncKeyState(VK_CAPITAL) & 0x8000) != 0;
-
-                if (capsIsPressed && !capsWasPressed)
+                while (Control.MouseButtons == MouseButtons.Left)
                 {
-                    // Триггер по нажатию Caps Lock
-                    if (!isSquare)
+                    Point currentPos = Cursor.Position;
+                    Color currentColor = ScreenCaptureService.GetPixel(currentPos.X, currentPos.Y);
+
+                    pictureBoxPixSquaSample.BackColor = currentColor;
+
+                    bool capsIsPressed = (GetAsyncKeyState(VK_CAPITAL) & 0x8000) != 0;
+
+                    if (capsIsPressed && !capsWasPressed)
                     {
-                        // Режим точки: сразу сохраняем
-                        textBoxPixSquaXY1.Text = $"{currentPos.X}, {currentPos.Y}";
-                        textBoxPixSquaColor.Text = ColorToHex(currentColor);
-                    }
-                    else
-                    {
-                        // Режим квадрата: сохраняем 1 или 2 точку
-                        if (p1 == null)
+                        if (!isSquare)
                         {
-                            p1 = currentPos;
-                            groupBoxPixSqua.Text = "Укажите второй угол (Нажмите CapsLock)";
+                            textBoxPixSquaXY1.Text = $"{currentPos.X}, {currentPos.Y}";
+                            textBoxPixSquaColor.Text = ColorToHex(currentColor);
                         }
-                        else if (p2 == null)
+                        else
                         {
-                            p2 = currentPos;
-
-                            // Нормализуем координаты левый-верх / правый-низ
-                            int left = Math.Min(p1.Value.X, p2.Value.X);
-                            int right = Math.Max(p1.Value.X, p2.Value.X);
-                            int top = Math.Min(p1.Value.Y, p2.Value.Y);
-                            int bottom = Math.Max(p1.Value.Y, p2.Value.Y);
-
-                            textBoxPixSquaXY1.Text = $"{left}, {top}";
-                            textBoxPixSquaXY2.Text = $"{right}, {bottom}";
-
-                            // Вычисляем средний цвет региона
-                            if (ScreenCaptureService.CurrentBuffer != null)
+                            if (p1 == null)
                             {
-                                Color avgColor = ScreenCaptureService.CurrentBuffer.GetAverageColor(left, top, right, bottom);
-                                textBoxPixSquaColor.Text = ColorToHex(avgColor);
-                                pictureBoxPixSquaSample.BackColor = avgColor;
+                                p1 = currentPos;
+                                groupBoxPixSqua.Text = "Укажите второй угол (Нажмите CapsLock)";
+                            }
+                            else
+                            {
+                                p2 = currentPos;
+
+                                int left = Math.Min(p1.Value.X, p2.Value.X);
+                                int right = Math.Max(p1.Value.X, p2.Value.X);
+                                int top = Math.Min(p1.Value.Y, p2.Value.Y);
+                                int bottom = Math.Max(p1.Value.Y, p2.Value.Y);
+
+                                textBoxPixSquaXY1.Text = $"{left}, {top}";
+                                textBoxPixSquaXY2.Text = $"{right}, {bottom}";
+
+                                if (ScreenCaptureService.CurrentBuffer != null)
+                                {
+                                    Color avgColor = ScreenCaptureService.CurrentBuffer.GetAverageColor(left, top, right, bottom);
+                                    textBoxPixSquaColor.Text = ColorToHex(avgColor);
+                                    pictureBoxPixSquaSample.BackColor = avgColor;
+                                }
+                                else
+                                {
+                                    textBoxPixSquaColor.Text = ColorToHex(currentColor);
+                                }
                             }
                         }
                     }
+                    capsWasPressed = capsIsPressed;
+
+                    await Task.Delay(15);
                 }
-                capsWasPressed = capsIsPressed;
-
-                await Task.Delay(15);
             }
-
-            // ЛКМ отпущена - возвращаем заголовок
-            groupBoxPixSqua.Text = "? IF Pixel OR square ?";
+            finally
+            {
+                pictureBoxPixSquaSample.Capture = false;
+                groupBoxPixSqua.Text = "? IF Pixel OR square ?";
+            }
         }
 
         // =====================================================================

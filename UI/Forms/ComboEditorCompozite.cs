@@ -287,6 +287,10 @@ namespace pxlhunt.UI.Forms
             {
                 return new PixSquaControl();
             }
+            if (string.Equals(presetName, "pixSquaControl", StringComparison.OrdinalIgnoreCase))
+            {
+                return new PixSquaControl();
+            }
 
             // 2. Временная обратная совместимость для GroupBox'ов
             Control[] found = GroupActionPreset.Controls.Find(presetName, true);
