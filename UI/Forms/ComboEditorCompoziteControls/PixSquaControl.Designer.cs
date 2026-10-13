@@ -38,16 +38,19 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
             panel3 = new Panel();
             radioButtonPixSquaXY = new RadioButton();
             radioButtonPixSquaSqua = new RadioButton();
+            pictureBoxPixSquaCurrent = new PictureBox();
             groupBoxPixSqua.SuspendLayout();
             groupBoxPixSquaVol.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)trackBarPixSqua).BeginInit();
             ((System.ComponentModel.ISupportInitialize)pictureBoxPixSquaSample).BeginInit();
             panel3.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)pictureBoxPixSquaCurrent).BeginInit();
             SuspendLayout();
             // 
             // groupBoxPixSqua
             // 
             groupBoxPixSqua.BackColor = Color.Cyan;
+            groupBoxPixSqua.Controls.Add(pictureBoxPixSquaCurrent);
             groupBoxPixSqua.Controls.Add(groupBoxPixSquaVol);
             groupBoxPixSqua.Controls.Add(checkBoxPixSquaOverlay);
             groupBoxPixSqua.Controls.Add(labelPixSquaBool);
@@ -82,8 +85,8 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
             // 
             trackBarPixSqua.AutoSize = false;
             trackBarPixSqua.Location = new Point(11, 14);
-            trackBarPixSqua.Minimum = 5;
             trackBarPixSqua.Maximum = 100;
+            trackBarPixSqua.Minimum = 5;
             trackBarPixSqua.Name = "trackBarPixSqua";
             trackBarPixSqua.Size = new Size(239, 18);
             trackBarPixSqua.TabIndex = 53;
@@ -114,7 +117,7 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
             // 
             labelPixSquaBool.AutoSize = true;
             labelPixSquaBool.Font = new Font("Calibri", 9.75F, FontStyle.Bold | FontStyle.Italic, GraphicsUnit.Point, 204);
-            labelPixSquaBool.Location = new Point(255, 5);
+            labelPixSquaBool.Location = new Point(231, 4);
             labelPixSquaBool.Name = "labelPixSquaBool";
             labelPixSquaBool.Size = new Size(34, 15);
             labelPixSquaBool.TabIndex = 52;
@@ -171,7 +174,7 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
             // radioButtonPixSquaNotEqu
             // 
             radioButtonPixSquaNotEqu.AutoSize = true;
-            radioButtonPixSquaNotEqu.Location = new Point(209, 3);
+            radioButtonPixSquaNotEqu.Location = new Point(190, 3);
             radioButtonPixSquaNotEqu.Name = "radioButtonPixSquaNotEqu";
             radioButtonPixSquaNotEqu.Size = new Size(36, 19);
             radioButtonPixSquaNotEqu.TabIndex = 1;
@@ -183,7 +186,7 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
             // 
             radioButtonPixSquaEqu.AutoSize = true;
             radioButtonPixSquaEqu.Checked = true;
-            radioButtonPixSquaEqu.Location = new Point(177, 3);
+            radioButtonPixSquaEqu.Location = new Point(151, 3);
             radioButtonPixSquaEqu.Name = "radioButtonPixSquaEqu";
             radioButtonPixSquaEqu.Size = new Size(33, 19);
             radioButtonPixSquaEqu.TabIndex = 0;
@@ -224,6 +227,15 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
             radioButtonPixSquaSqua.Text = "Square";
             radioButtonPixSquaSqua.UseVisualStyleBackColor = true;
             // 
+            // pictureBoxPixSquaCurrent
+            // 
+            pictureBoxPixSquaCurrent.BackColor = Color.White;
+            pictureBoxPixSquaCurrent.Location = new Point(268, 3);
+            pictureBoxPixSquaCurrent.Name = "pictureBoxPixSquaCurrent";
+            pictureBoxPixSquaCurrent.Size = new Size(23, 17);
+            pictureBoxPixSquaCurrent.TabIndex = 55;
+            pictureBoxPixSquaCurrent.TabStop = false;
+            // 
             // PixSquaControl
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -240,6 +252,7 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
             ((System.ComponentModel.ISupportInitialize)pictureBoxPixSquaSample).EndInit();
             panel3.ResumeLayout(false);
             panel3.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)pictureBoxPixSquaCurrent).EndInit();
             ResumeLayout(false);
         }
 
@@ -261,5 +274,6 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
         public System.Windows.Forms.Panel panel3;
         public System.Windows.Forms.RadioButton radioButtonPixSquaXY;
         public System.Windows.Forms.RadioButton radioButtonPixSquaSqua;
+        public PictureBox pictureBoxPixSquaCurrent;
     }
 }
