@@ -22,7 +22,7 @@ public static class ActionLogger
         OnLog?.Invoke(line);
     }
 
-    public static void LogKey(string keyName, byte byteCode, bool isDown, string? comboName = null)
+    public static void LogKey(string keyName, byte byteCode, bool isDown, string? comboName = null, int? holdMs = null)
     {
         string hex = byteCode != 0 ? $" [0x{byteCode:X2}]" : "";
 
@@ -32,7 +32,10 @@ public static class ActionLogger
             prefix = $"[{comboName}] ";
         }
 
-        Log($"{prefix}Key {(isDown ? "DOWN" : "UP")}: {keyName}{hex}");
+        // Длительность удержания показываем только для UP (завершение клика)
+        string hold = (!isDown && holdMs.HasValue) ? $" ({holdMs.Value} ms)" : "";
+
+        Log($"{prefix}Key {(isDown ? "DOWN" : "UP")}: {keyName}{hex}{hold}");
     }
 
     /// <summary>Логирует действие мыши (клик, скролл).</summary>

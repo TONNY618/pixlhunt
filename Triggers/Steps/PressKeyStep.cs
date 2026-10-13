@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using PixelMacroEngine.Core.Abstractions;
@@ -36,6 +37,10 @@ public class PressKeyStep : IComboStep
 
         bool isModifier = code >= 0x80 && code <= 0x87;
 
+        // Замер реального времени удержания между DOWN и UP (включая время на Send).
+        var holdWatch = Stopwatch.StartNew();
+        bool holdMeasured = false;
+
         // 1. Атомарное нажатие (DOWN) - отдельный пакет
         if (pressDown)
         {
@@ -57,6 +62,7 @@ public class PressKeyStep : IComboStep
         {
             int holdTime = PixelMacroEngine.Core.Services.HumanizerEngine.GetKeyPressDuration();
             await Task.Delay(holdTime, cancellationToken);
+            holdMeasured = true;
         }
 
         // 3. Атомарное отпускание (UP) - отдельный пакет
@@ -65,7 +71,10 @@ public class PressKeyStep : IComboStep
             var batchUp = new PixelMacroEngine.Core.Input.PacketBatch();
             batchUp.AddKey(code, false);
             PixelMacroEngine.Core.Services.ArduinoHidService.Send(batchUp);
-            PixelMacroEngine.Core.Services.ActionLogger.LogKey(key, code, false, context.ComboName);
+
+            // Показываем длительность удержания только для полного клика (DOWN+UP)
+            int? holdMs = holdMeasured ? (int)holdWatch.ElapsedMilliseconds : null;
+            PixelMacroEngine.Core.Services.ActionLogger.LogKey(key, code, false, context.ComboName, holdMs);
         }
 
         // 4. Пост-пауза (перенос пальца на следующую кнопку)
