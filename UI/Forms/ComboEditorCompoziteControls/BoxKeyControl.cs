@@ -28,6 +28,36 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
 
         public string ComponentType => "BoxKeyControl";
 
+        /// <summary>
+        /// Скрывает чекбоксы down/up и расширяет выпадающий список,
+        /// если контрол размещён в панели триггеров.
+        /// </summary>
+        private void UpdateTriggerMode()
+        {
+            bool isTrigger = Parent != null &&
+                string.Equals(Parent.Name, "flowLayoutPanelTrigger", StringComparison.OrdinalIgnoreCase);
+
+            checkBoxKey1.Visible = !isTrigger;
+            checkBoxKey2.Visible = !isTrigger;
+
+            if (isTrigger)
+            {
+                comboBoxKeyList.Location = new Point(46, 2);
+                comboBoxKeyList.Width = 265;
+            }
+            else
+            {
+                comboBoxKeyList.Location = new Point(150, 2);
+                comboBoxKeyList.Width = 162;
+            }
+        }
+
+        protected override void OnParentChanged(EventArgs e)
+        {
+            base.OnParentChanged(e);
+            UpdateTriggerMode();
+        }
+
         object IComboComponentControl.GetDto() => GetDto();
 
         public void SetDtoFromElement(JsonElement element) => SetDto(element.Deserialize<BoxKeyDto>());
@@ -55,6 +85,8 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
             comboBoxKeyList.Text = dto.KeyName;
             checkBoxKey1.Checked = dto.PressDown;
             checkBoxKey2.Checked = dto.PressUp;
+
+            UpdateTriggerMode();
         }
     }
 }

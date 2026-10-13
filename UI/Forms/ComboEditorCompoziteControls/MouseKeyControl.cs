@@ -12,6 +12,24 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
 
         public string ComponentType => "MouseKeyControl";
 
+        /// <summary>
+        /// Скрывает чекбоксы down/up, если контрол размещён в панели триггеров.
+        /// </summary>
+        private void UpdateTriggerMode()
+        {
+            bool isTrigger = Parent != null &&
+                string.Equals(Parent.Name, "flowLayoutPanelTrigger", StringComparison.OrdinalIgnoreCase);
+
+            checkBoxMouseKey1.Visible = !isTrigger;
+            checkBoxMouseKey2.Visible = !isTrigger;
+        }
+
+        protected override void OnParentChanged(EventArgs e)
+        {
+            base.OnParentChanged(e);
+            UpdateTriggerMode();
+        }
+
         public object GetDto()
         {
             return new MouseKeyDto
@@ -30,6 +48,8 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
             comboBoxMouseKeyList.Text = dto.Button;
             checkBoxMouseKey1.Checked = dto.PressDown;
             checkBoxMouseKey2.Checked = dto.PressUp;
+
+            UpdateTriggerMode();
         }
     }
 
