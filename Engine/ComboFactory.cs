@@ -57,7 +57,10 @@ public static class ComboFactory
         {
             var dto = data.Deserialize<pxlhunt.UI.Forms.ComboEditorCompoziteControls.PixSquaDto>();
             if (dto == null) return null;
-            return new ConditionStep(CreateColorEvaluator(dto));
+
+            Point p1 = ParsePoint(dto.Point1);
+            Point p2 = ParsePoint(dto.Point2);
+            return new ConditionStep(CreateColorEvaluator(dto), p1, p2, dto.IsSquareMode);
         });
     }
 
