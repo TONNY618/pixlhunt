@@ -124,6 +124,7 @@
             GroupActionPreset.BackColor = Color.LightSkyBlue;
             GroupActionPreset.Controls.Add(triggerOrAnd);
             GroupActionPreset.Controls.Add(triggerTimer);
+            GroupActionPreset.Controls.Add(pixSquaControl);
             GroupActionPreset.Controls.Add(groupBoxMouseKey);
             GroupActionPreset.Controls.Add(groupBoxCurMoove);
             GroupActionPreset.Controls.Add(groupBoxIMAGE);
@@ -156,6 +157,15 @@
             triggerTimer.Name = "triggerTimer";
             triggerTimer.Size = new Size(155, 44);
             triggerTimer.TabIndex = 23;
+            // 
+            // pixSquaControl
+            // 
+            pixSquaControl = new pxlhunt.UI.Forms.ComboEditorCompoziteControls.PixSquaControl();
+            pixSquaControl.BackColor = Color.Transparent;
+            pixSquaControl.Location = new Point(8, 77);
+            pixSquaControl.Name = "pixSquaControl";
+            pixSquaControl.Size = new Size(300, 107);
+            pixSquaControl.TabIndex = 48;
             // 
             // groupBoxMouseKey
             // 
@@ -969,6 +979,7 @@
         private GroupBox GroupActionPreset;
         private pxlhunt.UI.Forms.ComboEditorCompoziteControls.TriggerOrAnd triggerOrAnd;
         private pxlhunt.UI.Forms.ComboEditorCompoziteControls.TriggerTimer triggerTimer;
+        private pxlhunt.UI.Forms.ComboEditorCompoziteControls.PixSquaControl pixSquaControl;
         private GroupBox groupBoxMouseScroll;
         private Label labelMouseScrollStep;
         private TextBox textBoxStepWhell;
