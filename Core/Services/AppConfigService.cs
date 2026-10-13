@@ -12,18 +12,23 @@ public class UsbHwKeyClickerConfig
     public string Vendor_id { get; set; } = "0x04F2";
     public string Product_id { get; set; } = "0x0833";
 
-    public int GetVendorId() => ParseHexOrInt(Vendor_id, 0x04F2);
-    public int GetProductId() => ParseHexOrInt(Product_id, 0x0833);
+    public int GetVendorId() => ParseHex(Vendor_id, 0x04F2);
+    public int GetProductId() => ParseHex(Product_id, 0x0833);
 
-    private static int ParseHexOrInt(string? val, int fallback)
+    private static int ParseHex(string? val, int fallback)
     {
         if (string.IsNullOrWhiteSpace(val)) return fallback;
         val = val.Trim();
         if (val.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
         {
-            return int.TryParse(val.Substring(2), System.Globalization.NumberStyles.HexNumber, null, out int hex) ? hex : fallback;
+            val = val.Substring(2);
         }
-        return int.TryParse(val, out int dec) ? dec : fallback;
+
+        // VID/PID по стандарту USB задаются в HEX и именно в таком виде
+        // присутствуют в системном имени устройства (VID_2341&PID_8036).
+        // Поэтому значение без префикса 0x тоже трактуем как HEX, иначе "2341"
+        // ошибочно превратилось бы в 0x0925 и фильтр Arduino не сработал бы.
+        return int.TryParse(val, System.Globalization.NumberStyles.HexNumber, null, out int hex) ? hex : fallback;
     }
 }
 
