@@ -76,14 +76,14 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
             groupBoxPixSquaVol.Size = new Size(281, 29);
             groupBoxPixSquaVol.TabIndex = 54;
             groupBoxPixSquaVol.TabStop = false;
-            groupBoxPixSquaVol.Text = "%отклонения";
+            groupBoxPixSquaVol.Text = "% соответствия";
             // 
             // trackBarPixSqua
             // 
             trackBarPixSqua.AutoSize = false;
             trackBarPixSqua.Location = new Point(11, 14);
-            trackBarPixSqua.Maximum = 100;
             trackBarPixSqua.Minimum = 5;
+            trackBarPixSqua.Maximum = 100;
             trackBarPixSqua.Name = "trackBarPixSqua";
             trackBarPixSqua.Size = new Size(239, 18);
             trackBarPixSqua.TabIndex = 53;
@@ -97,7 +97,7 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
             textBoxPixSquaVolNumber.Name = "textBoxPixSquaVolNumber";
             textBoxPixSquaVolNumber.Size = new Size(23, 23);
             textBoxPixSquaVolNumber.TabIndex = 20;
-            textBoxPixSquaVolNumber.Text = "5";
+            textBoxPixSquaVolNumber.Text = "95";
             // 
             // checkBoxPixSquaOverlay
             // 

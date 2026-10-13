@@ -39,9 +39,8 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
 
         private void TrackBarPixSqua_ValueChanged(object? sender, EventArgs e)
         {
-            // Инвертируем ползунок: 100 на UI = 0% отклонения (строго). 0 на UI = 100% отклонения
-            int tolerance = 100 - trackBarPixSqua.Value;
-            textBoxPixSquaVolNumber.Text = tolerance.ToString();
+            // Шкала соответствия точности: 100 = эталон, 5 = максимальный допуск
+            textBoxPixSquaVolNumber.Text = trackBarPixSqua.Value.ToString();
         }
 
         private void UpdateUiMode()
@@ -135,13 +134,30 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
         private async void ButtonPixSquaView_Click(object? sender, EventArgs e)
         {
             Point? p = ParsePoint(textBoxPixSquaXY1.Text);
-            if (p.HasValue)
+            if (!p.HasValue) return;
+
+            Point orig = Cursor.Position;
+            buttonPixSquaView.Enabled = false;
+
+            try
             {
-                Point orig = Cursor.Position;
-                buttonPixSquaView.Enabled = false;
-                Cursor.Position = p.Value;
+                // Полет к точке через аппаратное устройство (штатный MouseService)
+                await MouseService.MoveToAsync(p.Value.X, p.Value.Y, 80, "ViewCheck", CancellationToken.None);
+
+                // Fallback: если Arduino не подключён, MoveToAsync ничего не сделает — двигаем курсор напрямую
+                if (!ArduinoHidService.IsConnected)
+                    Cursor.Position = p.Value;
+
                 await Task.Delay(1000);
-                Cursor.Position = orig;
+
+                // Плавный возврат на исходную позицию
+                await MouseService.MoveToAsync(orig.X, orig.Y, 80, "ViewReturn", CancellationToken.None);
+
+                if (!ArduinoHidService.IsConnected)
+                    Cursor.Position = orig;
+            }
+            finally
+            {
                 buttonPixSquaView.Enabled = true;
             }
         }
@@ -155,42 +171,48 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
 
             Point? p1 = ParsePoint(textBoxPixSquaXY1.Text);
             Color targetColor = HexToColor(textBoxPixSquaColor.Text);
-            int tolerance = 100 - trackBarPixSqua.Value; // 0..95
+            int accuracy = trackBarPixSqua.Value; // 5..100%
 
             bool isMatch = false;
 
             if (radioButtonPixSquaXY.Checked && p1.HasValue)
             {
                 Color screenColor = ScreenCaptureService.CurrentBuffer.GetPixelColor(p1.Value.X, p1.Value.Y);
-                isMatch = IsColorMatch(screenColor, targetColor, tolerance);
+                isMatch = IsColorMatch(screenColor, targetColor, accuracy);
             }
             else if (radioButtonPixSquaSqua.Checked)
             {
                 Point? p2 = ParsePoint(textBoxPixSquaXY2.Text);
                 if (p1.HasValue && p2.HasValue)
                 {
-                    Color avgColor = ScreenCaptureService.CurrentBuffer.GetAverageColor(p1.Value.X, p1.Value.Y, p2.Value.X, p2.Value.Y);
-                    isMatch = IsColorMatch(avgColor, targetColor, tolerance);
+                    int left = Math.Min(p1.Value.X, p2.Value.X);
+                    int right = Math.Max(p1.Value.X, p2.Value.X);
+                    int top = Math.Min(p1.Value.Y, p2.Value.Y);
+                    int bottom = Math.Max(p1.Value.Y, p2.Value.Y);
+
+                    Color avgColor = ScreenCaptureService.CurrentBuffer.GetAverageColor(left, top, right, bottom);
+                    isMatch = IsColorMatch(avgColor, targetColor, accuracy);
                 }
             }
 
-            // Учет условия Равно / Не равно
             bool finalResult = radioButtonPixSquaEqu.Checked ? isMatch : !isMatch;
 
-            labelPixSquaBool.Text = finalResult.ToString();
+            labelPixSquaBool.Text = finalResult ? "True" : "False";
             labelPixSquaBool.ForeColor = finalResult ? Color.Green : Color.Red;
         }
 
-        private bool IsColorMatch(Color c1, Color c2, int tolerancePct)
+        private bool IsColorMatch(Color c1, Color c2, int accuracyPct)
         {
-            if (tolerancePct == 0) return c1.R == c2.R && c1.G == c2.G && c1.B == c2.B;
+            if (accuracyPct >= 100)
+                return c1.R == c2.R && c1.G == c2.G && c1.B == c2.B;
 
-            // Расстояние в RGB-пространстве (макс ~441)
+            // Евклидово 3D-расстояние в RGB
             double distance = Math.Sqrt(Math.Pow(c1.R - c2.R, 2) + Math.Pow(c1.G - c2.G, 2) + Math.Pow(c1.B - c2.B, 2));
-            double maxDistance = 441.67;
+            const double maxDistance = 441.67295593; // sqrt(255^2 * 3)
             double diffPct = (distance / maxDistance) * 100.0;
+            double allowedErrorPct = 100.0 - accuracyPct;
 
-            return diffPct <= tolerancePct;
+            return diffPct <= allowedErrorPct;
         }
 
         // =====================================================================
@@ -205,7 +227,7 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
                 Point2 = textBoxPixSquaXY2.Text,
                 ColorHex = textBoxPixSquaColor.Text,
                 IsEqualLogic = radioButtonPixSquaEqu.Checked,
-                Tolerance = 100 - trackBarPixSqua.Value,
+                Accuracy = trackBarPixSqua.Value,
                 IsOverlayEnabled = checkBoxPixSquaOverlay.Checked
             };
         }
@@ -220,7 +242,8 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
             textBoxPixSquaColor.Text = dto.ColorHex;
             radioButtonPixSquaEqu.Checked = dto.IsEqualLogic;
             radioButtonPixSquaNotEqu.Checked = !dto.IsEqualLogic;
-            trackBarPixSqua.Value = 100 - dto.Tolerance;
+            trackBarPixSqua.Value = Math.Clamp(dto.Accuracy, 5, 100);
+            textBoxPixSquaVolNumber.Text = trackBarPixSqua.Value.ToString();
             checkBoxPixSquaOverlay.Checked = dto.IsOverlayEnabled;
 
             UpdateUiMode();
@@ -249,7 +272,7 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
         public string Point2 { get; set; } = "0, 0";
         public string ColorHex { get; set; } = "#FFFFFF";
         public bool IsEqualLogic { get; set; } = true;
-        public int Tolerance { get; set; } = 5;
+        public int Accuracy { get; set; } = 95;
         public bool IsOverlayEnabled { get; set; } = false;
     }
 }
