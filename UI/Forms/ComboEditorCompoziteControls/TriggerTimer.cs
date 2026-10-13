@@ -3,11 +3,21 @@ using System.Windows.Forms;
 
 namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
 {
-    public partial class TriggerTimer : UserControl
+    public partial class TriggerTimer : UserControl, IComboComponentControl
     {
         public TriggerTimer()
         {
             InitializeComponent();
+        }
+
+        /// <summary>
+        /// Создает полную копию контрола через его DTO.
+        /// </summary>
+        public Control Duplicate()
+        {
+            var copy = new TriggerTimer();
+            copy.SetDto(GetDto());
+            return copy;
         }
 
         public TriggerTimerDto GetDto()

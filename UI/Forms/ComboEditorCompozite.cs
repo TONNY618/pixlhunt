@@ -10,6 +10,10 @@ namespace pxlhunt.UI.Forms
         // Зона заголовка (левый верхний угол), за которую можно цеплять контрол мышкой
         private static readonly Rectangle DragHandleZone = new Rectangle(0, 0, 100, 22);
 
+        // Контекстное меню для элементов внутри панелей (ПКМ)
+        private readonly ContextMenuStrip _itemContextMenu = new ContextMenuStrip();
+        private Control? _contextTargetControl;
+
         public ComboEditorCompozite()
         {
             InitializeComponent();
@@ -18,8 +22,21 @@ namespace pxlhunt.UI.Forms
             this.TopMost = true;
             this.StartPosition = FormStartPosition.Manual;
 
+            // Инициализация контекстного меню элементов
+            SetupItemContextMenu();
+
             // Инициализация Drag-and-Drop механики
             SetupDragAndDrop();
+        }
+
+        /// <summary>
+        /// Создает контекстное меню для элементов внутри панелей-стаканов.
+        /// </summary>
+        private void SetupItemContextMenu()
+        {
+            var duplicateItem = new ToolStripMenuItem("Дублировать");
+            duplicateItem.Click += (s, e) => DuplicateItem(_contextTargetControl);
+            _itemContextMenu.Items.Add(duplicateItem);
         }
 
         // -----------------------------------------------------------------------------
@@ -85,8 +102,36 @@ namespace pxlhunt.UI.Forms
             }
         }
 
+        /// <summary>
+        /// Универсальное дублирование элемента внутри панели-стакана.
+        /// Работает только с контролами, реализующими IComboComponentControl.
+        /// </summary>
+        private void DuplicateItem(Control? source)
+        {
+            if (source is IComboComponentControl comp && source.Parent is FlowLayoutPanel parentPanel)
+            {
+                int idx = parentPanel.Controls.GetChildIndex(source);
+
+                Control clone = comp.Duplicate();
+                clone.Margin = source.Margin;
+
+                SubscribeClonedItemForDragging(clone);
+
+                parentPanel.Controls.Add(clone);
+                parentPanel.Controls.SetChildIndex(clone, idx + 1);
+            }
+        }
+
         private void ClonedItem_MouseDown(Control clonedControl, MouseEventArgs e)
         {
+            // ПКМ в зоне заголовка — открываем контекстное меню элемента
+            if (e.Button == MouseButtons.Right && DragHandleZone.Contains(e.Location))
+            {
+                _contextTargetControl = clonedControl;
+                _itemContextMenu.Show(Cursor.Position);
+                return;
+            }
+
             if (e.Button == MouseButtons.Left && DragHandleZone.Contains(e.Location))
             {
                 FlowLayoutPanel? parentPanel = clonedControl.Parent as FlowLayoutPanel;

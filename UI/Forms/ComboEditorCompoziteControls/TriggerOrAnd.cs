@@ -3,11 +3,21 @@ using System.Windows.Forms;
 
 namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
 {
-    public partial class TriggerOrAnd : UserControl
+    public partial class TriggerOrAnd : UserControl, IComboComponentControl
     {
         public TriggerOrAnd()
         {
             InitializeComponent();
+        }
+
+        /// <summary>
+        /// Создает полную копию контрола через его DTO.
+        /// </summary>
+        public Control Duplicate()
+        {
+            var copy = new TriggerOrAnd();
+            copy.SetDto(GetDto());
+            return copy;
         }
 
         /// <summary>

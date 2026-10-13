@@ -7,7 +7,7 @@ using PixelMacroEngine.Core.Services;
 
 namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
 {
-    public partial class PixSquaControl : UserControl
+    public partial class PixSquaControl : UserControl, IComboComponentControl
     {
         [DllImport("user32.dll")]
         private static extern short GetAsyncKeyState(int vKey);
@@ -288,6 +288,16 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
         // =====================================================================
         // DTO И ВСПОМОГАТЕЛЬНЫЕ
         // =====================================================================
+        /// <summary>
+        /// Создает полную копию контрола через его DTO.
+        /// </summary>
+        public Control Duplicate()
+        {
+            var copy = new PixSquaControl();
+            copy.SetDto(GetDto());
+            return copy;
+        }
+
         public PixSquaDto GetDto()
         {
             return new PixSquaDto

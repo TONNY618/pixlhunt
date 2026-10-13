@@ -18,11 +18,21 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
         public bool PressUp { get; set; } = true;
     }
 
-    public partial class BoxKeyControl : UserControl
+    public partial class BoxKeyControl : UserControl, IComboComponentControl
     {
         public BoxKeyControl()
         {
             InitializeComponent();
+        }
+
+        /// <summary>
+        /// Создает полную копию контрола через его DTO.
+        /// </summary>
+        public Control Duplicate()
+        {
+            var copy = new BoxKeyControl();
+            copy.SetDto(GetDto());
+            return copy;
         }
 
         /// <summary>
