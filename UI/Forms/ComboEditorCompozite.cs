@@ -515,11 +515,6 @@ namespace pxlhunt.UI.Forms
             }
         }
 
-        private void buttonLoad_Click(object sender, EventArgs e)
-        {
-            LoadProfileFromConfig(textBoxNameCOMBO.Text.Trim(), true);
-        }
-
         /// <summary>
         /// Загружает профиль комбо по имени из папки Config.
         /// </summary>
