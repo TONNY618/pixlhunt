@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
@@ -34,6 +35,18 @@ namespace PixelMacroEngine.Core.Services
 
         // === Флаги клавиатуры ===
         private const ushort RI_KEY_BREAK = 1;
+        private const ushort RI_KEY_E0 = 2; // Расширенная клавиша (правые Ctrl/Alt/Win)
+
+        // === Коды виртуальных клавиш модификаторов ===
+        private const ushort VK_SHIFT = 0x10;
+        private const ushort VK_CONTROL = 0x11;
+        private const ushort VK_MENU = 0x12; // Alt
+        private const ushort VK_LSHIFT = 0xA0;
+        private const ushort VK_RSHIFT = 0xA1;
+        private const ushort VK_LCONTROL = 0xA2;
+        private const ushort VK_RCONTROL = 0xA3;
+        private const ushort VK_LMENU = 0xA4;
+        private const ushort VK_RMENU = 0xA5;
 
         // === Флаги кнопок мыши ===
         private const ushort RI_MOUSE_LEFT_BUTTON_DOWN = 0x0001;
@@ -49,9 +62,7 @@ namespace PixelMacroEngine.Core.Services
         private const ushort HID_USAGE_GENERIC_KEYBOARD = 0x06;
 
         // === Потокобезопасное состояние ===
-        // true = устройство принадлежит Arduino (эмулятору) и его ввод игнорируется.
         private static readonly ConcurrentDictionary<IntPtr, bool> _ignoredDevicesCache = new();
-        // Карта: Virtual Key -> нажата ли физически.
         private static readonly ConcurrentDictionary<ushort, bool> _keyStates = new();
 
         private static volatile bool _isLmbDown;
@@ -69,13 +80,20 @@ namespace PixelMacroEngine.Core.Services
             _window = new HiddenMessageWindow();
         }
 
-        /// <summary>Нажата ли физическая клавиша с данным Virtual Key.</summary>
+        /// <summary>Сброс всех зафиксированных состояний клавиш и кнопок (при паузе/сбое).</summary>
+        public static void ResetAllStates()
+        {
+            _isLmbDown = false;
+            _isRmbDown = false;
+            _isMmbDown = false;
+            _keyStates.Clear();
+        }
+
         public static bool IsKeyDown(ushort vKey)
         {
             return _keyStates.TryGetValue(vKey, out bool down) && down;
         }
 
-        /// <summary>Нажата ли физическая кнопка мыши: 1 = ЛКМ, 2 = ПКМ, 3 = СКМ.</summary>
         public static bool IsMouseButtonDown(int button)
         {
             return button switch
@@ -93,11 +111,14 @@ namespace PixelMacroEngine.Core.Services
         {
             public HiddenMessageWindow()
             {
+                // ВАЖНО: Не используем HWND_MESSAGE (-3), так как Windows блокирует 
+                // широковещательный фоновый ввод (RIDEV_INPUTSINK) для чисто служебных окон.
+                // Создаем невидимое окно верхнего уровня.
                 var cp = new CreateParams
                 {
                     Caption = "pxlhuntRawInputSink",
-                    Parent = new IntPtr(-3), // HWND_MESSAGE — окно, невидимое для пользователя
-                    Style = 0
+                    Style = 0, // Без WS_VISIBLE — окно невидимо
+                    Parent = IntPtr.Zero
                 };
                 CreateHandle(cp);
 
@@ -115,7 +136,8 @@ namespace PixelMacroEngine.Core.Services
                 devices[1].dwFlags = RIDEV_INPUTSINK | RIDEV_DEVNOTIFY;
                 devices[1].hwndTarget = Handle;
 
-                RegisterRawInputDevices(devices, 2, (uint)Marshal.SizeOf<RAWINPUTDEVICE>());
+                bool registered = RegisterRawInputDevices(devices, 2, (uint)Marshal.SizeOf<RAWINPUTDEVICE>());
+                Debug.WriteLine($"[RawInput] Регистрация устройств: {(registered ? "УСПЕШНО" : "ОШИБКА: " + Marshal.GetLastWin32Error())}");
             }
 
             protected override void WndProc(ref Message m)
@@ -123,8 +145,6 @@ namespace PixelMacroEngine.Core.Services
                 switch (m.Msg)
                 {
                     case WM_INPUT_DEVICE_CHANGE:
-                        // Устройство физически отключено — выкидываем его из кэша,
-                        // чтобы при повторном подключении выполнилась свежая проверка.
                         if (m.WParam.ToInt32() == GIDC_REMOVAL)
                         {
                             _ignoredDevicesCache.TryRemove(m.LParam, out _);
@@ -146,8 +166,8 @@ namespace PixelMacroEngine.Core.Services
         private static void HandleInput(IntPtr lParam)
         {
             uint headerSize = (uint)Marshal.SizeOf<RAWINPUTHEADER>();
-
             uint size = 0;
+
             GetRawInputData(lParam, RID_INPUT, IntPtr.Zero, ref size, headerSize);
             if (size == 0) return;
 
@@ -159,7 +179,7 @@ namespace PixelMacroEngine.Core.Services
 
                 RAWINPUT raw = Marshal.PtrToStructure<RAWINPUT>(buffer);
 
-                // === Фильтр устройства (Arduino-эмулятор) ===
+                // Фильтр эмулятора (Arduino)
                 if (!_ignoredDevicesCache.TryGetValue(raw.header.hDevice, out bool ignore))
                 {
                     ignore = IsIgnoredDevice(raw.header.hDevice);
@@ -169,10 +189,8 @@ namespace PixelMacroEngine.Core.Services
 
                 if (raw.header.dwType == RIM_TYPEMOUSE)
                 {
-                    // Защита от спама перемещений: чистое движение курсора не несёт кнопочных флагов.
-                    if (raw.data.mouse.usButtonFlags == 0) return;
-
                     ushort flags = raw.data.mouse.usButtonFlags;
+                    if (flags == 0) return; // Чистое перемещение мыши — выходим
 
                     if ((flags & RI_MOUSE_LEFT_BUTTON_DOWN) != 0) _isLmbDown = true;
                     if ((flags & RI_MOUSE_LEFT_BUTTON_UP) != 0) _isLmbDown = false;
@@ -184,10 +202,25 @@ namespace PixelMacroEngine.Core.Services
                 else if (raw.header.dwType == RIM_TYPEKEYBOARD)
                 {
                     ushort vKey = raw.data.keyboard.VKey;
-                    // 0/0xFFFF — служебные "фейковые" коды, игнорируем.
                     if (vKey == 0 || vKey == 0xFFFF) return;
 
-                    bool isUp = (raw.data.keyboard.Flags & RI_KEY_BREAK) != 0;
+                    ushort flags = raw.data.keyboard.Flags;
+                    bool isUp = (flags & RI_KEY_BREAK) != 0;
+
+                    // Конвертация универсальных модификаторов в конкретные L/R
+                    if (vKey == VK_SHIFT)
+                    {
+                        vKey = (raw.data.keyboard.MakeCode == 0x36) ? VK_RSHIFT : VK_LSHIFT;
+                    }
+                    else if (vKey == VK_CONTROL)
+                    {
+                        vKey = (flags & RI_KEY_E0) != 0 ? VK_RCONTROL : VK_LCONTROL;
+                    }
+                    else if (vKey == VK_MENU)
+                    {
+                        vKey = (flags & RI_KEY_E0) != 0 ? VK_RMENU : VK_LMENU;
+                    }
+
                     _keyStates[vKey] = !isUp;
                 }
             }
@@ -197,13 +230,12 @@ namespace PixelMacroEngine.Core.Services
             }
         }
 
-        /// <summary>
-        /// Возвращает true, если устройство принадлежит плате Arduino (по VID/PID из конфига).
-        /// </summary>
         private static bool IsIgnoredDevice(IntPtr hDevice)
         {
             string? deviceName = GetDeviceName(hDevice);
             if (string.IsNullOrEmpty(deviceName)) return false;
+
+            Debug.WriteLine($"[RawInput] Обнаружено устройство: {deviceName}");
 
             try
             {
@@ -213,23 +245,28 @@ namespace PixelMacroEngine.Core.Services
                 if (vid == 0 && pid == 0) return false;
 
                 string target = $"VID_{vid:X4}&PID_{pid:X4}";
-                return deviceName!.Contains(target, StringComparison.OrdinalIgnoreCase);
+                bool isMatch = deviceName.Contains(target, StringComparison.OrdinalIgnoreCase);
+
+                if (isMatch)
+                {
+                    Debug.WriteLine($"[RawInput] >>> ARDUINO ИДЕНТИФИЦИРОВАНО И ИГНОРИРУЕТСЯ: {deviceName}");
+                }
+
+                return isMatch;
             }
             catch
             {
-                // При любой ошибке конфига не блокируем ввод.
                 return false;
             }
         }
 
-        /// <summary>Читает системное имя устройства (в нём содержатся VID/PID).</summary>
         private static string? GetDeviceName(IntPtr hDevice)
         {
             uint size = 0;
             uint res = GetRawInputDeviceInfo(hDevice, RIDI_DEVICENAME, IntPtr.Zero, ref size);
             if (res == uint.MaxValue || size == 0) return null;
 
-            IntPtr buffer = Marshal.AllocHGlobal((int)size * 2); // WCHAR = 2 байта
+            IntPtr buffer = Marshal.AllocHGlobal((int)size * 2);
             try
             {
                 res = GetRawInputDeviceInfo(hDevice, RIDI_DEVICENAME, buffer, ref size);
@@ -243,7 +280,7 @@ namespace PixelMacroEngine.Core.Services
         }
 
         // =====================================================================
-        // P/INVOKE
+        // P/INVOKE И СТРУКТУРЫ
         // =====================================================================
         [DllImport("user32.dll", SetLastError = true)]
         private static extern bool RegisterRawInputDevices(
@@ -257,9 +294,6 @@ namespace PixelMacroEngine.Core.Services
         private static extern uint GetRawInputDeviceInfo(
             IntPtr hDevice, uint uiCommand, IntPtr pData, ref uint pcbSize);
 
-        // =====================================================================
-        // СТРУКТУРЫ RAW INPUT
-        // =====================================================================
         [StructLayout(LayoutKind.Sequential)]
         internal struct RAWINPUTDEVICE
         {
@@ -302,7 +336,6 @@ namespace PixelMacroEngine.Core.Services
             public uint ExtraInformation;
         }
 
-        // Объединение payload мыши/клавиатуры.
         [StructLayout(LayoutKind.Explicit)]
         internal struct RAWINPUTUNION
         {
@@ -310,8 +343,6 @@ namespace PixelMacroEngine.Core.Services
             [FieldOffset(0)] public RAWKEYBOARD keyboard;
         }
 
-        // Заголовок + union. При Sequential смещение union естественно совпадает
-        // и на x86 (16), и на x64 (24).
         [StructLayout(LayoutKind.Sequential)]
         internal struct RAWINPUT
         {
