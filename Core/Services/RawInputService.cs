@@ -226,8 +226,16 @@ namespace PixelMacroEngine.Core.Services
                     if ((flags & RI_MOUSE_LEFT_BUTTON_UP) != 0) { _isLmbDown = false; Log($"[Mouse] LMB UP   flags=0x{flags:X4}"); }
                     if ((flags & RI_MOUSE_RIGHT_BUTTON_DOWN) != 0) { _isRmbDown = true; Log($"[Mouse] RMB DOWN flags=0x{flags:X4}"); }
                     if ((flags & RI_MOUSE_RIGHT_BUTTON_UP) != 0) { _isRmbDown = false; Log($"[Mouse] RMB UP   flags=0x{flags:X4}"); }
-                    if ((flags & RI_MOUSE_MIDDLE_BUTTON_DOWN) != 0) { _isMmbDown = true; Log($"[Mouse] MMB DOWN flags=0x{flags:X4}"); }
-                    if ((flags & RI_MOUSE_MIDDLE_BUTTON_UP) != 0) { _isMmbDown = false; Log($"[Mouse] MMB UP   flags=0x{flags:X4}"); }
+                    if ((flags & RI_MOUSE_MIDDLE_BUTTON_DOWN) != 0)
+                    {
+                        _isMmbDown = true;
+                        Log($"[Mouse] MMB DOWN flags=0x{flags:X4}");
+                    }
+                    if ((flags & RI_MOUSE_MIDDLE_BUTTON_UP) != 0)
+                    {
+                        _isMmbDown = false;
+                        Log($"[Mouse] MMB UP   flags=0x{flags:X4}");
+                    }
                 }
                 else if (raw.header.dwType == RIM_TYPEKEYBOARD)
                 {
@@ -292,6 +300,8 @@ namespace PixelMacroEngine.Core.Services
                            || deviceName.Contains(alt3, StringComparison.OrdinalIgnoreCase);
                 }
 
+                Log($"[RawInput] Проверка устройства: {deviceName} | Ищем VID: {vid:X4}, PID: {pid:X4} | Результат: {isMatch}");
+
                 if (isMatch)
                 {
                     Log($"[RawInput] ARDUINO IGNORED: {deviceName}");
@@ -308,14 +318,17 @@ namespace PixelMacroEngine.Core.Services
 
         private static string? GetDeviceName(IntPtr hDevice)
         {
-            uint size = 0;
-            uint res = GetRawInputDeviceInfo(hDevice, RIDI_DEVICENAME, IntPtr.Zero, ref size);
-            if (res == uint.MaxValue || size == 0) return null;
+            // ВАЖНО: GetRawInputDeviceInfoW с RIDI_DEVICENAME возвращает размер в СИМВОЛАХ (WCHAR),
+            // а не в байтах. При повторном вызове нужно передавать именно это число символов.
+            uint charCount = 0;
+            uint res = GetRawInputDeviceInfo(hDevice, RIDI_DEVICENAME, IntPtr.Zero, ref charCount);
+            if (res == uint.MaxValue || charCount == 0) return null;
 
-            IntPtr buffer = Marshal.AllocHGlobal((int)size * 2);
+            // Выделяем память: charCount * sizeof(char)
+            IntPtr buffer = Marshal.AllocHGlobal((int)charCount * 2);
             try
             {
-                res = GetRawInputDeviceInfo(hDevice, RIDI_DEVICENAME, buffer, ref size);
+                res = GetRawInputDeviceInfo(hDevice, RIDI_DEVICENAME, buffer, ref charCount);
                 if (res == uint.MaxValue) return null;
                 return Marshal.PtrToStringUni(buffer);
             }
@@ -336,7 +349,7 @@ namespace PixelMacroEngine.Core.Services
         private static extern uint GetRawInputData(
             IntPtr hRawInput, uint uiCommand, IntPtr pData, ref uint pcbSize, uint cbSizeHeader);
 
-        [DllImport("user32.dll", SetLastError = true)]
+        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode, EntryPoint = "GetRawInputDeviceInfoW")]
         private static extern uint GetRawInputDeviceInfo(
             IntPtr hDevice, uint uiCommand, IntPtr pData, ref uint pcbSize);
 
