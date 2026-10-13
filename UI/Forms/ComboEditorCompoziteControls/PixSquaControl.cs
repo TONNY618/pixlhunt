@@ -69,6 +69,7 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
             Point? p1 = null;
             Point? p2 = null;
             bool capsWasPressed = false;
+            bool colorLocked = false;
 
             if (isSquare) groupBoxPixSqua.Text = "Укажите первый угол (Нажмите CapsLock)";
             else groupBoxPixSqua.Text = "Наведите и нажмите CapsLock";
@@ -80,7 +81,9 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
                     Point currentPos = Cursor.Position;
                     Color currentColor = ScreenCaptureService.GetPixel(currentPos.X, currentPos.Y);
 
-                    pictureBoxPixSquaSample.BackColor = currentColor;
+                    // В режиме Square после фиксации обеих точек не затираем вычисленный средний цвет региона
+                    if (!colorLocked)
+                        pictureBoxPixSquaSample.BackColor = currentColor;
 
                     bool capsIsPressed = (GetAsyncKeyState(VK_CAPITAL) & 0x8000) != 0;
 
@@ -120,6 +123,9 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
                                 {
                                     textBoxPixSquaColor.Text = ColorToHex(currentColor);
                                 }
+
+                                // Блокируем дальнейшую перезапись цвета под курсором до отпускания ЛКМ
+                                colorLocked = true;
                             }
                         }
                     }
@@ -306,7 +312,7 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
             textBoxPixSquaColor.Text = dto.ColorHex;
             radioButtonPixSquaEqu.Checked = dto.IsEqualLogic;
             radioButtonPixSquaNotEqu.Checked = !dto.IsEqualLogic;
-            trackBarPixSqua.Value = Math.Clamp(dto.Accuracy, 5, 100);
+            trackBarPixSqua.Value = Math.Clamp(dto.Accuracy, 75, 100);
             textBoxPixSquaVolNumber.Text = trackBarPixSqua.Value.ToString();
             checkBoxPixSquaOverlay.Checked = dto.IsOverlayEnabled;
 

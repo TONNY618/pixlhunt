@@ -86,7 +86,7 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
             trackBarPixSqua.AutoSize = false;
             trackBarPixSqua.Location = new Point(11, 14);
             trackBarPixSqua.Maximum = 100;
-            trackBarPixSqua.Minimum = 5;
+            trackBarPixSqua.Minimum = 75;
             trackBarPixSqua.Name = "trackBarPixSqua";
             trackBarPixSqua.Size = new Size(239, 18);
             trackBarPixSqua.TabIndex = 53;
