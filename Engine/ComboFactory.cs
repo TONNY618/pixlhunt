@@ -81,6 +81,13 @@ public static class ComboFactory
             if (dto == null) return null;
             return new MouseMoveStep(dto);
         });
+
+        RegisterStep("MouseKeyControl", data =>
+        {
+            var dto = data.Deserialize<pxlhunt.UI.Forms.ComboEditorCompoziteControls.MouseKeyDto>();
+            if (dto == null) return null;
+            return new MouseClickStep(dto);
+        });
     }
 
     private static ColorTriggerEvaluator CreateColorEvaluator(pxlhunt.UI.Forms.ComboEditorCompoziteControls.PixSquaDto dto)

@@ -365,6 +365,10 @@ namespace pxlhunt.UI.Forms
             {
                 return new CursorMoveControl();
             }
+            if (string.Equals(presetName, "mouseKeyControl", StringComparison.OrdinalIgnoreCase))
+            {
+                return new MouseKeyControl();
+            }
 
             // 2. Временная обратная совместимость для GroupBox'ов
             Control[] found = GroupActionPreset.Controls.Find(presetName, true);

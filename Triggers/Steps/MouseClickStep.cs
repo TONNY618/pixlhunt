@@ -47,6 +47,18 @@ public class MouseClickStep : IComboStep
         }
     }
 
+    public MouseClickStep(pxlhunt.UI.Forms.ComboEditorCompoziteControls.MouseKeyDto dto)
+    {
+        Button = dto.Button switch
+        {
+            "R key" or "2" => 2,
+            "M key" or "3" => 3,
+            _ => 1
+        };
+        PressDown = dto.PressDown;
+        PressUp = dto.PressUp;
+    }
+
     public async Task ExecuteAsync(TriggerExecutionContext context, CancellationToken ct)
     {
         if (!PressDown && !PressUp) return;

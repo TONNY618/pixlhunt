@@ -32,10 +32,7 @@
             triggerOrAnd = new pxlhunt.UI.Forms.ComboEditorCompoziteControls.TriggerOrAnd();
             triggerTimer = new pxlhunt.UI.Forms.ComboEditorCompoziteControls.TriggerTimer();
             pixSquaControl = new pxlhunt.UI.Forms.ComboEditorCompoziteControls.PixSquaControl();
-            groupBoxMouseKey = new GroupBox();
-            comboBoxMouseKeyList = new ComboBox();
-            checkBoxMouseKey2 = new CheckBox();
-            checkBoxMouseKey1 = new CheckBox();
+            mouseKeyControl = new pxlhunt.UI.Forms.ComboEditorCompoziteControls.MouseKeyControl();
             cursorMoveControl = new pxlhunt.UI.Forms.ComboEditorCompoziteControls.CursorMoveControl();
             groupBoxIMAGE = new GroupBox();
             checkBoxTakeXY = new CheckBox();
@@ -88,7 +85,6 @@
             buttonSave = new Button();
             textBoxHelp = new TextBox();
             GroupActionPreset.SuspendLayout();
-            groupBoxMouseKey.SuspendLayout();
             groupBoxIMAGE.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)pictureBoxIMAGESample).BeginInit();
             groupBoxIMAGEVol.SuspendLayout();
@@ -108,7 +104,7 @@
             GroupActionPreset.Controls.Add(triggerOrAnd);
             GroupActionPreset.Controls.Add(triggerTimer);
             GroupActionPreset.Controls.Add(pixSquaControl);
-            GroupActionPreset.Controls.Add(groupBoxMouseKey);
+            GroupActionPreset.Controls.Add(mouseKeyControl);
             GroupActionPreset.Controls.Add(cursorMoveControl);
             GroupActionPreset.Controls.Add(groupBoxIMAGE);
             GroupActionPreset.Controls.Add(groupBoxTextTo);
@@ -148,53 +144,12 @@
             pixSquaControl.Size = new Size(300, 107);
             pixSquaControl.TabIndex = 48;
             // 
-            // groupBoxMouseKey
+            // mouseKeyControl
             // 
-            groupBoxMouseKey.BackColor = Color.Gainsboro;
-            groupBoxMouseKey.Controls.Add(comboBoxMouseKeyList);
-            groupBoxMouseKey.Controls.Add(checkBoxMouseKey2);
-            groupBoxMouseKey.Controls.Add(checkBoxMouseKey1);
-            groupBoxMouseKey.ForeColor = SystemColors.HotTrack;
-            groupBoxMouseKey.Location = new Point(22, 361);
-            groupBoxMouseKey.Name = "groupBoxMouseKey";
-            groupBoxMouseKey.Size = new Size(240, 28);
-            groupBoxMouseKey.TabIndex = 62;
-            groupBoxMouseKey.TabStop = false;
-            groupBoxMouseKey.Text = "Mouse";
-            // 
-            // comboBoxMouseKeyList
-            // 
-            comboBoxMouseKeyList.FormattingEnabled = true;
-            comboBoxMouseKeyList.Items.AddRange(new object[] { "L key", "R key", "M key" });
-            comboBoxMouseKeyList.Location = new Point(63, 3);
-            comboBoxMouseKeyList.Name = "comboBoxMouseKeyList";
-            comboBoxMouseKeyList.Size = new Size(58, 23);
-            comboBoxMouseKeyList.TabIndex = 19;
-            comboBoxMouseKeyList.Text = "L key";
-            // 
-            // checkBoxMouseKey2
-            // 
-            checkBoxMouseKey2.AutoSize = true;
-            checkBoxMouseKey2.Checked = true;
-            checkBoxMouseKey2.CheckState = CheckState.Checked;
-            checkBoxMouseKey2.Location = new Point(194, 5);
-            checkBoxMouseKey2.Name = "checkBoxMouseKey2";
-            checkBoxMouseKey2.Size = new Size(40, 19);
-            checkBoxMouseKey2.TabIndex = 17;
-            checkBoxMouseKey2.Text = "up";
-            checkBoxMouseKey2.UseVisualStyleBackColor = true;
-            // 
-            // checkBoxMouseKey1
-            // 
-            checkBoxMouseKey1.AutoSize = true;
-            checkBoxMouseKey1.Checked = true;
-            checkBoxMouseKey1.CheckState = CheckState.Checked;
-            checkBoxMouseKey1.Location = new Point(133, 5);
-            checkBoxMouseKey1.Name = "checkBoxMouseKey1";
-            checkBoxMouseKey1.Size = new Size(56, 19);
-            checkBoxMouseKey1.TabIndex = 18;
-            checkBoxMouseKey1.Text = "down";
-            checkBoxMouseKey1.UseVisualStyleBackColor = true;
+            mouseKeyControl.Location = new Point(22, 361);
+            mouseKeyControl.Name = "mouseKeyControl";
+            mouseKeyControl.Size = new Size(240, 28);
+            mouseKeyControl.TabIndex = 62;
             // 
             // cursorMoveControl
             // 
@@ -762,8 +717,6 @@
             Text = "ComboEditorCompozite";
             GroupActionPreset.ResumeLayout(false);
             GroupActionPreset.PerformLayout();
-            groupBoxMouseKey.ResumeLayout(false);
-            groupBoxMouseKey.PerformLayout();
             groupBoxIMAGE.ResumeLayout(false);
             groupBoxIMAGE.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)pictureBoxIMAGESample).EndInit();
@@ -840,10 +793,7 @@
         private Button buttonIMAGEsettings;
         private Label labelIMAGE1;
         private Label labelIMAGE2;
-        private GroupBox groupBoxMouseKey;
-        private ComboBox comboBoxMouseKeyList;
-        private CheckBox checkBoxMouseKey1;
-        private CheckBox checkBoxMouseKey2;
+        private pxlhunt.UI.Forms.ComboEditorCompoziteControls.MouseKeyControl mouseKeyControl;
         private TextBox textBoxHelp;
         private Button buttonIMAGEView;
         private CheckBox checkBoxTakeXY;
