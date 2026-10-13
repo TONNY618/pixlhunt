@@ -31,6 +31,7 @@
             GroupActionPreset = new GroupBox();
             triggerOrAnd = new pxlhunt.UI.Forms.ComboEditorCompoziteControls.TriggerOrAnd();
             triggerTimer = new pxlhunt.UI.Forms.ComboEditorCompoziteControls.TriggerTimer();
+            pixSquaControl = new pxlhunt.UI.Forms.ComboEditorCompoziteControls.PixSquaControl();
             groupBoxMouseKey = new GroupBox();
             comboBoxMouseKeyList = new ComboBox();
             checkBoxMouseKey2 = new CheckBox();
@@ -76,7 +77,7 @@
             radioButtonWhellUp = new RadioButton();
             radioButtonWhellDown = new RadioButton();
             groupBoxdelayMs = new GroupBox();
-            textBoxdelayMs = new TextBox();
+            textBoxdelayMin = new TextBox();
             groupBoxKey = new GroupBox();
             checkBoxKey1 = new CheckBox();
             checkBoxKey2 = new CheckBox();
@@ -100,6 +101,7 @@
             radioButtonSkillCooldownGLOBAL = new RadioButton();
             buttonSave = new Button();
             textBoxHelp = new TextBox();
+            textBoxdelayMsMax = new TextBox();
             GroupActionPreset.SuspendLayout();
             groupBoxMouseKey.SuspendLayout();
             groupBoxCurMoove.SuspendLayout();
@@ -160,7 +162,6 @@
             // 
             // pixSquaControl
             // 
-            pixSquaControl = new pxlhunt.UI.Forms.ComboEditorCompoziteControls.PixSquaControl();
             pixSquaControl.BackColor = Color.Transparent;
             pixSquaControl.Location = new Point(8, 77);
             pixSquaControl.Name = "pixSquaControl";
@@ -657,23 +658,24 @@
             // groupBoxdelayMs
             // 
             groupBoxdelayMs.BackColor = Color.Gainsboro;
-            groupBoxdelayMs.Controls.Add(textBoxdelayMs);
+            groupBoxdelayMs.Controls.Add(textBoxdelayMsMax);
+            groupBoxdelayMs.Controls.Add(textBoxdelayMin);
             groupBoxdelayMs.ForeColor = Color.DarkOliveGreen;
             groupBoxdelayMs.Location = new Point(8, 518);
             groupBoxdelayMs.Name = "groupBoxdelayMs";
-            groupBoxdelayMs.Size = new Size(207, 28);
+            groupBoxdelayMs.Size = new Size(318, 28);
             groupBoxdelayMs.TabIndex = 4;
             groupBoxdelayMs.TabStop = false;
             groupBoxdelayMs.Text = "Задержка, ~мс";
             // 
-            // textBoxdelayMs
+            // textBoxdelayMin
             // 
-            textBoxdelayMs.Location = new Point(103, 0);
-            textBoxdelayMs.MaxLength = 5;
-            textBoxdelayMs.Name = "textBoxdelayMs";
-            textBoxdelayMs.Size = new Size(96, 23);
-            textBoxdelayMs.TabIndex = 2;
-            textBoxdelayMs.Text = "500";
+            textBoxdelayMin.Location = new Point(103, 0);
+            textBoxdelayMin.MaxLength = 5;
+            textBoxdelayMin.Name = "textBoxdelayMin";
+            textBoxdelayMin.Size = new Size(96, 23);
+            textBoxdelayMin.TabIndex = 2;
+            textBoxdelayMin.Text = "500";
             // 
             // groupBoxKey
             // 
@@ -919,6 +921,15 @@
             textBoxHelp.TabIndex = 63;
             textBoxHelp.Text = "— Фиксация XY: LKM+Потянуть => CapsLock - под курсором \r\n— ЖЕЛТЫЙ - Триггер, ГОЛУБОЙ и то и то, СЕРЫЙ - actions";
             // 
+            // textBoxdelayMsMax
+            // 
+            textBoxdelayMsMax.Location = new Point(214, 0);
+            textBoxdelayMsMax.MaxLength = 5;
+            textBoxdelayMsMax.Name = "textBoxdelayMsMax";
+            textBoxdelayMsMax.Size = new Size(96, 23);
+            textBoxdelayMsMax.TabIndex = 3;
+            textBoxdelayMsMax.Text = "500";
+            // 
             // ComboEditorCompozite
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -986,7 +997,7 @@
         private RadioButton radioButtonWhellUp;
         private RadioButton radioButtonWhellDown;
         private GroupBox groupBoxdelayMs;
-        private TextBox textBoxdelayMs;
+        private TextBox textBoxdelayMin;
         private GroupBox groupBoxKey;
         private CheckBox checkBoxKey1;
         private CheckBox checkBoxKey2;
@@ -1049,5 +1060,6 @@
         private CheckBox checkBoxMouseKey2;
         private TextBox textBoxHelp;
         private Button buttonIMAGEView;
+        private TextBox textBoxdelayMsMax;
     }
 }
