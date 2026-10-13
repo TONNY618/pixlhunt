@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Drawing;
 using System.Text.Json;
 using System.Windows.Forms;
 
@@ -9,7 +10,17 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
         public TriggerTimer()
         {
             InitializeComponent();
-            textBoxTriggerTimerMax.Leave += TextBoxTriggerTimerMax_Leave;
+
+            // Подписываем правое поле Max (левое поле и кнопка ? уже подписаны в Designer.cs)
+            textBoxTriggerTimerMax.Leave += (s, e) => ValidateInterval();
+            textBoxTriggerTimerMax.KeyDown += (s, e) =>
+            {
+                if (e.KeyCode == Keys.Enter)
+                {
+                    ValidateInterval();
+                    e.SuppressKeyPress = true;
+                }
+            };
         }
 
         public string ComponentType => "TriggerTimer";
@@ -20,107 +31,100 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
 
         public TriggerTimerDto GetDto()
         {
-            int min = int.TryParse(textBoxTriggerTimer.Text, out int m) ? Math.Max(1, m) : 50;
-            int max = int.TryParse(textBoxTriggerTimerMax.Text, out int mx) ? Math.Max(min, mx) : min;
+            ValidateInterval();
+            int min = int.Parse(textBoxTriggerTimer.Text);
+            int max = int.Parse(textBoxTriggerTimerMax.Text);
             return new TriggerTimerDto { MinMs = min, MaxMs = max };
         }
 
         public void SetDto(TriggerTimerDto? dto)
         {
             if (dto == null) return;
-            textBoxTriggerTimer.Text = dto.MinMs.ToString();
-            textBoxTriggerTimerMax.Text = dto.MaxMs.ToString();
+            int min = Math.Max(1, dto.MinMs);
+            int max = Math.Max(min, dto.MaxMs);
+
+            textBoxTriggerTimer.Text = min.ToString();
+            textBoxTriggerTimerMax.Text = max.ToString();
         }
 
         /// <summary>
-        /// Валидация правого поля: если Max меньше Min, приравниваем Max = Min.
+        /// Единая валидация: гарантирует 1 <= Min <= Max.
+        /// Если Min > Max, поле Max автоматически приравнивается к Min.
         /// </summary>
-        private void TextBoxTriggerTimerMax_Leave(object? sender, EventArgs e)
+        private void ValidateInterval()
         {
             int min = int.TryParse(textBoxTriggerTimer.Text, out int m) ? Math.Max(1, m) : 50;
-            int max = int.TryParse(textBoxTriggerTimerMax.Text, out int mx) ? mx : min;
+            int max = int.TryParse(textBoxTriggerTimerMax.Text, out int mx) ? Math.Max(1, mx) : min;
+
             if (max < min)
             {
-                textBoxTriggerTimerMax.Text = min.ToString();
+                max = min;
             }
+
+            textBoxTriggerTimer.Text = min.ToString();
+            textBoxTriggerTimerMax.Text = max.ToString();
         }
 
-        /// <summary>
-        /// Автокоррекция: если Max меньше Min, приравниваем Max = Min.
-        /// </summary>
-        private void AutoCorrectMax()
+        // =====================================================================
+        // ОБРАБОТЧИКИ, ПРИВЯЗАННЫЕ В ДИЗАЙНЕРЕ (TriggerTimer.Designer.cs)
+        // =====================================================================
+
+        private void textBoxTriggerTimer_Leave(object? sender, EventArgs e)
         {
-            if (int.TryParse(textBoxTriggerTimer.Text, out int min) &&
-                int.TryParse(textBoxTriggerTimerMax.Text, out int max))
-            {
-                if (max < min)
-                {
-                    textBoxTriggerTimerMax.Text = min.ToString();
-                }
-            }
+            ValidateInterval();
         }
 
-        private void textBoxTriggerTimer_Leave(object sender, EventArgs e)
-        {
-            AutoCorrectMax();
-        }
-
-        private void textBoxTriggerTimer_KeyDown(object sender, KeyEventArgs e)
+        private void textBoxTriggerTimer_KeyDown(object? sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Enter)
             {
-                AutoCorrectMax();
+                ValidateInterval();
                 e.SuppressKeyPress = true;
             }
         }
 
-        private void button1_Click(object sender, EventArgs e)
+        private void button1_Click(object? sender, EventArgs e)
         {
             string helpText =
-                "Задержка между значениями, вероятность колокол\n" +
+                "Задержка между значениями (колоколообразное распределение):\n\n" +
                 "1 000 мс = 1 секунда\n" +
                 "10 000 мс = 10 секунд\n" +
                 "60 000 мс = 1 минута\n" +
                 "300 000 мс = 5 минут\n" +
                 "3 600 000 мс = 1 час";
 
-            using (var helpForm = new Form())
+            using var helpForm = new Form
             {
-                helpForm.Text = "Справка: миллисекунды";
-                helpForm.FormBorderStyle = FormBorderStyle.FixedDialog;
-                helpForm.StartPosition = FormStartPosition.CenterParent;
-                helpForm.TopMost = true;
-                helpForm.MinimizeBox = false;
-                helpForm.MaximizeBox = false;
-                helpForm.ShowInTaskbar = false;
-                helpForm.ClientSize = new System.Drawing.Size(280, 160);
+                Text = "Справка: миллисекунды",
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                StartPosition = FormStartPosition.CenterParent,
+                TopMost = true,
+                MinimizeBox = false,
+                MaximizeBox = false,
+                ShowInTaskbar = false,
+                ClientSize = new Size(290, 170)
+            };
 
-                var label = new Label
-                {
-                    Text = helpText,
-                    Dock = DockStyle.Fill,
-                    TextAlign = System.Drawing.ContentAlignment.MiddleLeft,
-                    Padding = new Padding(12)
-                };
-                helpForm.Controls.Add(label);
+            var label = new Label
+            {
+                Text = helpText,
+                Dock = DockStyle.Fill,
+                TextAlign = ContentAlignment.MiddleLeft,
+                Padding = new Padding(14)
+            };
+            helpForm.Controls.Add(label);
 
-                Form? parentForm = this.FindForm();
-                if (parentForm != null)
-                {
-                    helpForm.ShowDialog(parentForm);
-                }
-                else
-                {
-                    helpForm.StartPosition = FormStartPosition.CenterScreen;
-                    helpForm.ShowDialog();
-                }
-            }
+            Form? parent = FindForm();
+            if (parent != null)
+                helpForm.ShowDialog(parent);
+            else
+                helpForm.ShowDialog();
         }
     }
 
     /// <summary>
-    /// DTO триггера периодического срабатывания по таймеру.
-    /// Возвращает True через случайный интервал в диапазоне [MinIntervalMs, MaxIntervalMs].
+    /// DTO интервала времени: используется как плавающий таймер в триггерах 
+    /// и как пауза Task.Delay в действиях.
     /// </summary>
     public class TriggerTimerDto
     {
@@ -128,8 +132,7 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
         public int MaxMs { get; set; } = 100;
 
         /// <summary>
-        /// Алиас для обратной совместимости: чтение/запись MinMs.
-        /// При записи автоматически подтягивает MaxMs, если он меньше.
+        /// Алиас для обратной совместимости.
         /// </summary>
         public int IntervalMs
         {

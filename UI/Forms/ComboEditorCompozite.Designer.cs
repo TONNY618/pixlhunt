@@ -38,6 +38,7 @@
             checkBoxMouseKey1 = new CheckBox();
             cursorMoveControl = new pxlhunt.UI.Forms.ComboEditorCompoziteControls.CursorMoveControl();
             groupBoxIMAGE = new GroupBox();
+            checkBoxTakeXY = new CheckBox();
             labelIMAGE2 = new Label();
             labelIMAGE1 = new Label();
             checkBoxIMAGEOverlay = new CheckBox();
@@ -66,9 +67,6 @@
             textBoxStepWhell = new TextBox();
             radioButtonWhellUp = new RadioButton();
             radioButtonWhellDown = new RadioButton();
-            groupBoxdelayMs = new GroupBox();
-            textBoxdelayMsMax = new TextBox();
-            textBoxdelayMin = new TextBox();
             boxKeyControl = new pxlhunt.UI.Forms.ComboEditorCompoziteControls.BoxKeyControl();
             label7 = new Label();
             temp = new ListBox();
@@ -89,7 +87,6 @@
             radioButtonSkillCooldownGLOBAL = new RadioButton();
             buttonSave = new Button();
             textBoxHelp = new TextBox();
-            checkBoxTakeXY = new CheckBox();
             GroupActionPreset.SuspendLayout();
             groupBoxMouseKey.SuspendLayout();
             groupBoxIMAGE.SuspendLayout();
@@ -100,7 +97,6 @@
             groupBoxTextTo.SuspendLayout();
             groupBoxSound.SuspendLayout();
             groupBoxMouseScroll.SuspendLayout();
-            groupBoxdelayMs.SuspendLayout();
             groupBoxPauseIfMooved.SuspendLayout();
             groupBoxPriority.SuspendLayout();
             groupBoxCDtrigger.SuspendLayout();
@@ -118,7 +114,6 @@
             GroupActionPreset.Controls.Add(groupBoxTextTo);
             GroupActionPreset.Controls.Add(groupBoxSound);
             GroupActionPreset.Controls.Add(groupBoxMouseScroll);
-            GroupActionPreset.Controls.Add(groupBoxdelayMs);
             GroupActionPreset.Controls.Add(boxKeyControl);
             GroupActionPreset.Controls.Add(label7);
             GroupActionPreset.Font = new Font("Calibri", 9.75F, FontStyle.Regular, GraphicsUnit.Point, 204);
@@ -203,6 +198,7 @@
             // 
             // cursorMoveControl
             // 
+            cursorMoveControl.BackColor = Color.Transparent;
             cursorMoveControl.Location = new Point(22, 429);
             cursorMoveControl.Name = "cursorMoveControl";
             cursorMoveControl.Size = new Size(300, 74);
@@ -231,6 +227,15 @@
             groupBoxIMAGE.TabIndex = 49;
             groupBoxIMAGE.TabStop = false;
             groupBoxIMAGE.Text = "IF IMAGE";
+            // 
+            // checkBoxTakeXY
+            // 
+            checkBoxTakeXY.AutoSize = true;
+            checkBoxTakeXY.Location = new Point(239, 38);
+            checkBoxTakeXY.Name = "checkBoxTakeXY";
+            checkBoxTakeXY.Size = new Size(15, 14);
+            checkBoxTakeXY.TabIndex = 66;
+            checkBoxTakeXY.UseVisualStyleBackColor = true;
             // 
             // labelIMAGE2
             // 
@@ -529,37 +534,6 @@
             radioButtonWhellDown.Text = "\\/";
             radioButtonWhellDown.UseVisualStyleBackColor = true;
             // 
-            // groupBoxdelayMs
-            // 
-            groupBoxdelayMs.BackColor = Color.Gainsboro;
-            groupBoxdelayMs.Controls.Add(textBoxdelayMsMax);
-            groupBoxdelayMs.Controls.Add(textBoxdelayMin);
-            groupBoxdelayMs.ForeColor = Color.DarkOliveGreen;
-            groupBoxdelayMs.Location = new Point(8, 518);
-            groupBoxdelayMs.Name = "groupBoxdelayMs";
-            groupBoxdelayMs.Size = new Size(318, 28);
-            groupBoxdelayMs.TabIndex = 4;
-            groupBoxdelayMs.TabStop = false;
-            groupBoxdelayMs.Text = "Задержка, ~мс";
-            // 
-            // textBoxdelayMsMax
-            // 
-            textBoxdelayMsMax.Location = new Point(214, 0);
-            textBoxdelayMsMax.MaxLength = 5;
-            textBoxdelayMsMax.Name = "textBoxdelayMsMax";
-            textBoxdelayMsMax.Size = new Size(96, 23);
-            textBoxdelayMsMax.TabIndex = 3;
-            textBoxdelayMsMax.Text = "500";
-            // 
-            // textBoxdelayMin
-            // 
-            textBoxdelayMin.Location = new Point(103, 0);
-            textBoxdelayMin.MaxLength = 5;
-            textBoxdelayMin.Name = "textBoxdelayMin";
-            textBoxdelayMin.Size = new Size(96, 23);
-            textBoxdelayMin.TabIndex = 2;
-            textBoxdelayMin.Text = "500";
-            // 
             // boxKeyControl
             // 
             boxKeyControl.Location = new Point(8, 318);
@@ -764,15 +738,6 @@
             textBoxHelp.TabIndex = 63;
             textBoxHelp.Text = "— Фиксация XY: LKM+Потянуть => CapsLock - под курсором \r\n— ЖЕЛТЫЙ - Триггер, ГОЛУБОЙ и то и то, СЕРЫЙ - actions";
             // 
-            // checkBoxTakeXY
-            // 
-            checkBoxTakeXY.AutoSize = true;
-            checkBoxTakeXY.Location = new Point(239, 38);
-            checkBoxTakeXY.Name = "checkBoxTakeXY";
-            checkBoxTakeXY.Size = new Size(15, 14);
-            checkBoxTakeXY.TabIndex = 66;
-            checkBoxTakeXY.UseVisualStyleBackColor = true;
-            // 
             // ComboEditorCompozite
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -811,8 +776,6 @@
             groupBoxSound.ResumeLayout(false);
             groupBoxMouseScroll.ResumeLayout(false);
             groupBoxMouseScroll.PerformLayout();
-            groupBoxdelayMs.ResumeLayout(false);
-            groupBoxdelayMs.PerformLayout();
             groupBoxPauseIfMooved.ResumeLayout(false);
             groupBoxPauseIfMooved.PerformLayout();
             groupBoxPriority.ResumeLayout(false);
@@ -834,8 +797,6 @@
         private TextBox textBoxStepWhell;
         private RadioButton radioButtonWhellUp;
         private RadioButton radioButtonWhellDown;
-        private GroupBox groupBoxdelayMs;
-        private TextBox textBoxdelayMin;
         private pxlhunt.UI.Forms.ComboEditorCompoziteControls.BoxKeyControl boxKeyControl;
         private Label label7;
         private Label labelActions;
@@ -885,7 +846,6 @@
         private CheckBox checkBoxMouseKey2;
         private TextBox textBoxHelp;
         private Button buttonIMAGEView;
-        private TextBox textBoxdelayMsMax;
         private CheckBox checkBoxTakeXY;
     }
 }

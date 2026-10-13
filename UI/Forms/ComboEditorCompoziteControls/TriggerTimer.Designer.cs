@@ -46,7 +46,7 @@
             groupBoxTriggerTimer.Size = new Size(180, 43);
             groupBoxTriggerTimer.TabIndex = 0;
             groupBoxTriggerTimer.TabStop = false;
-            groupBoxTriggerTimer.Text = "Таймер";
+            groupBoxTriggerTimer.Text = "Таймер / пауза";
             // 
             // button1
             // 
