@@ -1,247 +1,107 @@
 using System;
 using System.Collections.Generic;
-using System.Drawing;
+using System.Text.Json;
 using PixelMacroEngine.Core.Abstractions;
 using PixelMacroEngine.Core.Models;
-using PixelMacroEngine.Triggers;
-using PixelMacroEngine.Triggers.Steps;
-using pxlhunt.FORMS;
 
 namespace PixelMacroEngine.Engine;
 
 /// <summary>
 /// [Подсистема движка: Уровень 3 - Фабрика]
-/// Конвертирует UI-модель ComboProfile (из ComboEditorForm) в боевую модель ActiveCombo.
-/// Связан с: ComboProfile, ActiveCombo, IComboStep, PressKeyStep, ConditionStep.
+/// Универсальная фабрика на паттерне Registry: сборщики шагов и триггеров
+/// регистрируются в словарях делегатов, что устраняет жёсткую привязку к конструкторам.
 /// </summary>
 public static class ComboFactory
 {
-    /// <summary>
-    /// Создаёт ActiveCombo из UI-профиля.
-    /// </summary>
-    public static ActiveCombo Create(ComboProfile profile)
+    // УНИВЕРСАЛЬНЫЕ РЕЕСТРЫ СБОРЩИКОВ
+    // Ключ - имя контрола (ComponentType), Значение - функция сборки шага/триггера
+    private static readonly Dictionary<string, Func<JsonElement, ITriggerEvaluator?>> TriggerBuilders = new();
+    private static readonly Dictionary<string, Func<JsonElement, IComboStep?>> StepBuilders = new();
+
+    static ComboFactory()
+    {
+        // Здесь в будущем будут регистрироваться сборщики (когда файлы шагов будут адаптированы)
+        // Пример (пока закомментирован, чтобы не было ошибок компиляции):
+        // RegisterTrigger("TriggerTimer", data => new TimerTriggerEvaluator(data.Deserialize<TriggerTimerDto>().IntervalMs));
+    }
+
+    public static void RegisterTrigger(string componentType, Func<JsonElement, ITriggerEvaluator?> builder)
+    {
+        TriggerBuilders[componentType] = builder;
+    }
+
+    public static void RegisterStep(string componentType, Func<JsonElement, IComboStep?> builder)
+    {
+        StepBuilders[componentType] = builder;
+    }
+
+    public static ActiveCombo Create(ComboProfileDto profile)
     {
         if (profile == null) throw new ArgumentNullException(nameof(profile));
 
-        // Кулдаун определяется системно через AppConfigManager:
-        // - Общий (Skill): GlobalCooldownDefaultMs
-        // - Мгновенный (HP): InstantComboDefaultCooldownMs
-        int cooldownMs = profile.IsCooldownGlobal
-            ? AppConfigManager.Config.GlobalCooldownDefaultMs
-            : AppConfigManager.Config.InstantComboDefaultCooldownMs;
+        int cooldownMs = profile.IsCooldownGlobal ? 1100 : 1500; // Fallbacks
+        int priority = int.TryParse(profile.Priority, out int p) ? p : 50;
 
         var combo = new ActiveCombo
         {
             Name = profile.ComboName ?? string.Empty,
-            Priority = ParseIntOrDefault(profile.Priority, 50),
+            Priority = priority,
             CooldownMs = cooldownMs,
             IsGlobalCooldown = profile.IsCooldownGlobal,
-            PauseIfWasd = profile.PauseIfWASD
+            PauseIfWasd = profile.PauseIfWASD,
+            IsEnabled = profile.IsOnOff
         };
 
-        BuildSteps(profile.Actions, combo.Steps);
         BuildTriggers(profile.Triggers, combo);
+        BuildSteps(profile.Actions, combo.Steps);
 
         return combo;
     }
 
-    /// <summary>
-    /// Собирает триггеры из UI-элементов профиля.
-    /// Поддерживаются типы: "groupBox1" (цвет), "IFconditionsKEYgroupBox" (клавиша),
-    /// "IFconditionsOrAndStart" (логика И/ИЛИ), "IFconditionsTimerStart" (таймер).
-    /// </summary>
-    private static void BuildTriggers(List<ComboElement> elements, ActiveCombo combo)
+    private static void BuildTriggers(List<ComboElementDto> elements, ActiveCombo combo)
     {
         if (elements == null) return;
-
         foreach (var elem in elements)
         {
-            if (elem == null) continue;
-
-            switch (elem.ElementType)
+            if (elem.Type == "TriggerOrAnd")
             {
-                case "groupBox1":
-                    var trigger = ParseColorEvaluator(elem.Parameters, "1");
-                    if (trigger != null)
-                        combo.Triggers.Add(trigger);
-                    break;
+                // Логика И/ИЛИ зашита в сам комбо, а не является триггером
+                var orAndDto = elem.Data.Deserialize<pxlhunt.UI.Forms.ComboEditorCompoziteControls.TriggerOrAndDto>();
+                if (orAndDto != null) combo.IsOrTriggerLogic = orAndDto.IsOrLogic;
+                continue;
+            }
 
-                case "IFconditionsKEYgroupBox":
-                    var keyTrigger = CreateKeyTrigger(elem);
-                    if (keyTrigger != null)
-                        combo.Triggers.Add(keyTrigger);
-                    break;
-
-                case "IFconditionsOrAndStart":
-                    if (elem.Parameters != null &&
-                        elem.Parameters.GetValueOrDefault("radioButtonOrAnd1_1") == "True")
-                    {
-                        combo.IsOrTriggerLogic = true;
-                    }
-                    break;
-
-                case "IFconditionsTimerStart":
-                    if (elem.Parameters != null)
-                    {
-                        int ms = ParseIntOrDefault(elem.Parameters.GetValueOrDefault("TimerStarttextBox"), 0);
-                        if (ms > 0)
-                            combo.Triggers.Add(new TimerTriggerEvaluator(ms));
-                    }
-                    break;
+            if (TriggerBuilders.TryGetValue(elem.Type, out var builder))
+            {
+                var trigger = builder(elem.Data);
+                if (trigger != null) combo.Triggers.Add(trigger);
             }
         }
     }
 
-    /// <summary>
-    /// Создаёт ColorTriggerEvaluator из параметров UI-элемента по заданному суффиксу.
-    /// </summary>
-    private static ColorTriggerEvaluator? ParseColorEvaluator(Dictionary<string, string>? p, string suffix)
-    {
-        if (p == null) return null;
-
-        Point point1 = ParsePoint(p.GetValueOrDefault($"textBoxXY{suffix}_1"));
-        Point point2 = ParsePoint(p.GetValueOrDefault($"textBoxXY{suffix}_2"));
-        Color expected = ParseColor(p.GetValueOrDefault($"textBoxColor{suffix}"));
-        int deviant = ParseIntOrDefault(p.GetValueOrDefault($"textBoxDeviant{suffix}"), 0);
-
-        bool isNotEqual = p.GetValueOrDefault($"radioButtonEqu{suffix}_2") == "True";
-        bool isRegionAverage = p.GetValueOrDefault($"radioButtonSquare{suffix}_2") == "True";
-
-        return new ColorTriggerEvaluator(point1, point2, expected, deviant, isNotEqual, isRegionAverage);
-    }
-
-    /// <summary>
-    /// Создаёт KeyTriggerEvaluator из параметров UI-элемента "IFconditionsKEYgroupBox".
-    /// Имя клавиши берётся из параметра "IFconditionsKEYcomboBox".
-    /// </summary>
-    private static KeyTriggerEvaluator? CreateKeyTrigger(ComboElement elem)
-    {
-        var p = elem.Parameters;
-        if (p == null) return null;
-
-        string keyName = p.GetValueOrDefault("IFconditionsKEYcomboBox", "");
-        if (string.IsNullOrWhiteSpace(keyName)) return null;
-
-        return new KeyTriggerEvaluator(keyName);
-    }
-
-    /// <summary>
-    /// Парсит строку вида "119, 273" в Point.
-    /// </summary>
-    private static Point ParsePoint(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-            return Point.Empty;
-
-        var parts = value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        if (parts.Length < 2)
-            return Point.Empty;
-
-        int x = ParseIntOrDefault(parts[0], 0);
-        int y = ParseIntOrDefault(parts[1], 0);
-        return new Point(x, y);
-    }
-
-    /// <summary>
-    /// Парсит hex-строку цвета (например "#A0A0A0") в Color.
-    /// </summary>
-    private static Color ParseColor(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-            return Color.Black;
-
-        try
-        {
-            return ColorTranslator.FromHtml(value);
-        }
-        catch
-        {
-            return Color.Black;
-        }
-    }
-
-    /// <summary>
-    /// Собирает дерево шагов с учётом IndentLevel (поддерживается 1 уровень вложенности).
-    /// Элементы с IndentLevel > 0 попадают во внутренний список TrueSteps последнего ConditionStep.
-    /// </summary>
-    private static void BuildSteps(List<ComboElement> elements, List<IComboStep> rootSteps)
+    private static void BuildSteps(List<ComboElementDto> elements, List<IComboStep> rootSteps)
     {
         if (elements == null) return;
 
-        ConditionStep? lastCondition = null;
+        IComboStep? lastCondition = null; // Позже заменим на ConditionStep
 
         foreach (var elem in elements)
         {
-            if (elem == null) continue;
-
-            IComboStep? step = CreateStep(elem);
-            if (step == null) continue;
-
-            if (elem.IndentLevel > 0)
+            if (StepBuilders.TryGetValue(elem.Type, out var builder))
             {
-                // Вложенный шаг — добавляем в TrueSteps последнего условия
-                if (lastCondition != null)
+                IComboStep? step = builder(elem.Data);
+                if (step == null) continue;
+
+                if (elem.Indent > 0 && lastCondition != null)
                 {
-                    lastCondition.TrueSteps.Add(step);
+                    // Вложенность (в будущем: lastCondition.TrueSteps.Add(step))
                 }
-                // Если условия нет — игнорируем (некорректный профиль)
-            }
-            else
-            {
-                rootSteps.Add(step);
-
-                // Запоминаем последнее условие корневого уровня для вложенных шагов
-                lastCondition = step as ConditionStep;
+                else
+                {
+                    rootSteps.Add(step);
+                    lastCondition = step;
+                }
             }
         }
-    }
-
-    /// <summary>
-    /// Создаёт конкретный шаг по типу элемента.
-    /// </summary>
-    private static IComboStep? CreateStep(ComboElement elem)
-    {
-        switch (elem.ElementType)
-        {
-            case "pressKey":
-                return new PressKeyStep(elem.Parameters);
-
-            case "groupBoxCond":
-                return new ConditionStep(ParseColorEvaluator(elem.Parameters, "2"));
-
-            case "groupBoxAwait":
-                return new AwaitStep(ParseColorEvaluator(elem.Parameters, "3"));
-
-            case "delayMs":
-                return new PixelMacroEngine.Triggers.Steps.DelayStep(elem.Parameters);
-
-            // === БЛОКИ МЫШИ ===
-            case "groupBox2": // ЛКМ (кнопка 1, суффикс 1)
-                return new MouseClickStep(1, elem.Parameters, "1");
-
-            case "groupBox3": // ПКМ (кнопка 2, суффикс 2)
-                return new MouseClickStep(2, elem.Parameters, "2");
-
-            case "groupBox4": // СКМ (кнопка 3, суффикс 3)
-                return new MouseClickStep(3, elem.Parameters, "3");
-
-            case "groupBox5": // Колесико мыши
-                return new MouseScrollStep(elem.Parameters);
-
-            case "mooveCursor":
-            case "moveCursor": // Перемещение курсора
-                return new MouseMoveStep(elem.Parameters);
-
-            default:
-                return null;
-        }
-    }
-
-    private static int ParseIntOrDefault(string? value, int defaultValue)
-    {
-        if (int.TryParse(value, out int result))
-            return result;
-
-        return defaultValue;
     }
 }

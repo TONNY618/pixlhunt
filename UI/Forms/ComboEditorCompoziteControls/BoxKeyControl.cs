@@ -33,16 +33,6 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
         public void SetDtoFromElement(JsonElement element) => SetDto(element.Deserialize<BoxKeyDto>());
 
         /// <summary>
-        /// Создает полную копию контрола через его DTO.
-        /// </summary>
-        public Control Duplicate()
-        {
-            var copy = new BoxKeyControl();
-            copy.SetDto(GetDto());
-            return copy;
-        }
-
-        /// <summary>
         /// Считывает текущее состояние контролов в DTO.
         /// </summary>
         public BoxKeyDto GetDto()

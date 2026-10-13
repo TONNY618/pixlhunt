@@ -294,16 +294,6 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
         // =====================================================================
         // DTO И ВСПОМОГАТЕЛЬНЫЕ
         // =====================================================================
-        /// <summary>
-        /// Создает полную копию контрола через его DTO.
-        /// </summary>
-        public Control Duplicate()
-        {
-            var copy = new PixSquaControl();
-            copy.SetDto(GetDto());
-            return copy;
-        }
-
         public PixSquaDto GetDto()
         {
             return new PixSquaDto

@@ -17,16 +17,6 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
 
         public void SetDtoFromElement(JsonElement element) => SetDto(element.Deserialize<TriggerTimerDto>());
 
-        /// <summary>
-        /// Создает полную копию контрола через его DTO.
-        /// </summary>
-        public Control Duplicate()
-        {
-            var copy = new TriggerTimer();
-            copy.SetDto(GetDto());
-            return copy;
-        }
-
         public TriggerTimerDto GetDto()
         {
             return new TriggerTimerDto

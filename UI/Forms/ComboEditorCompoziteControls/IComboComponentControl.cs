@@ -10,8 +10,6 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
     /// </summary>
     public interface IComboComponentControl
     {
-        Control Duplicate();
-
         /// <summary>
         /// Строковый идентификатор типа компонента (используется при сохранении в JSON).
         /// </summary>

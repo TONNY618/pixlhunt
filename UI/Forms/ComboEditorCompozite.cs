@@ -120,9 +120,14 @@ namespace pxlhunt.UI.Forms
             {
                 int idx = parentPanel.Controls.GetChildIndex(source);
 
-                Control clone = comp.Duplicate();
-                clone.Margin = source.Margin;
+                // УНИВЕРСАЛЬНОЕ ДУБЛИРОВАНИЕ ЧЕРЕЗ REFLECTION И JSON
+                Control clone = (Control)Activator.CreateInstance(source.GetType())!;
 
+                // Передаем данные из оригинала в клон
+                var dtoJson = System.Text.Json.JsonSerializer.SerializeToElement(comp.GetDto());
+                ((IComboComponentControl)clone).SetDtoFromElement(dtoJson);
+
+                clone.Margin = source.Margin;
                 SubscribeClonedItemForDragging(clone);
 
                 parentPanel.Controls.Add(clone);
