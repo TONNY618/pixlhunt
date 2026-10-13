@@ -99,6 +99,7 @@
             radioButtonSkillCooldownGLOBAL = new RadioButton();
             buttonSave = new Button();
             textBoxHelp = new TextBox();
+            checkBoxTakeXY = new CheckBox();
             GroupActionPreset.SuspendLayout();
             groupBoxMouseKey.SuspendLayout();
             groupBoxCurMoove.SuspendLayout();
@@ -334,6 +335,7 @@
             // groupBoxIMAGE
             // 
             groupBoxIMAGE.BackColor = Color.Cyan;
+            groupBoxIMAGE.Controls.Add(checkBoxTakeXY);
             groupBoxIMAGE.Controls.Add(labelIMAGE2);
             groupBoxIMAGE.Controls.Add(labelIMAGE1);
             groupBoxIMAGE.Controls.Add(checkBoxIMAGEOverlay);
@@ -416,9 +418,9 @@
             // pictureBoxIMAGESample
             // 
             pictureBoxIMAGESample.BackColor = Color.White;
-            pictureBoxIMAGESample.Location = new Point(239, 35);
+            pictureBoxIMAGESample.Location = new Point(238, 59);
             pictureBoxIMAGESample.Name = "pictureBoxIMAGESample";
-            pictureBoxIMAGESample.Size = new Size(20, 47);
+            pictureBoxIMAGESample.Size = new Size(20, 23);
             pictureBoxIMAGESample.TabIndex = 58;
             pictureBoxIMAGESample.TabStop = false;
             // 
@@ -886,6 +888,15 @@
             textBoxHelp.TabIndex = 63;
             textBoxHelp.Text = "— Фиксация XY: LKM+Потянуть => CapsLock - под курсором \r\n— ЖЕЛТЫЙ - Триггер, ГОЛУБОЙ и то и то, СЕРЫЙ - actions";
             // 
+            // checkBoxTakeXY
+            // 
+            checkBoxTakeXY.AutoSize = true;
+            checkBoxTakeXY.Location = new Point(239, 38);
+            checkBoxTakeXY.Name = "checkBoxTakeXY";
+            checkBoxTakeXY.Size = new Size(15, 14);
+            checkBoxTakeXY.TabIndex = 66;
+            checkBoxTakeXY.UseVisualStyleBackColor = true;
+            // 
             // ComboEditorCompozite
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -1012,5 +1023,6 @@
         private TextBox textBoxHelp;
         private Button buttonIMAGEView;
         private TextBox textBoxdelayMsMax;
+        private CheckBox checkBoxTakeXY;
     }
 }

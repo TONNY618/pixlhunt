@@ -597,5 +597,10 @@ namespace pxlhunt.UI.Forms
                 panel.Controls.Add(ctrl);
             }
         }
+
+        private void pixSquaControl_Load(object sender, EventArgs e)
+        {
+
+        }
     }
 }
