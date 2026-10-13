@@ -26,7 +26,19 @@ public static class ComboFactory
         RegisterTrigger("TriggerTimer", data =>
         {
             var dto = data.Deserialize<pxlhunt.UI.Forms.ComboEditorCompoziteControls.TriggerTimerDto>();
-            return dto != null ? new TimerTriggerEvaluator(dto.MinIntervalMs, dto.MaxIntervalMs) : null;
+            if (dto == null) return null;
+            int min = Math.Max(1, dto.MinMs);
+            int max = Math.Max(min, dto.MaxMs);
+            return new TimerTriggerEvaluator(min, max);
+        });
+
+        RegisterStep("TriggerTimer", data =>
+        {
+            var dto = data.Deserialize<pxlhunt.UI.Forms.ComboEditorCompoziteControls.TriggerTimerDto>();
+            if (dto == null) return null;
+            int min = Math.Max(1, dto.MinMs);
+            int max = Math.Max(min, dto.MaxMs);
+            return new DelayStep(min, max);
         });
 
         RegisterTrigger("PixSquaControl", data =>

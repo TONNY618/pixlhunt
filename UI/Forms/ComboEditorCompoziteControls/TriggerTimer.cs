@@ -9,6 +9,7 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
         public TriggerTimer()
         {
             InitializeComponent();
+            textBoxTriggerTimerMax.Leave += TextBoxTriggerTimerMax_Leave;
         }
 
         public string ComponentType => "TriggerTimer";
@@ -19,25 +20,29 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
 
         public TriggerTimerDto GetDto()
         {
-            int min = int.TryParse(textBoxTriggerTimer.Text, out int minVal) ? Math.Max(10, minVal) : 1000;
-            int max = int.TryParse(textBoxTriggerTimerMax.Text, out int maxVal) ? Math.Max(10, maxVal) : 5000;
-
-            // Нормализация: Min всегда <= Max
-            int normalizedMin = Math.Min(min, max);
-            int normalizedMax = Math.Max(min, max);
-
-            return new TriggerTimerDto
-            {
-                MinIntervalMs = normalizedMin,
-                MaxIntervalMs = normalizedMax
-            };
+            int min = int.TryParse(textBoxTriggerTimer.Text, out int m) ? Math.Max(1, m) : 50;
+            int max = int.TryParse(textBoxTriggerTimerMax.Text, out int mx) ? Math.Max(min, mx) : min;
+            return new TriggerTimerDto { MinMs = min, MaxMs = max };
         }
 
         public void SetDto(TriggerTimerDto? dto)
         {
             if (dto == null) return;
-            textBoxTriggerTimer.Text = dto.MinIntervalMs.ToString();
-            textBoxTriggerTimerMax.Text = dto.MaxIntervalMs.ToString();
+            textBoxTriggerTimer.Text = dto.MinMs.ToString();
+            textBoxTriggerTimerMax.Text = dto.MaxMs.ToString();
+        }
+
+        /// <summary>
+        /// Валидация правого поля: если Max меньше Min, приравниваем Max = Min.
+        /// </summary>
+        private void TextBoxTriggerTimerMax_Leave(object? sender, EventArgs e)
+        {
+            int min = int.TryParse(textBoxTriggerTimer.Text, out int m) ? Math.Max(1, m) : 50;
+            int max = int.TryParse(textBoxTriggerTimerMax.Text, out int mx) ? mx : min;
+            if (max < min)
+            {
+                textBoxTriggerTimerMax.Text = min.ToString();
+            }
         }
 
         /// <summary>
@@ -119,7 +124,21 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
     /// </summary>
     public class TriggerTimerDto
     {
-        public int MinIntervalMs { get; set; } = 1000;
-        public int MaxIntervalMs { get; set; } = 5000;
+        public int MinMs { get; set; } = 50;
+        public int MaxMs { get; set; } = 100;
+
+        /// <summary>
+        /// Алиас для обратной совместимости: чтение/запись MinMs.
+        /// При записи автоматически подтягивает MaxMs, если он меньше.
+        /// </summary>
+        public int IntervalMs
+        {
+            get => MinMs;
+            set
+            {
+                MinMs = value;
+                if (MaxMs < value) MaxMs = value;
+            }
+        }
     }
 }

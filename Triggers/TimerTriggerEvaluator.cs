@@ -7,16 +7,15 @@ namespace PixelMacroEngine.Triggers;
 /// <summary>
 /// [Подсистема движка: Уровень 2 - Триггер]
 /// Триггер по таймеру: срабатывает через случайный интервал в диапазоне [minMs, maxMs].
-/// Распределение интервалов — вероятностный колокол (Irwin-Hall, n=3),
-/// что даёт плавную концентрацию вокруг середины диапазона и снижает
-/// предсказуемость срабатываний (антидетект).
+/// Распределение интервалов — нормальное (Гаусс), что даёт плавную концентрацию
+/// вокруг середины диапазона и снижает предсказуемость срабатываний (антидетект).
 /// Связан с: ITriggerEvaluator, ComboFactory.
 /// </summary>
 public class TimerTriggerEvaluator : ITriggerEvaluator
 {
     private readonly int _minMs;
     private readonly int _maxMs;
-    private readonly Random _random = new Random();
+    private readonly Random _rnd = new Random();
 
     private int _currentIntervalMs;
     private DateTime _lastTriggerTime = DateTime.MinValue;
@@ -26,12 +25,9 @@ public class TimerTriggerEvaluator : ITriggerEvaluator
     /// </summary>
     public TimerTriggerEvaluator(int minMs, int maxMs)
     {
-        if (minMs < 1) minMs = 1;
-        if (maxMs < minMs) maxMs = minMs;
-
-        _minMs = minMs;
-        _maxMs = maxMs;
-        _currentIntervalMs = _minMs;
+        _minMs = Math.Max(1, minMs);
+        _maxMs = Math.Max(_minMs, maxMs);
+        _currentIntervalMs = CalculateGaussianDelay(_minMs, _maxMs);
     }
 
     /// <summary>
@@ -46,26 +42,29 @@ public class TimerTriggerEvaluator : ITriggerEvaluator
         if ((DateTime.UtcNow - _lastTriggerTime).TotalMilliseconds >= _currentIntervalMs)
         {
             _lastTriggerTime = DateTime.UtcNow;
-            RecalculateNextInterval();
+            _currentIntervalMs = CalculateGaussianDelay(_minMs, _maxMs);
             return true;
         }
         return false;
     }
 
     /// <summary>
-    /// Пересчёт следующего интервала по вероятностному колоколу (Irwin-Hall, n=3).
-    /// Сумма трёх равномерных [0..1] даёт колоколообразное распределение,
-    /// нормированное делением на 3 в диапазон [0..1].
+    /// Расчёт задержки по нормальному распределению (Box-Muller).
+    /// Среднее — середина диапазона, stdDev = (max - min) / 6,
+    /// что укладывает ~99.7% значений в [min, max] до клампа.
     /// </summary>
-    private void RecalculateNextInterval()
+    private int CalculateGaussianDelay(int min, int max)
     {
-        if (_maxMs <= _minMs)
-        {
-            _currentIntervalMs = _minMs;
-            return;
-        }
+        if (min >= max) return min;
 
-        double bellFactor = (_random.NextDouble() + _random.NextDouble() + _random.NextDouble()) / 3.0; // [0..1] колокол
-        _currentIntervalMs = _minMs + (int)(bellFactor * (_maxMs - _minMs));
+        double u1 = 1.0 - _rnd.NextDouble();
+        double u2 = 1.0 - _rnd.NextDouble();
+        double randStdNormal = Math.Sqrt(-2.0 * Math.Log(u1)) * Math.Sin(2.0 * Math.PI * u2);
+
+        double mean = (min + max) / 2.0;
+        double stdDev = (max - min) / 6.0;
+        double val = mean + randStdNormal * stdDev;
+
+        return (int)Math.Clamp(Math.Round(val), min, max);
     }
 }
