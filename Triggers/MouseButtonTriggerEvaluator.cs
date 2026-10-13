@@ -35,6 +35,10 @@ namespace PixelMacroEngine.Triggers
                 // СКМ
                 "m key" or "middle" or "скм" or "3" or "mmb" or "middlebutton"
                     or "wheel" or "middle click" => 3,
+                // Боковая 1 (XButton1)
+                "xbutton1" or "mouse4" or "боковая 1" or "4" => 4,
+                // Боковая 2 (XButton2)
+                "xbutton2" or "mouse5" or "боковая 2" or "5" => 5,
                 _ => 0
             };
         }

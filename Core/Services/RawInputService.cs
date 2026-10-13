@@ -54,6 +54,10 @@ namespace PixelMacroEngine.Core.Services
         private const ushort RI_MOUSE_RIGHT_BUTTON_UP = 0x0008;
         private const ushort RI_MOUSE_MIDDLE_BUTTON_DOWN = 0x0010;
         private const ushort RI_MOUSE_MIDDLE_BUTTON_UP = 0x0020;
+        private const ushort RI_MOUSE_BUTTON_4_DOWN = 0x0040;
+        private const ushort RI_MOUSE_BUTTON_4_UP   = 0x0080;
+        private const ushort RI_MOUSE_BUTTON_5_DOWN = 0x0100;
+        private const ushort RI_MOUSE_BUTTON_5_UP   = 0x0200;
 
         // === Usages ===
         private const ushort HID_USAGE_PAGE_GENERIC = 0x01;
@@ -67,6 +71,12 @@ namespace PixelMacroEngine.Core.Services
         private static volatile bool _isLmbDown;
         private static volatile bool _isRmbDown;
         private static volatile bool _isMmbDown;
+        private static volatile bool _isXButton1Down;
+        private static volatile bool _isXButton2Down;
+
+        // Постоянный буфер для чтения Raw Input (избегаем AllocHGlobal/FreeHGlobal на каждое событие).
+        // 128 байт с запасом покрывает RAWINPUT (48 байт на x64).
+        private static readonly IntPtr _rawInputBuffer = Marshal.AllocHGlobal(128);
 
         private static HiddenMessageWindow? _window;
         private static bool _initialized;
@@ -88,6 +98,8 @@ namespace PixelMacroEngine.Core.Services
             _isLmbDown = false;
             _isRmbDown = false;
             _isMmbDown = false;
+            _isXButton1Down = false;
+            _isXButton2Down = false;
             _keyStates.Clear();
         }
 
@@ -102,6 +114,8 @@ namespace PixelMacroEngine.Core.Services
             {
                 2 => _isRmbDown,
                 3 => _isMmbDown,
+                4 => _isXButton1Down,
+                5 => _isXButton2Down,
                 _ => _isLmbDown
             };
         }
@@ -169,65 +183,64 @@ namespace PixelMacroEngine.Core.Services
             uint headerSize = (uint)Marshal.SizeOf<RAWINPUTHEADER>();
             uint size = 0;
 
+            // Обязательный запрос размера у Windows (Windows вернет 48 на x64)
             GetRawInputData(lParam, RID_INPUT, IntPtr.Zero, ref size, headerSize);
-            if (size == 0) return;
+            if (size == 0 || size > 128) return;
 
-            IntPtr buffer = Marshal.AllocHGlobal((int)size);
-            try
+            // Читаем данные в наш заранее выделенный буфер _rawInputBuffer
+            if (GetRawInputData(lParam, RID_INPUT, _rawInputBuffer, ref size, headerSize) != size)
+                return;
+
+            RAWINPUT raw = Marshal.PtrToStructure<RAWINPUT>(_rawInputBuffer);
+
+            // Фильтр эмулятора (Arduino)
+            if (!_ignoredDevicesCache.TryGetValue(raw.header.hDevice, out bool ignore))
             {
-                if (GetRawInputData(lParam, RID_INPUT, buffer, ref size, headerSize) != size)
-                    return;
-
-                RAWINPUT raw = Marshal.PtrToStructure<RAWINPUT>(buffer);
-
-                // Фильтр эмулятора (Arduino)
-                if (!_ignoredDevicesCache.TryGetValue(raw.header.hDevice, out bool ignore))
-                {
-                    ignore = IsIgnoredDevice(raw.header.hDevice);
-                    _ignoredDevicesCache[raw.header.hDevice] = ignore;
-                }
-                if (ignore) return;
-
-                if (raw.header.dwType == RIM_TYPEMOUSE)
-                {
-                    ushort flags = raw.data.mouse.usButtonFlags;
-                    if (flags == 0) return; // Чистое перемещение мыши — выходим
-
-                    if ((flags & RI_MOUSE_LEFT_BUTTON_DOWN) != 0) _isLmbDown = true;
-                    if ((flags & RI_MOUSE_LEFT_BUTTON_UP) != 0) _isLmbDown = false;
-                    if ((flags & RI_MOUSE_RIGHT_BUTTON_DOWN) != 0) _isRmbDown = true;
-                    if ((flags & RI_MOUSE_RIGHT_BUTTON_UP) != 0) _isRmbDown = false;
-                    if ((flags & RI_MOUSE_MIDDLE_BUTTON_DOWN) != 0) _isMmbDown = true;
-                    if ((flags & RI_MOUSE_MIDDLE_BUTTON_UP) != 0) _isMmbDown = false;
-                }
-                else if (raw.header.dwType == RIM_TYPEKEYBOARD)
-                {
-                    ushort vKey = raw.data.keyboard.VKey;
-                    if (vKey == 0 || vKey == 0xFFFF) return;
-
-                    ushort flags = raw.data.keyboard.Flags;
-                    bool isUp = (flags & RI_KEY_BREAK) != 0;
-
-                    // Конвертация универсальных модификаторов в конкретные L/R
-                    if (vKey == VK_SHIFT)
-                    {
-                        vKey = (raw.data.keyboard.MakeCode == 0x36) ? VK_RSHIFT : VK_LSHIFT;
-                    }
-                    else if (vKey == VK_CONTROL)
-                    {
-                        vKey = (flags & RI_KEY_E0) != 0 ? VK_RCONTROL : VK_LCONTROL;
-                    }
-                    else if (vKey == VK_MENU)
-                    {
-                        vKey = (flags & RI_KEY_E0) != 0 ? VK_RMENU : VK_LMENU;
-                    }
-
-                    _keyStates[vKey] = !isUp;
-                }
+                ignore = IsIgnoredDevice(raw.header.hDevice);
+                _ignoredDevicesCache[raw.header.hDevice] = ignore;
             }
-            finally
+            if (ignore) return;
+
+            if (raw.header.dwType == RIM_TYPEMOUSE)
             {
-                Marshal.FreeHGlobal(buffer);
+                ushort flags = raw.data.mouse.usButtonFlags;
+                if (flags == 0) return; // Чистое перемещение мыши — выходим
+
+                if ((flags & RI_MOUSE_LEFT_BUTTON_DOWN) != 0) _isLmbDown = true;
+                if ((flags & RI_MOUSE_LEFT_BUTTON_UP) != 0) _isLmbDown = false;
+                if ((flags & RI_MOUSE_RIGHT_BUTTON_DOWN) != 0) _isRmbDown = true;
+                if ((flags & RI_MOUSE_RIGHT_BUTTON_UP) != 0) _isRmbDown = false;
+                if ((flags & RI_MOUSE_MIDDLE_BUTTON_DOWN) != 0) _isMmbDown = true;
+                if ((flags & RI_MOUSE_MIDDLE_BUTTON_UP) != 0) _isMmbDown = false;
+
+                if ((flags & RI_MOUSE_BUTTON_4_DOWN) != 0) _isXButton1Down = true;
+                if ((flags & RI_MOUSE_BUTTON_4_UP) != 0)   _isXButton1Down = false;
+                if ((flags & RI_MOUSE_BUTTON_5_DOWN) != 0) _isXButton2Down = true;
+                if ((flags & RI_MOUSE_BUTTON_5_UP) != 0)   _isXButton2Down = false;
+            }
+            else if (raw.header.dwType == RIM_TYPEKEYBOARD)
+            {
+                ushort vKey = raw.data.keyboard.VKey;
+                if (vKey == 0 || vKey == 0xFFFF) return;
+
+                ushort flags = raw.data.keyboard.Flags;
+                bool isUp = (flags & RI_KEY_BREAK) != 0;
+
+                // Конвертация универсальных модификаторов в конкретные L/R
+                if (vKey == VK_SHIFT)
+                {
+                    vKey = (raw.data.keyboard.MakeCode == 0x36) ? VK_RSHIFT : VK_LSHIFT;
+                }
+                else if (vKey == VK_CONTROL)
+                {
+                    vKey = (flags & RI_KEY_E0) != 0 ? VK_RCONTROL : VK_LCONTROL;
+                }
+                else if (vKey == VK_MENU)
+                {
+                    vKey = (flags & RI_KEY_E0) != 0 ? VK_RMENU : VK_LMENU;
+                }
+
+                _keyStates[vKey] = !isUp;
             }
         }
 

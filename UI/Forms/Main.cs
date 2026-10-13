@@ -731,6 +731,9 @@ namespace pxlhunt.FORMS
                 // При явном выключении — сбрасываем кулдауны всех комбо
                 _orchestrator.ResetAllStates();
 
+                // Сбрасываем зафиксированные состояния физического ввода (мышь/клавиатура)
+                PixelMacroEngine.Core.Services.RawInputService.ResetAllStates();
+
                 // Стоп-кран: аварийно отпускаем все залипшие клавиши на плате
                 PixelMacroEngine.Core.Services.ArduinoHidService.EmergencyReset();
             }
