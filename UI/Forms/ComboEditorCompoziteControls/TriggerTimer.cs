@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text.Json;
 using System.Windows.Forms;
 
 namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
@@ -9,6 +10,12 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
         {
             InitializeComponent();
         }
+
+        public string ComponentType => "TriggerTimer";
+
+        object IComboComponentControl.GetDto() => GetDto();
+
+        public void SetDtoFromElement(JsonElement element) => SetDto(element.Deserialize<TriggerTimerDto>());
 
         /// <summary>
         /// Создает полную копию контрола через его DTO.

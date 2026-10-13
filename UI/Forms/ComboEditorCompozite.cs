@@ -1,6 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
+using System.Text.Json;
 using System.Windows.Forms;
+using PixelMacroEngine.Core.Models;
 using pxlhunt.UI.Forms.ComboEditorCompoziteControls;
 
 namespace pxlhunt.UI.Forms
@@ -27,6 +31,10 @@ namespace pxlhunt.UI.Forms
 
             // Инициализация Drag-and-Drop механики
             SetupDragAndDrop();
+
+            // Подписка кнопок сохранения/загрузки
+            buttonSave.Click += buttonSave_Click;
+            buttonLoad.Click += buttonLoad_Click;
         }
 
         /// <summary>
@@ -403,9 +411,165 @@ namespace pxlhunt.UI.Forms
             return clone;
         }
 
+        // -----------------------------------------------------------------------------
+        // 5. СОХРАНЕНИЕ И ЗАГРУЗКА ПРОФИЛЯ (JSON)
+        // -----------------------------------------------------------------------------
+
+        private static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions
+        {
+            WriteIndented = true
+        };
+
+        /// <summary>
+        /// Возвращает путь к папке Config рядом с исполняемым файлом.
+        /// </summary>
+        private static string GetConfigDirectory()
+        {
+            string baseDir = AppContext.BaseDirectory;
+            string configDir = Path.Combine(baseDir, "Config");
+            if (!Directory.Exists(configDir))
+                Directory.CreateDirectory(configDir);
+            return configDir;
+        }
+
+        /// <summary>
+        /// Собирает список элементов панели в DTO-список.
+        /// </summary>
+        private static List<ComboElementDto> CollectElements(FlowLayoutPanel panel)
+        {
+            var list = new List<ComboElementDto>();
+
+            foreach (Control ctrl in panel.Controls)
+            {
+                if (ctrl is IComboComponentControl comp)
+                {
+                    list.Add(new ComboElementDto
+                    {
+                        Type = comp.ComponentType,
+                        Indent = ctrl.Margin.Left > 10 ? 1 : 0,
+                        Data = JsonSerializer.SerializeToElement(comp.GetDto(), comp.GetDto().GetType(), JsonOptions)
+                    });
+                }
+            }
+
+            return list;
+        }
+
         private void buttonSave_Click(object sender, EventArgs e)
         {
-            // Метод сохранения будет подключен на следующем этапе
+            string comboName = textBoxNameCOMBO.Text.Trim();
+            if (string.IsNullOrEmpty(comboName))
+            {
+                MessageBox.Show("Введите имя комбо перед сохранением.", "Сохранение",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            var profile = new ComboProfileDto
+            {
+                ComboName = comboName,
+                IsOnOff = checkBoxOnOff.Checked,
+                IsCooldownGlobal = radioButtonSkillCooldownGLOBAL.Checked,
+                Priority = textBoxPriorityTrigger.Text,
+                PauseIfWASD = checkBoxWASDpauseTrigger.Checked,
+                Triggers = CollectElements(flowLayoutPanelTrigger),
+                Actions = CollectElements(flowLayoutPanelActions)
+            };
+
+            try
+            {
+                string path = Path.Combine(GetConfigDirectory(), comboName + ".json");
+                string json = JsonSerializer.Serialize(profile, JsonOptions);
+                File.WriteAllText(path, json);
+
+                MessageBox.Show($"Комбо \"{comboName}\" успешно сохранено.\n{path}", "Сохранение",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка сохранения: {ex.Message}", "Сохранение",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void buttonLoad_Click(object sender, EventArgs e)
+        {
+            string comboName = textBoxNameCOMBO.Text.Trim();
+            if (string.IsNullOrEmpty(comboName))
+            {
+                MessageBox.Show("Введите имя комбо для загрузки.", "Загрузка",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            string primaryPath = Path.Combine(GetConfigDirectory(), comboName + ".json");
+            string fallbackPath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "Config", comboName + ".json");
+
+            string? path = null;
+            if (File.Exists(primaryPath)) path = primaryPath;
+            else if (File.Exists(fallbackPath)) path = Path.GetFullPath(fallbackPath);
+
+            if (path == null)
+            {
+                MessageBox.Show($"Файл профиля \"{comboName}.json\" не найден.", "Загрузка",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            try
+            {
+                string json = File.ReadAllText(path);
+                ComboProfileDto? profile = JsonSerializer.Deserialize<ComboProfileDto>(json, JsonOptions);
+                if (profile == null)
+                {
+                    MessageBox.Show("Не удалось прочитать профиль.", "Загрузка",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                // Восстановление полей формы
+                textBoxNameCOMBO.Text = profile.ComboName;
+                checkBoxOnOff.Checked = profile.IsOnOff;
+                radioButtonSkillCooldownGLOBAL.Checked = profile.IsCooldownGlobal;
+                textBoxPriorityTrigger.Text = profile.Priority;
+                checkBoxWASDpauseTrigger.Checked = profile.PauseIfWASD;
+
+                // Очистка панелей
+                flowLayoutPanelTrigger.Controls.Clear();
+                flowLayoutPanelActions.Controls.Clear();
+
+                RestoreElements(flowLayoutPanelTrigger, profile.Triggers);
+                RestoreElements(flowLayoutPanelActions, profile.Actions);
+
+                MessageBox.Show($"Комбо \"{comboName}\" успешно загружено.", "Загрузка",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка загрузки: {ex.Message}", "Загрузка",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        /// <summary>
+        /// Восстанавливает элементы панели из DTO-списка.
+        /// </summary>
+        private void RestoreElements(FlowLayoutPanel panel, List<ComboElementDto> elements)
+        {
+            foreach (ComboElementDto elem in elements)
+            {
+                Control? ctrl = CreateControlFromPreset(elem.Type);
+                if (ctrl == null) continue;
+
+                if (ctrl is IComboComponentControl comp)
+                {
+                    comp.SetDtoFromElement(elem.Data);
+                }
+
+                ctrl.Margin = new Padding(elem.Indent > 0 ? 25 : 3, 3, 3, 3);
+                SubscribeClonedItemForDragging(ctrl);
+                panel.Controls.Add(ctrl);
+            }
         }
     }
 }

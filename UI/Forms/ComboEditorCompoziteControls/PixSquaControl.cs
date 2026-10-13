@@ -1,6 +1,7 @@
 using System;
 using System.Drawing;
 using System.Runtime.InteropServices;
+using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using PixelMacroEngine.Core.Services;
@@ -9,6 +10,11 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
 {
     public partial class PixSquaControl : UserControl, IComboComponentControl
     {
+        public string ComponentType => "PixSquaControl";
+
+        object IComboComponentControl.GetDto() => GetDto();
+
+        public void SetDtoFromElement(JsonElement element) => SetDto(element.Deserialize<PixSquaDto>());
         [DllImport("user32.dll")]
         private static extern short GetAsyncKeyState(int vKey);
         private const int VK_CAPITAL = 0x14; // Caps Lock

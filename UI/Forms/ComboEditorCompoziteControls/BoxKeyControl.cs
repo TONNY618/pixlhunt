@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.Text;
+using System.Text.Json;
 using System.Windows.Forms;
 
 namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
@@ -24,6 +25,12 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
         {
             InitializeComponent();
         }
+
+        public string ComponentType => "BoxKeyControl";
+
+        object IComboComponentControl.GetDto() => GetDto();
+
+        public void SetDtoFromElement(JsonElement element) => SetDto(element.Deserialize<BoxKeyDto>());
 
         /// <summary>
         /// Создает полную копию контрола через его DTO.
