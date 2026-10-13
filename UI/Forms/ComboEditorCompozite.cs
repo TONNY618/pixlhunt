@@ -36,6 +36,15 @@ namespace pxlhunt.UI.Forms
             textBoxCDglobal.ReadOnly = true;
         }
 
+        public ComboEditorCompozite(string? comboNameToLoad) : this()
+        {
+            if (!string.IsNullOrWhiteSpace(comboNameToLoad))
+            {
+                textBoxNameCOMBO.Text = comboNameToLoad;
+                this.Shown += (s, e) => LoadProfileFromConfig(comboNameToLoad, false);
+            }
+        }
+
         /// <summary>
         /// Создает контекстное меню для элементов внутри панелей-стаканов.
         /// </summary>

@@ -489,7 +489,7 @@ namespace pxlhunt.FORMS
         {
             string? selectedCombo = checkedListBoxCombo.SelectedItem as string;
 
-            ComboEditorForm editor = new ComboEditorForm(selectedCombo);
+            ComboEditorCompozite editor = new ComboEditorCompozite(selectedCombo);
             editor.FormClosed += (s, args) => LoadCombosFromConfig();
             CenterFormOnMain(editor);
             editor.ShowDialog(this);
