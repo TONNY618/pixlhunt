@@ -88,6 +88,12 @@ public static class ComboFactory
             if (dto == null) return null;
             return new MouseClickStep(dto);
         });
+
+        RegisterTrigger("MouseKeyControl", data =>
+        {
+            var dto = data.Deserialize<pxlhunt.UI.Forms.ComboEditorCompoziteControls.MouseKeyDto>();
+            return dto != null ? new MouseButtonTriggerEvaluator(dto.Button) : null;
+        });
     }
 
     private static ColorTriggerEvaluator CreateColorEvaluator(pxlhunt.UI.Forms.ComboEditorCompoziteControls.PixSquaDto dto)

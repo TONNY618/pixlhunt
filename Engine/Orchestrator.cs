@@ -78,7 +78,8 @@ public class Orchestrator
             bool triggersPassed;
             if (combo.Triggers.Count == 0)
             {
-                triggersPassed = true;
+                // Комбо без триггеров не должно спамить на каждом кадре
+                triggersPassed = false;
             }
             else if (combo.IsOrTriggerLogic)
             {
