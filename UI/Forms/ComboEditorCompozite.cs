@@ -504,11 +504,21 @@ namespace pxlhunt.UI.Forms
 
         private void buttonLoad_Click(object sender, EventArgs e)
         {
-            string comboName = textBoxNameCOMBO.Text.Trim();
+            LoadProfileFromConfig(textBoxNameCOMBO.Text.Trim(), true);
+        }
+
+        /// <summary>
+        /// Загружает профиль комбо по имени из папки Config.
+        /// </summary>
+        public void LoadProfileFromConfig(string comboName, bool showSuccessMessage = false)
+        {
             if (string.IsNullOrEmpty(comboName))
             {
-                MessageBox.Show("Введите имя комбо для загрузки.", "Загрузка",
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                if (showSuccessMessage)
+                {
+                    MessageBox.Show("Введите имя комбо для загрузки.", "Загрузка",
+                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
                 return;
             }
 
@@ -521,8 +531,11 @@ namespace pxlhunt.UI.Forms
 
             if (path == null)
             {
-                MessageBox.Show($"Файл профиля \"{comboName}.json\" не найден.", "Загрузка",
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                if (showSuccessMessage)
+                {
+                    MessageBox.Show($"Файл профиля \"{comboName}.json\" не найден.", "Загрузка",
+                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
                 return;
             }
 
@@ -532,8 +545,11 @@ namespace pxlhunt.UI.Forms
                 ComboProfileDto? profile = JsonSerializer.Deserialize<ComboProfileDto>(json, JsonOptions);
                 if (profile == null)
                 {
-                    MessageBox.Show("Не удалось прочитать профиль.", "Загрузка",
-                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    if (showSuccessMessage)
+                    {
+                        MessageBox.Show("Не удалось прочитать профиль.", "Загрузка",
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
                     return;
                 }
 
@@ -553,8 +569,11 @@ namespace pxlhunt.UI.Forms
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка загрузки: {ex.Message}", "Загрузка",
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                if (showSuccessMessage)
+                {
+                    MessageBox.Show($"Ошибка загрузки: {ex.Message}", "Загрузка",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
             }
         }
 
