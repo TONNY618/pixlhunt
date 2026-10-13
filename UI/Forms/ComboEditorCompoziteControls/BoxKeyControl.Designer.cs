@@ -42,7 +42,7 @@
             groupBoxKey.Controls.Add(checkBoxKey2);
             groupBoxKey.Controls.Add(comboBoxKeyList);
             groupBoxKey.ForeColor = Color.DarkOliveGreen;
-            groupBoxKey.Location = new Point(0, 3);
+            groupBoxKey.Location = new Point(0, 0);
             groupBoxKey.Name = "groupBoxKey";
             groupBoxKey.Size = new Size(318, 28);
             groupBoxKey.TabIndex = 3;
@@ -88,7 +88,7 @@
             AutoScaleMode = AutoScaleMode.Font;
             Controls.Add(groupBoxKey);
             Name = "BoxKeyControl";
-            Size = new Size(336, 57);
+            Size = new Size(318, 28);
             groupBoxKey.ResumeLayout(false);
             groupBoxKey.PerformLayout();
             ResumeLayout(false);
