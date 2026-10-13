@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Concurrent;
-using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
@@ -72,27 +71,8 @@ namespace PixelMacroEngine.Core.Services
         private static HiddenMessageWindow? _window;
         private static bool _initialized;
 
-        // === Логирование в файл ===
-        private static readonly object _logLock = new();
-        private static readonly string _logPath =
-            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "rawinput.log");
-
-        /// <summary>Потокобезопасная запись строки в rawinput.log.</summary>
-        private static void Log(string message)
-        {
-            try
-            {
-                string line = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff} [T{Environment.CurrentManagedThreadId}] {message}{Environment.NewLine}";
-                lock (_logLock)
-                {
-                    File.AppendAllText(_logPath, line);
-                }
-            }
-            catch
-            {
-                // Логирование не должно ломать работу сервиса
-            }
-        }
+        /// <summary>Успешно ли зарегистрирован низкоуровневый перехват ввода.</summary>
+        public static bool IsRegisteredSuccessfully { get; private set; }
 
         /// <summary>Запускает глобальный перехват ввода. Идемпотентно.</summary>
         public static void Initialize()
@@ -158,16 +138,7 @@ namespace PixelMacroEngine.Core.Services
                 devices[1].dwFlags = RIDEV_INPUTSINK | RIDEV_DEVNOTIFY;
                 devices[1].hwndTarget = Handle;
 
-                bool registered = RegisterRawInputDevices(devices, 2, (uint)Marshal.SizeOf<RAWINPUTDEVICE>());
-                if (registered)
-                {
-                    Log("[RawInput] Регистрация устройств: УСПЕШНО");
-                }
-                else
-                {
-                    int err = Marshal.GetLastWin32Error();
-                    Log($"[RawInput] Регистрация устройств: ОШИБКА Win32={err}");
-                }
+                IsRegisteredSuccessfully = RegisterRawInputDevices(devices, 2, (uint)Marshal.SizeOf<RAWINPUTDEVICE>());
             }
 
             protected override void WndProc(ref Message m)
@@ -222,20 +193,12 @@ namespace PixelMacroEngine.Core.Services
                     ushort flags = raw.data.mouse.usButtonFlags;
                     if (flags == 0) return; // Чистое перемещение мыши — выходим
 
-                    if ((flags & RI_MOUSE_LEFT_BUTTON_DOWN) != 0) { _isLmbDown = true; Log($"[Mouse] LMB DOWN flags=0x{flags:X4}"); }
-                    if ((flags & RI_MOUSE_LEFT_BUTTON_UP) != 0) { _isLmbDown = false; Log($"[Mouse] LMB UP   flags=0x{flags:X4}"); }
-                    if ((flags & RI_MOUSE_RIGHT_BUTTON_DOWN) != 0) { _isRmbDown = true; Log($"[Mouse] RMB DOWN flags=0x{flags:X4}"); }
-                    if ((flags & RI_MOUSE_RIGHT_BUTTON_UP) != 0) { _isRmbDown = false; Log($"[Mouse] RMB UP   flags=0x{flags:X4}"); }
-                    if ((flags & RI_MOUSE_MIDDLE_BUTTON_DOWN) != 0)
-                    {
-                        _isMmbDown = true;
-                        Log($"[Mouse] MMB DOWN flags=0x{flags:X4}");
-                    }
-                    if ((flags & RI_MOUSE_MIDDLE_BUTTON_UP) != 0)
-                    {
-                        _isMmbDown = false;
-                        Log($"[Mouse] MMB UP   flags=0x{flags:X4}");
-                    }
+                    if ((flags & RI_MOUSE_LEFT_BUTTON_DOWN) != 0) _isLmbDown = true;
+                    if ((flags & RI_MOUSE_LEFT_BUTTON_UP) != 0) _isLmbDown = false;
+                    if ((flags & RI_MOUSE_RIGHT_BUTTON_DOWN) != 0) _isRmbDown = true;
+                    if ((flags & RI_MOUSE_RIGHT_BUTTON_UP) != 0) _isRmbDown = false;
+                    if ((flags & RI_MOUSE_MIDDLE_BUTTON_DOWN) != 0) _isMmbDown = true;
+                    if ((flags & RI_MOUSE_MIDDLE_BUTTON_UP) != 0) _isMmbDown = false;
                 }
                 else if (raw.header.dwType == RIM_TYPEKEYBOARD)
                 {
@@ -273,8 +236,6 @@ namespace PixelMacroEngine.Core.Services
             string? deviceName = GetDeviceName(hDevice);
             if (string.IsNullOrEmpty(deviceName)) return false;
 
-            Log($"[RawInput] Обнаружено устройство: {deviceName}");
-
             try
             {
                 int vid = AppConfigService.Instance.Usb_hwKeyClicker.GetVendorId();
@@ -300,18 +261,10 @@ namespace PixelMacroEngine.Core.Services
                            || deviceName.Contains(alt3, StringComparison.OrdinalIgnoreCase);
                 }
 
-                Log($"[RawInput] Проверка устройства: {deviceName} | Ищем VID: {vid:X4}, PID: {pid:X4} | Результат: {isMatch}");
-
-                if (isMatch)
-                {
-                    Log($"[RawInput] ARDUINO IGNORED: {deviceName}");
-                }
-
                 return isMatch;
             }
-            catch (Exception ex)
+            catch
             {
-                Log($"[RawInput] IsIgnoredDevice ошибка: {ex.Message}");
                 return false;
             }
         }

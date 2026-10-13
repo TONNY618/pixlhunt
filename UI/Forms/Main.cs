@@ -38,6 +38,9 @@ namespace pxlhunt.FORMS
         {
             InitializeComponent();
 
+            // Подписка на логи действий — в самом начале, чтобы стартовые сообщения попали в listBoxActiv
+            ActionLogger.OnLog += AppendLogMessage;
+
             // Запускаем глобальный перехват физического ввода (Raw Input)
             PixelMacroEngine.Core.Services.RawInputService.Initialize();
 
@@ -75,6 +78,9 @@ namespace pxlhunt.FORMS
             // Загружаем комбо из Config
             LoadCombosFromConfig();
 
+            // Красивый стартовый вывод статуса всех подсистем в окно логов
+            LogStartupStatus(isArduinoConnected);
+
             // Восстанавливаем время активности
             RestoreSessionTime();
 
@@ -111,15 +117,55 @@ namespace pxlhunt.FORMS
             // Открытие комбо по двойному клику
             checkedListBoxCombo.DoubleClick += CheckedListBoxCombo_DoubleClick;
 
-            // Подписка на логи действий
-            ActionLogger.OnLog += AppendLogMessage;
-
             // Настройка трекбара прозрачности (на случай, если не задано в дизайнере)
             trackBarTransparency.Minimum = 10;
             trackBarTransparency.Maximum = 100;
             trackBarTransparency.Scroll += TrackBarTransparency_Scroll;
 
             UpdateActiveTimeLabel();
+        }
+
+        /// <summary>
+        /// Формирует красивый стартовый отчёт о состоянии всех подсистем в окно логов.
+        /// </summary>
+        private void LogStartupStatus(bool isArduinoConnected)
+        {
+            const string separator = "==========================================";
+
+            ActionLogger.Log(separator);
+            ActionLogger.Log($"[Система] Запуск {AppConfigService.Instance.PxlhuntNameMainForm}...");
+
+            // Статус платы Arduino
+            if (isArduinoConnected)
+            {
+                ActionLogger.Log($"[Arduino] Плата OK (VID: {AppConfigService.Instance.Usb_hwKeyClicker.Vendor_id}, PID: {AppConfigService.Instance.Usb_hwKeyClicker.Product_id})");
+            }
+            else
+            {
+                ActionLogger.Log("[Arduino] ВНИМАНИЕ: Плата НЕ подключена!");
+            }
+
+            // Статус перехвата ввода
+            if (RawInputService.IsRegisteredSuccessfully)
+            {
+                ActionLogger.Log("[RawInput] Низкоуровневый перехват мыши и клавиатуры: OK");
+            }
+            else
+            {
+                ActionLogger.Log("[RawInput] ОШИБКА регистрации перехвата ввода!");
+            }
+
+            // Статус видеозахвата DXGI
+            int monitor = AppConfigService.Instance.DisplayNumberForCapteruVideoFrame;
+            int interval = AppConfigService.Instance.FrameCaptureIntervalMs;
+            int fps = interval > 0 ? (int)Math.Round(1000.0 / interval) : 0;
+            ActionLogger.Log($"[DXGI] Захват экрана #{monitor} активен (~{fps} FPS, {interval} мс)");
+
+            // Статус профилей комбо
+            ActionLogger.Log($"[Комбо] Загружено профилей: {_orchestrator.Combos.Count}");
+
+            ActionLogger.Log("[Система] Все системы готовы к работе");
+            ActionLogger.Log(separator);
         }
 
         /// <summary>
