@@ -12,9 +12,6 @@ namespace PixelMacroEngine.Engine;
 
 public class Orchestrator
 {
-    [DllImport("user32.dll")]
-    private static extern short GetAsyncKeyState(int vKey);
-
     /// <summary>Коллекция активных комбо, управляемых оркестратором.</summary>
     public List<ActiveCombo> Combos { get; } = new();
 
@@ -28,15 +25,10 @@ public class Orchestrator
     /// <summary>Проверяет, нажата ли хотя бы одна из клавиш движения W, A, S, D.</summary>
     private static bool IsWasdPressed()
     {
-        const int VK_W = 0x57;
-        const int VK_A = 0x41;
-        const int VK_S = 0x53;
-        const int VK_D = 0x44;
-
-        return (GetAsyncKeyState(VK_W) & 0x8000) != 0
-            || (GetAsyncKeyState(VK_A) & 0x8000) != 0
-            || (GetAsyncKeyState(VK_S) & 0x8000) != 0
-            || (GetAsyncKeyState(VK_D) & 0x8000) != 0;
+        return PixelMacroEngine.Core.Services.RawInputService.IsKeyDown(0x57) // W
+            || PixelMacroEngine.Core.Services.RawInputService.IsKeyDown(0x41) // A
+            || PixelMacroEngine.Core.Services.RawInputService.IsKeyDown(0x53) // S
+            || PixelMacroEngine.Core.Services.RawInputService.IsKeyDown(0x44); // D
     }
 
     /// <summary>Сбрасывает состояние кулдауна у всех комбо.</summary>
