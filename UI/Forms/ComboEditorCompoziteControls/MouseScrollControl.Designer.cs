@@ -12,57 +12,74 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
 
         private void InitializeComponent()
         {
-            groupBoxMouseScroll = new System.Windows.Forms.GroupBox();
-            labelMouseScrollStep = new System.Windows.Forms.Label();
-            textBoxStepWhell = new System.Windows.Forms.TextBox();
-            radioButtonWhellUp = new System.Windows.Forms.RadioButton();
-            radioButtonWhellDown = new System.Windows.Forms.RadioButton();
+            groupBoxMouseScroll = new GroupBox();
+            labelMouseScrollStep = new Label();
+            textBoxStepWhell = new TextBox();
+            radioButtonWhellUp = new RadioButton();
+            radioButtonWhellDown = new RadioButton();
             groupBoxMouseScroll.SuspendLayout();
             SuspendLayout();
-
-            groupBoxMouseScroll.BackColor = System.Drawing.Color.Gainsboro;
+            // 
+            // groupBoxMouseScroll
+            // 
+            groupBoxMouseScroll.BackColor = Color.Cyan;
             groupBoxMouseScroll.Controls.Add(labelMouseScrollStep);
             groupBoxMouseScroll.Controls.Add(textBoxStepWhell);
             groupBoxMouseScroll.Controls.Add(radioButtonWhellUp);
             groupBoxMouseScroll.Controls.Add(radioButtonWhellDown);
-            groupBoxMouseScroll.ForeColor = System.Drawing.SystemColors.HotTrack;
-            groupBoxMouseScroll.Location = new System.Drawing.Point(0, 0);
+            groupBoxMouseScroll.ForeColor = SystemColors.HotTrack;
+            groupBoxMouseScroll.Location = new Point(0, 0);
             groupBoxMouseScroll.Name = "groupBoxMouseScroll";
-            groupBoxMouseScroll.Size = new System.Drawing.Size(240, 28);
+            groupBoxMouseScroll.Size = new Size(240, 28);
             groupBoxMouseScroll.TabIndex = 22;
             groupBoxMouseScroll.TabStop = false;
             groupBoxMouseScroll.Text = "Mouse Scroll";
-
-            labelMouseScrollStep.Location = new System.Drawing.Point(168, 6);
+            // 
+            // labelMouseScrollStep
+            // 
+            labelMouseScrollStep.Location = new Point(168, 6);
             labelMouseScrollStep.Name = "labelMouseScrollStep";
-            labelMouseScrollStep.Size = new System.Drawing.Size(33, 18);
+            labelMouseScrollStep.Size = new Size(33, 18);
+            labelMouseScrollStep.TabIndex = 0;
             labelMouseScrollStep.Text = "step";
-
-            textBoxStepWhell.Location = new System.Drawing.Point(204, 3);
+            // 
+            // textBoxStepWhell
+            // 
+            textBoxStepWhell.Location = new Point(204, 3);
             textBoxStepWhell.MaxLength = 2;
             textBoxStepWhell.Name = "textBoxStepWhell";
-            textBoxStepWhell.Size = new System.Drawing.Size(28, 23);
+            textBoxStepWhell.Size = new Size(28, 23);
+            textBoxStepWhell.TabIndex = 1;
             textBoxStepWhell.Text = "3";
-
+            // 
+            // radioButtonWhellUp
+            // 
             radioButtonWhellUp.AutoSize = true;
-            radioButtonWhellUp.Location = new System.Drawing.Point(127, 4);
+            radioButtonWhellUp.Location = new Point(127, 4);
             radioButtonWhellUp.Name = "radioButtonWhellUp";
-            radioButtonWhellUp.Size = new System.Drawing.Size(35, 19);
+            radioButtonWhellUp.Size = new Size(35, 19);
+            radioButtonWhellUp.TabIndex = 2;
             radioButtonWhellUp.Text = "/\\";
-
+            // 
+            // radioButtonWhellDown
+            // 
             radioButtonWhellDown.AutoSize = true;
             radioButtonWhellDown.Checked = true;
-            radioButtonWhellDown.Location = new System.Drawing.Point(93, 4);
+            radioButtonWhellDown.Location = new Point(93, 4);
             radioButtonWhellDown.Name = "radioButtonWhellDown";
-            radioButtonWhellDown.Size = new System.Drawing.Size(35, 19);
+            radioButtonWhellDown.Size = new Size(35, 19);
+            radioButtonWhellDown.TabIndex = 3;
+            radioButtonWhellDown.TabStop = true;
             radioButtonWhellDown.Text = "\\/";
-
-            AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
-            AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            BackColor = System.Drawing.Color.Transparent;
+            // 
+            // MouseScrollControl
+            // 
+            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleMode = AutoScaleMode.Font;
+            BackColor = Color.Transparent;
             Controls.Add(groupBoxMouseScroll);
             Name = "MouseScrollControl";
-            Size = new System.Drawing.Size(240, 28);
+            Size = new Size(240, 28);
             groupBoxMouseScroll.ResumeLayout(false);
             groupBoxMouseScroll.PerformLayout();
             ResumeLayout(false);
