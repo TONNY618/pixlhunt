@@ -15,10 +15,12 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
         public object GetDto()
         {
             int steps = int.TryParse(textBoxStepWhell.Text, out int s) && s > 0 ? s : 3;
+            int windowMs = int.TryParse(textBoxWindowMs.Text, out int w) && w > 0 ? w : 350;
             return new MouseScrollDto
             {
                 ScrollUp = radioButtonWhellUp.Checked,
-                Steps = steps
+                Steps = steps,
+                WindowMs = windowMs
             };
         }
 
@@ -30,6 +32,7 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
             radioButtonWhellUp.Checked = dto.ScrollUp;
             radioButtonWhellDown.Checked = !dto.ScrollUp;
             textBoxStepWhell.Text = (dto.Steps > 0 ? dto.Steps : 3).ToString();
+            textBoxWindowMs.Text = (dto.WindowMs > 0 ? dto.WindowMs : 350).ToString();
         }
     }
 
@@ -37,5 +40,8 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
     {
         public bool ScrollUp { get; set; } = false;
         public int Steps { get; set; } = 3;
+
+        /// <summary>Окно накопления тиков колесика для триггера (мс).</summary>
+        public int WindowMs { get; set; } = 350;
     }
 }

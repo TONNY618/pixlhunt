@@ -152,16 +152,16 @@ namespace PixelMacroEngine.Core.Services
             {
                 var list = up ? _wheelUpTicks : _wheelDownTicks;
                 list.Add(now);
-                PruneWheelTicks(list, now);
+                PruneWheelTicks(list, now, WheelAccumulationWindowMs);
             }
         }
 
         /// <summary>
         /// Удаляет из списка метки времени, вышедшие за окно накопления.
         /// </summary>
-        private static void PruneWheelTicks(List<long> list, long nowTicks)
+        private static void PruneWheelTicks(List<long> list, long nowTicks, int windowMs)
         {
-            long windowTicks = TimeSpan.FromMilliseconds(WheelAccumulationWindowMs).Ticks;
+            long windowTicks = TimeSpan.FromMilliseconds(windowMs).Ticks;
             int removeCount = 0;
             for (int i = 0; i < list.Count; i++)
             {
@@ -175,15 +175,19 @@ namespace PixelMacroEngine.Core.Services
         /// Проверяет, накоплено ли в скользящем окне не менее <paramref name="requiredSteps"/>
         /// щелчков колесика в заданном направлении. При успехе счётчик этого направления сбрасывается.
         /// </summary>
-        public static bool ConsumeWheelTicks(bool up, int requiredSteps)
+        /// <param name="up">Направление: true — вверх, false — вниз.</param>
+        /// <param name="requiredSteps">Порог срабатывания (число щелчков в окне).</param>
+        /// <param name="windowMs">Размер скользящего окна в мс. Если &lt;= 0 — используется значение по умолчанию.</param>
+        public static bool ConsumeWheelTicks(bool up, int requiredSteps, int windowMs)
         {
             if (requiredSteps < 1) requiredSteps = 1;
+            if (windowMs <= 0) windowMs = WheelAccumulationWindowMs;
 
             long now = DateTime.UtcNow.Ticks;
             lock (_wheelLock)
             {
                 var list = up ? _wheelUpTicks : _wheelDownTicks;
-                PruneWheelTicks(list, now);
+                PruneWheelTicks(list, now, windowMs);
 
                 if (list.Count >= requiredSteps)
                 {
