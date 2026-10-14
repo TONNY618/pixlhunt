@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Text.Json;
 using System.Windows.Forms;
+using PixelMacroEngine.Core.Services;
 
 namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
 {
@@ -14,7 +15,7 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
         {
             InitializeComponent();
             comboBoxSoundList.DropDown += (s, e) => RefreshSoundList();
-            buttonSoundPlay.Click += ButtonSoundAddCustom_Click;
+            buttonSoundPlay.Click += ButtonSoundPlay_Click;
             RefreshSoundList();
         }
 
@@ -52,26 +53,15 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
             else if (comboBoxSoundList.Items.Count > 0) comboBoxSoundList.SelectedIndex = 0;
         }
 
-        private void ButtonSoundAddCustom_Click(object? sender, EventArgs e)
+        /// <summary>
+        /// Проигрывает звук, выбранный в данный момент в comboBoxSoundList.
+        /// </summary>
+        private void ButtonSoundPlay_Click(object? sender, EventArgs e)
         {
-            using var ofd = new OpenFileDialog
-            {
-                Title = "Выберите аудиофайл",
-                Filter = "Аудио (*.wav;*.mp3)|*.wav;*.mp3|Все файлы (*.*)|*.*"
-            };
+            string fileName = comboBoxSoundList.Text.Trim();
+            if (string.IsNullOrWhiteSpace(fileName)) return;
 
-            if (ofd.ShowDialog() == DialogResult.OK)
-            {
-                string targetDir = GetSoundsDirectory();
-                string destPath = Path.Combine(targetDir, Path.GetFileName(ofd.FileName));
-                try
-                {
-                    File.Copy(ofd.FileName, destPath, overwrite: true);
-                    RefreshSoundList();
-                    comboBoxSoundList.Text = Path.GetFileName(ofd.FileName);
-                }
-                catch { }
-            }
+            SoundService.Play(fileName);
         }
 
         private static string GetSoundsDirectory()
