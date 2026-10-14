@@ -44,6 +44,13 @@ public class AppConfig
     public int HumanLatencyMinMs { get; set; } = 40;
     public int HumanLatencyMaxMs { get; set; } = 120;
     public int DisplayNumberForCapteruVideoFrame { get; set; } = 0;
+
+    /// <summary>
+    /// Окно накопления тиков колесика для триггера (мс).
+    /// Используется как значение по умолчанию, если в DTO не задано иное.
+    /// </summary>
+    public int MouseScrollTriggerWindowMs { get; set; } = 350;
+
     public UsbHwKeyClickerConfig Usb_hwKeyClicker { get; set; } = new();
 }
 
