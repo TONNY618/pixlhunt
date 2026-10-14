@@ -108,6 +108,13 @@ public static class ComboFactory
             if (dto == null) return null;
             return new MouseScrollTriggerEvaluator(dto.ScrollUp, dto.Steps);
         });
+
+        RegisterStep("SoundControl", data =>
+        {
+            var dto = data.Deserialize<pxlhunt.UI.Forms.ComboEditorCompoziteControls.SoundDto>();
+            if (dto == null) return null;
+            return new PlaySoundStep(dto);
+        });
     }
 
     private static ColorTriggerEvaluator CreateColorEvaluator(pxlhunt.UI.Forms.ComboEditorCompoziteControls.PixSquaDto dto)
@@ -169,6 +176,15 @@ public static class ComboFactory
 
         BuildTriggers(profile.Triggers, combo);
         BuildSteps(profile.Actions, combo.Steps);
+
+        // Если все шаги комбо — неблокирующие (например, только звук),
+        // то комбо не занимает слот умения и не расходует ГКД.
+        if (combo.Steps.Count > 0 && combo.Steps.All(s => s is INonBlockingStep))
+        {
+            combo.IsNonBlocking = true;
+            combo.IsGlobalCooldown = false;
+            combo.CooldownMs = 0;
+        }
 
         return combo;
     }

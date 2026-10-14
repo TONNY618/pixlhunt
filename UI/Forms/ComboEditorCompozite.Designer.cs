@@ -56,9 +56,7 @@
             radioButtonTextToContext = new RadioButton();
             textBoxTextToTeleNameUser = new TextBox();
             textBoxTextToEdit = new TextBox();
-            groupBoxSound = new GroupBox();
-            buttonSoundAddCustom = new Button();
-            comboBoxSoundList = new ComboBox();
+            soundControl = new pxlhunt.UI.Forms.ComboEditorCompoziteControls.SoundControl();
             mouseScrollControl = new pxlhunt.UI.Forms.ComboEditorCompoziteControls.MouseScrollControl();
             boxKeyControl = new pxlhunt.UI.Forms.ComboEditorCompoziteControls.BoxKeyControl();
             label7 = new Label();
@@ -88,7 +86,6 @@
             ((System.ComponentModel.ISupportInitialize)trackBarIMAGE).BeginInit();
             ((System.ComponentModel.ISupportInitialize)pictureBoxIMAGEExample).BeginInit();
             groupBoxTextTo.SuspendLayout();
-            groupBoxSound.SuspendLayout();
             groupBoxPauseIfMooved.SuspendLayout();
             groupBoxPriority.SuspendLayout();
             groupBoxCDtrigger.SuspendLayout();
@@ -104,7 +101,7 @@
             GroupActionPreset.Controls.Add(cursorMoveControl);
             GroupActionPreset.Controls.Add(groupBoxIMAGE);
             GroupActionPreset.Controls.Add(groupBoxTextTo);
-            GroupActionPreset.Controls.Add(groupBoxSound);
+            GroupActionPreset.Controls.Add(soundControl);
             GroupActionPreset.Controls.Add(mouseScrollControl);
             GroupActionPreset.Controls.Add(boxKeyControl);
             GroupActionPreset.Controls.Add(label7);
@@ -401,36 +398,12 @@
             textBoxTextToEdit.TabIndex = 2;
             textBoxTextToEdit.Text = "Текст (Enter работает)";
             // 
-            // groupBoxSound
+            // soundControl
             // 
-            groupBoxSound.BackColor = Color.Gainsboro;
-            groupBoxSound.Controls.Add(buttonSoundAddCustom);
-            groupBoxSound.Controls.Add(comboBoxSoundList);
-            groupBoxSound.ForeColor = Color.DarkOliveGreen;
-            groupBoxSound.Location = new Point(8, 552);
-            groupBoxSound.Name = "groupBoxSound";
-            groupBoxSound.Size = new Size(318, 28);
-            groupBoxSound.TabIndex = 45;
-            groupBoxSound.TabStop = false;
-            groupBoxSound.Text = "Sound";
-            // 
-            // buttonSoundAddCustom
-            // 
-            buttonSoundAddCustom.Location = new Point(243, 3);
-            buttonSoundAddCustom.Name = "buttonSoundAddCustom";
-            buttonSoundAddCustom.Size = new Size(67, 23);
-            buttonSoundAddCustom.TabIndex = 17;
-            buttonSoundAddCustom.Text = "Custom";
-            buttonSoundAddCustom.UseVisualStyleBackColor = true;
-            // 
-            // comboBoxSoundList
-            // 
-            comboBoxSoundList.FormattingEnabled = true;
-            comboBoxSoundList.Items.AddRange(new object[] { "Sound1", "Sound2" });
-            comboBoxSoundList.Location = new Point(53, 3);
-            comboBoxSoundList.Name = "comboBoxSoundList";
-            comboBoxSoundList.Size = new Size(183, 23);
-            comboBoxSoundList.TabIndex = 16;
+            soundControl.Location = new Point(8, 552);
+            soundControl.Name = "soundControl";
+            soundControl.Size = new Size(318, 28);
+            soundControl.TabIndex = 45;
             // 
             // mouseScrollControl
             // 
@@ -688,7 +661,6 @@
             ((System.ComponentModel.ISupportInitialize)pictureBoxIMAGEExample).EndInit();
             groupBoxTextTo.ResumeLayout(false);
             groupBoxTextTo.PerformLayout();
-            groupBoxSound.ResumeLayout(false);
             groupBoxPauseIfMooved.ResumeLayout(false);
             groupBoxPauseIfMooved.PerformLayout();
             groupBoxPriority.ResumeLayout(false);
@@ -724,11 +696,9 @@
         private RadioButton radioButtonSkillCooldownSingleHP;
         private RadioButton radioButtonSkillCooldownGLOBAL;
         private Button buttonSave;
-        private GroupBox groupBoxSound;
-        private ComboBox comboBoxSoundList;
+        private pxlhunt.UI.Forms.ComboEditorCompoziteControls.SoundControl soundControl;
         private GroupBox groupBoxTextTo;
         private TextBox textBoxTextToEdit;
-        private Button buttonSoundAddCustom;
         private RadioButton radioButtonTextToTelegtamm;
         private RadioButton radioButtonTextToContext;
         private TextBox textBoxTextToTeleNameUser;

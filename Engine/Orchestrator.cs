@@ -19,6 +19,9 @@ public class Orchestrator
     private readonly Stopwatch _frameClock = Stopwatch.StartNew();
     private TimeSpan _lastFrameTime = TimeSpan.Zero;
 
+    // Время последнего выполнения боевого комбо, делящего общий кулдаун (ГКД).
+    private DateTime _globalLastExecuted = DateTime.MinValue;
+
     /// <summary>Регистрирует комбо в оркестраторе.</summary>
     public void RegisterCombo(ActiveCombo combo) => Combos.Add(combo);
 
@@ -67,6 +70,13 @@ public class Orchestrator
             if (!combo.IsEnabled || !combo.CanExecute())
                 continue;
 
+            // Если комбо делит ГКД и не является фоновым сервисным действием
+            if (combo.IsGlobalCooldown && !combo.IsNonBlocking && combo.CooldownMs > 0)
+            {
+                if ((DateTime.UtcNow - _globalLastExecuted).TotalMilliseconds < combo.CooldownMs)
+                    continue;
+            }
+
             // Если включён PauseIfWasd и игрок двигается — пропускаем комбо.
             // Состояние (Navigation) будет выставлено после цикла.
             if (combo.PauseIfWasd && wasdHeld)
@@ -99,6 +109,10 @@ public class Orchestrator
             {
                 // Обновляем время последнего выполнения
                 combo.LastExecuted = DateTime.UtcNow;
+                if (combo.IsGlobalCooldown && !combo.IsNonBlocking && combo.CooldownMs > 0)
+                {
+                    _globalLastExecuted = DateTime.UtcNow;
+                }
 
                 // Последовательно выполняем шаги комбо
                 var context = new TriggerExecutionContext
@@ -111,6 +125,14 @@ public class Orchestrator
                 {
                     foreach (var step in combo.Steps)
                     {
+                        if (step is INonBlockingStep)
+                        {
+                            // Фоновый шаг (звук/уведомление): запускаем без ожидания
+                            // и мгновенно переходим к следующему шагу!
+                            _ = step.ExecuteAsync(context, ct);
+                            continue;
+                        }
+
                         // Ожидаем, пока игрок отпустит клавиши движения (если включён PauseIfWasd)
                         while (combo.PauseIfWasd && IsWasdPressed())
                         {

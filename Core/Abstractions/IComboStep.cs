@@ -11,3 +11,9 @@ public interface IComboStep
 {
     Task ExecuteAsync(TriggerExecutionContext context, CancellationToken ct);
 }
+
+/// <summary>
+/// Маркер шага, который выполняется фоново, не блокирует очередь комбо
+/// и не расходует общий кулдаун (ГКД).
+/// </summary>
+public interface INonBlockingStep : IComboStep { }

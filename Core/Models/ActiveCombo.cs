@@ -41,6 +41,12 @@ public class ActiveCombo
     /// <summary>Признак того, что комбо в данный момент выполняет свои шаги.</summary>
     public bool IsRunning { get; set; } = false;
 
+    /// <summary>
+    /// Признак того, что комбо состоит только из неблокирующих (фоновых) шагов.
+    /// Такие комбо не занимают слот умения и не расходуют общий кулдаун (ГКД).
+    /// </summary>
+    public bool IsNonBlocking { get; set; } = false;
+
     /// <summary>Список триггеров, определяющих срабатывание комбо.</summary>
     public List<ITriggerEvaluator> Triggers { get; set; } = new List<ITriggerEvaluator>();
 
