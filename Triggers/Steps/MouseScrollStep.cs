@@ -15,6 +15,12 @@ public class MouseScrollStep : IComboStep
     public bool ScrollUp { get; }
     public int Steps { get; }
 
+    public MouseScrollStep(pxlhunt.UI.Forms.ComboEditorCompoziteControls.MouseScrollDto dto)
+    {
+        ScrollUp = dto.ScrollUp;
+        Steps = dto.Steps > 0 ? dto.Steps : 3;
+    }
+
     public MouseScrollStep(Dictionary<string, string>? p)
     {
         if (p == null)

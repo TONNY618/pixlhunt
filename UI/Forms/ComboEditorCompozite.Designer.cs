@@ -59,11 +59,7 @@
             groupBoxSound = new GroupBox();
             buttonSoundAddCustom = new Button();
             comboBoxSoundList = new ComboBox();
-            groupBoxMouseScroll = new GroupBox();
-            labelMouseScrollStep = new Label();
-            textBoxStepWhell = new TextBox();
-            radioButtonWhellUp = new RadioButton();
-            radioButtonWhellDown = new RadioButton();
+            mouseScrollControl = new pxlhunt.UI.Forms.ComboEditorCompoziteControls.MouseScrollControl();
             boxKeyControl = new pxlhunt.UI.Forms.ComboEditorCompoziteControls.BoxKeyControl();
             label7 = new Label();
             temp = new ListBox();
@@ -93,7 +89,6 @@
             ((System.ComponentModel.ISupportInitialize)pictureBoxIMAGEExample).BeginInit();
             groupBoxTextTo.SuspendLayout();
             groupBoxSound.SuspendLayout();
-            groupBoxMouseScroll.SuspendLayout();
             groupBoxPauseIfMooved.SuspendLayout();
             groupBoxPriority.SuspendLayout();
             groupBoxCDtrigger.SuspendLayout();
@@ -110,7 +105,7 @@
             GroupActionPreset.Controls.Add(groupBoxIMAGE);
             GroupActionPreset.Controls.Add(groupBoxTextTo);
             GroupActionPreset.Controls.Add(groupBoxSound);
-            GroupActionPreset.Controls.Add(groupBoxMouseScroll);
+            GroupActionPreset.Controls.Add(mouseScrollControl);
             GroupActionPreset.Controls.Add(boxKeyControl);
             GroupActionPreset.Controls.Add(label7);
             GroupActionPreset.Font = new Font("Calibri", 9.75F, FontStyle.Regular, GraphicsUnit.Point, 204);
@@ -740,8 +735,6 @@
             groupBoxTextTo.ResumeLayout(false);
             groupBoxTextTo.PerformLayout();
             groupBoxSound.ResumeLayout(false);
-            groupBoxMouseScroll.ResumeLayout(false);
-            groupBoxMouseScroll.PerformLayout();
             groupBoxPauseIfMooved.ResumeLayout(false);
             groupBoxPauseIfMooved.PerformLayout();
             groupBoxPriority.ResumeLayout(false);
@@ -758,11 +751,7 @@
         private pxlhunt.UI.Forms.ComboEditorCompoziteControls.TriggerOrAnd triggerOrAnd;
         private pxlhunt.UI.Forms.ComboEditorCompoziteControls.TriggerTimer triggerTimer;
         private pxlhunt.UI.Forms.ComboEditorCompoziteControls.PixSquaControl pixSquaControl;
-        private GroupBox groupBoxMouseScroll;
-        private Label labelMouseScrollStep;
-        private TextBox textBoxStepWhell;
-        private RadioButton radioButtonWhellUp;
-        private RadioButton radioButtonWhellDown;
+        private pxlhunt.UI.Forms.ComboEditorCompoziteControls.MouseScrollControl mouseScrollControl;
         private pxlhunt.UI.Forms.ComboEditorCompoziteControls.BoxKeyControl boxKeyControl;
         private Label label7;
         private Label labelActions;
