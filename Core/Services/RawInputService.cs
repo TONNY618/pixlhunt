@@ -86,12 +86,16 @@ namespace PixelMacroEngine.Core.Services
         /// <summary>Окно (в мс), в течение которого показывается последнее действие колесика.</summary>
         private const int WheelDisplayWindowMs = 350;
 
-        // === Накопитель тиков колесика для триггеров (скользящее окно) ===
-        // Храним метки времени (тики UTC) последних щелчков колесика отдельно для вверх/вниз.
+        // === Накопитель шагов колесика для триггеров (модель "таймаут бездействия") ===
+        // Считаем количество щелчков в текущей серии отдельно для вверх/вниз.
+        // Серия сбрасывается, если между соседними щелчками прошло больше
+        // WhellTrigerReadIntervalMs (пользователь "тупил" дольше лимита).
         // Используем lock, так как операции "прочитать-очистить" должны быть атомарными.
         private static readonly object _wheelLock = new();
-        private static readonly List<long> _wheelUpTicks = new();
-        private static readonly List<long> _wheelDownTicks = new();
+        private static int _wheelUpCount = 0;
+        private static DateTime _lastWheelUpTime = DateTime.MinValue;
+        private static int _wheelDownCount = 0;
+        private static DateTime _lastWheelDownTime = DateTime.MinValue;
 
         // Постоянный буфер для чтения Raw Input (избегаем AllocHGlobal/FreeHGlobal на каждое событие).
         // 128 байт с запасом покрывает RAWINPUT (48 байт на x64).
@@ -140,68 +144,110 @@ namespace PixelMacroEngine.Core.Services
         }
 
         /// <summary>
-        /// Регистрирует один щелчок колесика в накопителе триггеров.
+        /// Возвращает таймаут бездействия (мс) между соседними щелчками колесика.
+        /// Берётся из конфига (WhellTrigerReadIntervalMs); при некорректном значении — 1900 мс.
         /// </summary>
-        private static void RecordWheelTick(bool up)
+        private static int GetWheelInactivityTimeoutMs()
         {
-            long now = DateTime.UtcNow.Ticks;
-            int windowMs = AppConfigService.Instance.WhellTrigerReadIntervalMs;
-            if (windowMs <= 0) windowMs = 500; // безопасный дефолт, если конфиг не задан
+            int timeoutMs = AppConfigService.Instance.WhellTrigerReadIntervalMs;
+            return timeoutMs > 0 ? timeoutMs : 1900;
+        }
+
+        /// <summary>
+        /// Регистрирует щелчки колесика в накопителе триггеров (модель "таймаут бездействия").
+        /// </summary>
+        /// <param name="up">Направление: true — вверх, false — вниз.</param>
+        /// <param name="steps">
+        /// Количество шагов в одном событии (обычно 1, но delta/120 может содержать сразу несколько).
+        /// </param>
+        private static void RecordWheelTick(bool up, int steps = 1)
+        {
+            if (steps < 1) steps = 1;
+
+            int timeoutMs = GetWheelInactivityTimeoutMs();
+            DateTime now = DateTime.UtcNow;
 
             lock (_wheelLock)
             {
-                var list = up ? _wheelUpTicks : _wheelDownTicks;
-                list.Add(now);
-                PruneWheelTicks(list, now, windowMs);
+                if (up)
+                {
+                    // Если пауза между щелчками превысила лимит — начинаем серию заново.
+                    if (_lastWheelUpTime != DateTime.MinValue &&
+                        (now - _lastWheelUpTime).TotalMilliseconds > timeoutMs)
+                    {
+                        _wheelUpCount = 0;
+                    }
+
+                    _wheelUpCount += steps;
+                    _lastWheelUpTime = now; // перезапуск таймера ожидания следующего шага
+                }
+                else
+                {
+                    if (_lastWheelDownTime != DateTime.MinValue &&
+                        (now - _lastWheelDownTime).TotalMilliseconds > timeoutMs)
+                    {
+                        _wheelDownCount = 0;
+                    }
+
+                    _wheelDownCount += steps;
+                    _lastWheelDownTime = now;
+                }
             }
         }
 
         /// <summary>
-        /// Удаляет из списка метки времени, вышедшие за окно накопления.
-        /// </summary>
-        private static void PruneWheelTicks(List<long> list, long nowTicks, int windowMs)
-        {
-            long windowTicks = TimeSpan.FromMilliseconds(windowMs).Ticks;
-            int removeCount = 0;
-            for (int i = 0; i < list.Count; i++)
-            {
-                if (nowTicks - list[i] <= windowTicks) break;
-                removeCount++;
-            }
-            if (removeCount > 0) list.RemoveRange(0, removeCount);
-        }
-
-        /// <summary>
-        /// Проверяет, накоплено ли в скользящем окне не менее <paramref name="requiredSteps"/>
-        /// щелчков колесика в заданном направлении. При успехе счётчик этого направления сбрасывается.
+        /// Проверяет, накоплено ли не менее <paramref name="requiredSteps"/> щелчков колесика
+        /// в заданном направлении в рамках текущей серии (модель "таймаут бездействия").
+        /// При успехе счётчик этого направления сбрасывается.
         /// </summary>
         /// <param name="up">Направление: true — вверх, false — вниз.</param>
-        /// <param name="requiredSteps">Порог срабатывания (число щелчков в окне).</param>
+        /// <param name="requiredSteps">Порог срабатывания (число щелчков в серии).</param>
         /// <param name="windowMs">
-        /// Размер скользящего окна в мс. Если передано значение &lt;= 0,
-        /// используется значение из конфига (WhellTrigerReadIntervalMs).
+        /// Не используется (оставлен для обратной совместимости сигнатуры).
+        /// Таймаут всегда берётся из конфига (WhellTrigerReadIntervalMs).
         /// </param>
         public static bool ConsumeWheelTicks(bool up, int requiredSteps, int windowMs = 0)
         {
             if (requiredSteps < 1) requiredSteps = 1;
 
-            // Если вызывающая сторона не задала окно — берём его из конфига,
-            // чтобы параметр WhellTrigerReadIntervalMs реально управлял подсчётом.
-            if (windowMs <= 0)
-                windowMs = AppConfigService.Instance.WhellTrigerReadIntervalMs;
+            int timeoutMs = GetWheelInactivityTimeoutMs();
+            DateTime now = DateTime.UtcNow;
 
-            long now = DateTime.UtcNow.Ticks;
             lock (_wheelLock)
             {
-                var list = up ? _wheelUpTicks : _wheelDownTicks;
-                PruneWheelTicks(list, now, windowMs);
-
-                if (list.Count >= requiredSteps)
+                if (up)
                 {
-                    list.Clear();
-                    return true;
+                    // Серия "остыла" — сбрасываем накопленное и не срабатываем.
+                    if (_lastWheelUpTime != DateTime.MinValue &&
+                        (now - _lastWheelUpTime).TotalMilliseconds > timeoutMs)
+                    {
+                        _wheelUpCount = 0;
+                        return false;
+                    }
+
+                    if (_wheelUpCount >= requiredSteps)
+                    {
+                        _wheelUpCount = 0;
+                        return true;
+                    }
+                    return false;
                 }
-                return false;
+                else
+                {
+                    if (_lastWheelDownTime != DateTime.MinValue &&
+                        (now - _lastWheelDownTime).TotalMilliseconds > timeoutMs)
+                    {
+                        _wheelDownCount = 0;
+                        return false;
+                    }
+
+                    if (_wheelDownCount >= requiredSteps)
+                    {
+                        _wheelDownCount = 0;
+                        return true;
+                    }
+                    return false;
+                }
             }
         }
 
@@ -366,8 +412,11 @@ namespace PixelMacroEngine.Core.Services
                     _lastWheelAction = wheelDelta > 0 ? "Колесико: Прокрутка вверх" : "Колесико: Прокрутка вниз";
                     Volatile.Write(ref _lastWheelTicks, DateTime.UtcNow.Ticks);
 
-                    // Накопление тиков для триггеров (по направлению)
-                    RecordWheelTick(wheelDelta > 0);
+                    // Накопление шагов для триггеров (по направлению).
+                    // delta/120 — число шагов в одном событии (обычно 1, но бывает и больше).
+                    int steps = Math.Abs(wheelDelta) / 120;
+                    if (steps < 1) steps = 1;
+                    RecordWheelTick(wheelDelta > 0, steps);
                 }
                 else if ((flags & RI_MOUSE_HWHEEL) != 0)
                 {
