@@ -86,6 +86,16 @@ namespace PixelMacroEngine.Core.Services
         /// <summary>Окно (в мс), в течение которого показывается последнее действие колесика.</summary>
         private const int WheelDisplayWindowMs = 350;
 
+        // === Накопитель тиков колесика для триггеров (скользящее окно) ===
+        // Храним метки времени (тики UTC) последних щелчков колесика отдельно для вверх/вниз.
+        // Используем lock, так как операции "прочитать-очистить" должны быть атомарными.
+        private static readonly object _wheelLock = new();
+        private static readonly List<long> _wheelUpTicks = new();
+        private static readonly List<long> _wheelDownTicks = new();
+
+        /// <summary>Окно накопления тиков колесика для триггеров (мс).</summary>
+        private const int WheelAccumulationWindowMs = 350;
+
         // Постоянный буфер для чтения Raw Input (избегаем AllocHGlobal/FreeHGlobal на каждое событие).
         // 128 байт с запасом покрывает RAWINPUT (48 байт на x64).
         private static readonly IntPtr _rawInputBuffer = Marshal.AllocHGlobal(128);
@@ -130,6 +140,58 @@ namespace PixelMacroEngine.Core.Services
                 5 => _isXButton2Down,
                 _ => _isLmbDown
             };
+        }
+
+        /// <summary>
+        /// Регистрирует один щелчок колесика в накопителе триггеров.
+        /// </summary>
+        private static void RecordWheelTick(bool up)
+        {
+            long now = DateTime.UtcNow.Ticks;
+            lock (_wheelLock)
+            {
+                var list = up ? _wheelUpTicks : _wheelDownTicks;
+                list.Add(now);
+                PruneWheelTicks(list, now);
+            }
+        }
+
+        /// <summary>
+        /// Удаляет из списка метки времени, вышедшие за окно накопления.
+        /// </summary>
+        private static void PruneWheelTicks(List<long> list, long nowTicks)
+        {
+            long windowTicks = TimeSpan.FromMilliseconds(WheelAccumulationWindowMs).Ticks;
+            int removeCount = 0;
+            for (int i = 0; i < list.Count; i++)
+            {
+                if (nowTicks - list[i] <= windowTicks) break;
+                removeCount++;
+            }
+            if (removeCount > 0) list.RemoveRange(0, removeCount);
+        }
+
+        /// <summary>
+        /// Проверяет, накоплено ли в скользящем окне не менее <paramref name="requiredSteps"/>
+        /// щелчков колесика в заданном направлении. При успехе счётчик этого направления сбрасывается.
+        /// </summary>
+        public static bool ConsumeWheelTicks(bool up, int requiredSteps)
+        {
+            if (requiredSteps < 1) requiredSteps = 1;
+
+            long now = DateTime.UtcNow.Ticks;
+            lock (_wheelLock)
+            {
+                var list = up ? _wheelUpTicks : _wheelDownTicks;
+                PruneWheelTicks(list, now);
+
+                if (list.Count >= requiredSteps)
+                {
+                    list.Clear();
+                    return true;
+                }
+                return false;
+            }
         }
 
         /// <summary>
@@ -292,6 +354,9 @@ namespace PixelMacroEngine.Core.Services
                     short wheelDelta = (short)raw.data.mouse.usButtonData;
                     _lastWheelAction = wheelDelta > 0 ? "Колесико: Прокрутка вверх" : "Колесико: Прокрутка вниз";
                     Volatile.Write(ref _lastWheelTicks, DateTime.UtcNow.Ticks);
+
+                    // Накопление тиков для триггеров (по направлению)
+                    RecordWheelTick(wheelDelta > 0);
                 }
                 else if ((flags & RI_MOUSE_HWHEEL) != 0)
                 {

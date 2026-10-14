@@ -101,6 +101,13 @@ public static class ComboFactory
             if (dto == null) return null;
             return new MouseScrollStep(dto);
         });
+
+        RegisterTrigger("MouseScrollControl", data =>
+        {
+            var dto = data.Deserialize<pxlhunt.UI.Forms.ComboEditorCompoziteControls.MouseScrollDto>();
+            if (dto == null) return null;
+            return new MouseScrollTriggerEvaluator(dto.ScrollUp, dto.Steps);
+        });
     }
 
     private static ColorTriggerEvaluator CreateColorEvaluator(pxlhunt.UI.Forms.ComboEditorCompoziteControls.PixSquaDto dto)
