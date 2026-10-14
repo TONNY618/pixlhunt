@@ -129,7 +129,7 @@
             triggerTimer.BackColor = Color.Transparent;
             triggerTimer.Location = new Point(118, 25);
             triggerTimer.Name = "triggerTimer";
-            triggerTimer.Size = new Size(190, 44);
+            triggerTimer.Size = new Size(190, 46);
             triggerTimer.TabIndex = 23;
             // 
             // pixSquaControl
@@ -145,7 +145,7 @@
             mouseKeyControl.BackColor = Color.Transparent;
             mouseKeyControl.Location = new Point(6, 352);
             mouseKeyControl.Name = "mouseKeyControl";
-            mouseKeyControl.Size = new Size(240, 28);
+            mouseKeyControl.Size = new Size(238, 28);
             mouseKeyControl.TabIndex = 62;
             // 
             // cursorMoveControl
@@ -431,6 +431,14 @@
             comboBoxSoundList.Name = "comboBoxSoundList";
             comboBoxSoundList.Size = new Size(183, 23);
             comboBoxSoundList.TabIndex = 16;
+            // 
+            // mouseScrollControl
+            // 
+            mouseScrollControl.BackColor = Color.Transparent;
+            mouseScrollControl.Location = new Point(6, 386);
+            mouseScrollControl.Name = "mouseScrollControl";
+            mouseScrollControl.Size = new Size(240, 28);
+            mouseScrollControl.TabIndex = 63;
             // 
             // boxKeyControl
             // 

@@ -37,7 +37,7 @@
             // 
             // groupBoxTriggerTimer
             // 
-            groupBoxTriggerTimer.BackColor = SystemColors.Info;
+            groupBoxTriggerTimer.BackColor = Color.Cyan;
             groupBoxTriggerTimer.Controls.Add(button1);
             groupBoxTriggerTimer.Controls.Add(textBoxTriggerTimerMax);
             groupBoxTriggerTimer.Controls.Add(textBoxTriggerTimer);

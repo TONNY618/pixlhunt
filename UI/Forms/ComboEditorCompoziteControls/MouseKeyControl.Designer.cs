@@ -21,7 +21,7 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
             // 
             // groupBoxMouseKey
             // 
-            groupBoxMouseKey.BackColor = Color.Gainsboro;
+            groupBoxMouseKey.BackColor = Color.Cyan;
             groupBoxMouseKey.Controls.Add(comboBoxMouseKeyList);
             groupBoxMouseKey.Controls.Add(checkBoxMouseKey2);
             groupBoxMouseKey.Controls.Add(checkBoxMouseKey1);
