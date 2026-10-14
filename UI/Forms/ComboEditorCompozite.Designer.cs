@@ -432,60 +432,6 @@
             comboBoxSoundList.Size = new Size(183, 23);
             comboBoxSoundList.TabIndex = 16;
             // 
-            // groupBoxMouseScroll
-            // 
-            groupBoxMouseScroll.BackColor = Color.Gainsboro;
-            groupBoxMouseScroll.Controls.Add(labelMouseScrollStep);
-            groupBoxMouseScroll.Controls.Add(textBoxStepWhell);
-            groupBoxMouseScroll.Controls.Add(radioButtonWhellUp);
-            groupBoxMouseScroll.Controls.Add(radioButtonWhellDown);
-            groupBoxMouseScroll.ForeColor = SystemColors.HotTrack;
-            groupBoxMouseScroll.Location = new Point(22, 395);
-            groupBoxMouseScroll.Name = "groupBoxMouseScroll";
-            groupBoxMouseScroll.Size = new Size(240, 28);
-            groupBoxMouseScroll.TabIndex = 22;
-            groupBoxMouseScroll.TabStop = false;
-            groupBoxMouseScroll.Text = "Mouse Scroll";
-            // 
-            // labelMouseScrollStep
-            // 
-            labelMouseScrollStep.Location = new Point(168, 6);
-            labelMouseScrollStep.Name = "labelMouseScrollStep";
-            labelMouseScrollStep.Size = new Size(33, 18);
-            labelMouseScrollStep.TabIndex = 11;
-            labelMouseScrollStep.Text = "step";
-            // 
-            // textBoxStepWhell
-            // 
-            textBoxStepWhell.Location = new Point(204, 3);
-            textBoxStepWhell.MaxLength = 2;
-            textBoxStepWhell.Name = "textBoxStepWhell";
-            textBoxStepWhell.Size = new Size(28, 23);
-            textBoxStepWhell.TabIndex = 10;
-            textBoxStepWhell.Text = "3";
-            // 
-            // radioButtonWhellUp
-            // 
-            radioButtonWhellUp.AutoSize = true;
-            radioButtonWhellUp.Location = new Point(127, 4);
-            radioButtonWhellUp.Name = "radioButtonWhellUp";
-            radioButtonWhellUp.Size = new Size(35, 19);
-            radioButtonWhellUp.TabIndex = 1;
-            radioButtonWhellUp.Text = "/\\";
-            radioButtonWhellUp.UseVisualStyleBackColor = true;
-            // 
-            // radioButtonWhellDown
-            // 
-            radioButtonWhellDown.AutoSize = true;
-            radioButtonWhellDown.Checked = true;
-            radioButtonWhellDown.Location = new Point(93, 4);
-            radioButtonWhellDown.Name = "radioButtonWhellDown";
-            radioButtonWhellDown.Size = new Size(35, 19);
-            radioButtonWhellDown.TabIndex = 0;
-            radioButtonWhellDown.TabStop = true;
-            radioButtonWhellDown.Text = "\\/";
-            radioButtonWhellDown.UseVisualStyleBackColor = true;
-            // 
             // boxKeyControl
             // 
             boxKeyControl.Location = new Point(8, 318);
