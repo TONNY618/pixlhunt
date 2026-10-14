@@ -167,7 +167,7 @@ namespace PixelMacroEngine.Core.Services
                 if (kvp.Value)
                 {
                     string name = ResolveKeyName(kvp.Key);
-                    return $"Кнопка мыши / Клавиша: {name}";
+                    return $"KEY mouse/keyboard: {name}";
                 }
             }
 
