@@ -85,7 +85,6 @@
             buttonSave = new Button();
             textBoxHelp = new TextBox();
             groupBoxKeyMouseMonitor = new GroupBox();
-            labelKey = new Label();
             GroupActionPreset.SuspendLayout();
             groupBoxIMAGE.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)pictureBoxIMAGESample).BeginInit();
@@ -98,7 +97,6 @@
             groupBoxPauseIfMooved.SuspendLayout();
             groupBoxPriority.SuspendLayout();
             groupBoxCDtrigger.SuspendLayout();
-            groupBoxKeyMouseMonitor.SuspendLayout();
             SuspendLayout();
             // 
             // GroupActionPreset
@@ -512,9 +510,9 @@
             // 
             temp.FormattingEnabled = true;
             temp.Items.AddRange(new object[] { "Допуск масштаба ±% — 0 = только исходный размер. 20 = искать в диапазоне 0.8..1.2. Это MultiScale.", "Игнорировать цвета — галочка, grayscale on/off.", "Требовать уникальность — ratio test. Если рядом есть второй похожий пик — не считать найденным. Это главная защита от «каши»." });
-            temp.Location = new Point(8, 93);
+            temp.Location = new Point(8, 91);
             temp.Name = "temp";
-            temp.Size = new Size(162, 64);
+            temp.Size = new Size(353, 64);
             temp.TabIndex = 61;
             // 
             // labelActions
@@ -591,7 +589,7 @@
             flowLayoutPanelActions.FlowDirection = FlowDirection.TopDown;
             flowLayoutPanelActions.Location = new Point(8, 384);
             flowLayoutPanelActions.Name = "flowLayoutPanelActions";
-            flowLayoutPanelActions.Size = new Size(353, 327);
+            flowLayoutPanelActions.Size = new Size(353, 285);
             flowLayoutPanelActions.TabIndex = 39;
             flowLayoutPanelActions.WrapContents = false;
             // 
@@ -700,22 +698,12 @@
             // 
             // groupBoxKeyMouseMonitor
             // 
-            groupBoxKeyMouseMonitor.Controls.Add(labelKey);
-            groupBoxKeyMouseMonitor.Location = new Point(184, 93);
+            groupBoxKeyMouseMonitor.Location = new Point(8, 696);
             groupBoxKeyMouseMonitor.Name = "groupBoxKeyMouseMonitor";
-            groupBoxKeyMouseMonitor.Size = new Size(177, 64);
+            groupBoxKeyMouseMonitor.Size = new Size(353, 18);
             groupBoxKeyMouseMonitor.TabIndex = 64;
             groupBoxKeyMouseMonitor.TabStop = false;
             groupBoxKeyMouseMonitor.Text = "KeyMouseMonitor";
-            // 
-            // labelKey
-            // 
-            labelKey.AutoSize = true;
-            labelKey.Location = new Point(54, 29);
-            labelKey.Name = "labelKey";
-            labelKey.Size = new Size(25, 15);
-            labelKey.TabIndex = 0;
-            labelKey.Text = "key";
             // 
             // ComboEditorCompozite
             // 
@@ -760,8 +748,6 @@
             groupBoxPriority.PerformLayout();
             groupBoxCDtrigger.ResumeLayout(false);
             groupBoxCDtrigger.PerformLayout();
-            groupBoxKeyMouseMonitor.ResumeLayout(false);
-            groupBoxKeyMouseMonitor.PerformLayout();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -825,6 +811,5 @@
         private Button buttonIMAGEView;
         private CheckBox checkBoxTakeXY;
         private GroupBox groupBoxKeyMouseMonitor;
-        private Label labelKey;
     }
 }
