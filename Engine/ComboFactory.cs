@@ -106,7 +106,7 @@ public static class ComboFactory
         {
             var dto = data.Deserialize<pxlhunt.UI.Forms.ComboEditorCompoziteControls.MouseScrollDto>();
             if (dto == null) return null;
-            return new MouseScrollTriggerEvaluator(dto.ScrollUp, dto.Steps, dto.WindowMs);
+            return new MouseScrollTriggerEvaluator(dto.ScrollUp, dto.Steps);
         });
     }
 

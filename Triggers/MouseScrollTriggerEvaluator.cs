@@ -17,19 +17,16 @@ namespace PixelMacroEngine.Triggers
         /// <summary>Порог срабатывания (число щелчков в окне).</summary>
         public int RequiredSteps { get; }
 
-        /// <summary>Размер скользящего окна накопления (мс).</summary>
-        public int WindowMs { get; }
-
-        public MouseScrollTriggerEvaluator(bool scrollUp, int requiredSteps, int windowMs)
+        public MouseScrollTriggerEvaluator(bool scrollUp, int requiredSteps)
         {
             ScrollUp = scrollUp;
             RequiredSteps = requiredSteps > 0 ? requiredSteps : 1;
-            WindowMs = windowMs > 0 ? windowMs : 350;
         }
 
         public bool Evaluate(FrameBuffer buffer)
         {
-            return RawInputService.ConsumeWheelTicks(ScrollUp, RequiredSteps, WindowMs);
+            int windowMs = AppConfigService.Instance.WhellTrigerReadIntervalMs;
+            return RawInputService.ConsumeWheelTicks(ScrollUp, RequiredSteps, windowMs);
         }
     }
 }

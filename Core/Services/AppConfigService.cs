@@ -46,10 +46,9 @@ public class AppConfig
     public int DisplayNumberForCapteruVideoFrame { get; set; } = 0;
 
     /// <summary>
-    /// Окно накопления тиков колесика для триггера (мс).
-    /// Используется как значение по умолчанию, если в DTO не задано иное.
+    /// Интервал (мс) накопления тиков колесика для триггера.
     /// </summary>
-    public int MouseScrollTriggerWindowMs { get; set; } = 350;
+    public int WhellTrigerReadIntervalMs { get; set; }
 
     public UsbHwKeyClickerConfig Usb_hwKeyClicker { get; set; } = new();
 }

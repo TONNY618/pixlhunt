@@ -93,9 +93,6 @@ namespace PixelMacroEngine.Core.Services
         private static readonly List<long> _wheelUpTicks = new();
         private static readonly List<long> _wheelDownTicks = new();
 
-        /// <summary>Окно накопления тиков колесика для триггеров (мс).</summary>
-        private const int WheelAccumulationWindowMs = 350;
-
         // Постоянный буфер для чтения Raw Input (избегаем AllocHGlobal/FreeHGlobal на каждое событие).
         // 128 байт с запасом покрывает RAWINPUT (48 байт на x64).
         private static readonly IntPtr _rawInputBuffer = Marshal.AllocHGlobal(128);
@@ -152,7 +149,7 @@ namespace PixelMacroEngine.Core.Services
             {
                 var list = up ? _wheelUpTicks : _wheelDownTicks;
                 list.Add(now);
-                PruneWheelTicks(list, now, WheelAccumulationWindowMs);
+                PruneWheelTicks(list, now, AppConfigService.Instance.WhellTrigerReadIntervalMs);
             }
         }
 
@@ -177,11 +174,10 @@ namespace PixelMacroEngine.Core.Services
         /// </summary>
         /// <param name="up">Направление: true — вверх, false — вниз.</param>
         /// <param name="requiredSteps">Порог срабатывания (число щелчков в окне).</param>
-        /// <param name="windowMs">Размер скользящего окна в мс. Если &lt;= 0 — используется значение по умолчанию.</param>
+        /// <param name="windowMs">Размер скользящего окна в мс.</param>
         public static bool ConsumeWheelTicks(bool up, int requiredSteps, int windowMs)
         {
             if (requiredSteps < 1) requiredSteps = 1;
-            if (windowMs <= 0) windowMs = WheelAccumulationWindowMs;
 
             long now = DateTime.UtcNow.Ticks;
             lock (_wheelLock)

@@ -15,8 +15,6 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
             groupBoxMouseScroll = new GroupBox();
             labelMouseScrollStep = new Label();
             textBoxStepWhell = new TextBox();
-            labelMouseScrollWindow = new Label();
-            textBoxWindowMs = new TextBox();
             radioButtonWhellUp = new RadioButton();
             radioButtonWhellDown = new RadioButton();
             groupBoxMouseScroll.SuspendLayout();
@@ -27,8 +25,6 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
             groupBoxMouseScroll.BackColor = Color.Cyan;
             groupBoxMouseScroll.Controls.Add(labelMouseScrollStep);
             groupBoxMouseScroll.Controls.Add(textBoxStepWhell);
-            groupBoxMouseScroll.Controls.Add(labelMouseScrollWindow);
-            groupBoxMouseScroll.Controls.Add(textBoxWindowMs);
             groupBoxMouseScroll.Controls.Add(radioButtonWhellUp);
             groupBoxMouseScroll.Controls.Add(radioButtonWhellDown);
             groupBoxMouseScroll.ForeColor = SystemColors.HotTrack;
@@ -55,23 +51,6 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
             textBoxStepWhell.Size = new Size(28, 23);
             textBoxStepWhell.TabIndex = 1;
             textBoxStepWhell.Text = "3";
-            // 
-            // labelMouseScrollWindow
-            // 
-            labelMouseScrollWindow.Location = new Point(168, 6);
-            labelMouseScrollWindow.Name = "labelMouseScrollWindow";
-            labelMouseScrollWindow.Size = new Size(33, 18);
-            labelMouseScrollWindow.TabIndex = 4;
-            labelMouseScrollWindow.Text = "ms";
-            // 
-            // textBoxWindowMs
-            // 
-            textBoxWindowMs.Location = new Point(204, 3);
-            textBoxWindowMs.MaxLength = 4;
-            textBoxWindowMs.Name = "textBoxWindowMs";
-            textBoxWindowMs.Size = new Size(28, 23);
-            textBoxWindowMs.TabIndex = 5;
-            textBoxWindowMs.Text = "350";
             // 
             // radioButtonWhellUp
             // 
@@ -109,8 +88,6 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
         public System.Windows.Forms.GroupBox groupBoxMouseScroll;
         public System.Windows.Forms.Label labelMouseScrollStep;
         public System.Windows.Forms.TextBox textBoxStepWhell;
-        public System.Windows.Forms.Label labelMouseScrollWindow;
-        public System.Windows.Forms.TextBox textBoxWindowMs;
         public System.Windows.Forms.RadioButton radioButtonWhellUp;
         public System.Windows.Forms.RadioButton radioButtonWhellDown;
     }
