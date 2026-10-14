@@ -145,11 +145,14 @@ namespace PixelMacroEngine.Core.Services
         private static void RecordWheelTick(bool up)
         {
             long now = DateTime.UtcNow.Ticks;
+            int windowMs = AppConfigService.Instance.WhellTrigerReadIntervalMs;
+            if (windowMs <= 0) windowMs = 500; // безопасный дефолт, если конфиг не задан
+
             lock (_wheelLock)
             {
                 var list = up ? _wheelUpTicks : _wheelDownTicks;
                 list.Add(now);
-                PruneWheelTicks(list, now, AppConfigService.Instance.WhellTrigerReadIntervalMs);
+                PruneWheelTicks(list, now, windowMs);
             }
         }
 
@@ -174,10 +177,18 @@ namespace PixelMacroEngine.Core.Services
         /// </summary>
         /// <param name="up">Направление: true — вверх, false — вниз.</param>
         /// <param name="requiredSteps">Порог срабатывания (число щелчков в окне).</param>
-        /// <param name="windowMs">Размер скользящего окна в мс.</param>
+        /// <param name="windowMs">
+        /// Размер скользящего окна в мс. Если передано значение &lt;= 0,
+        /// используется значение из конфига (WhellTrigerReadIntervalMs).
+        /// </param>
         public static bool ConsumeWheelTicks(bool up, int requiredSteps, int windowMs)
         {
             if (requiredSteps < 1) requiredSteps = 1;
+
+            // Если вызывающая сторона не задала окно — берём его из конфига,
+            // чтобы параметр WhellTrigerReadIntervalMs реально управлял подсчётом.
+            if (windowMs <= 0)
+                windowMs = AppConfigService.Instance.WhellTrigerReadIntervalMs;
 
             long now = DateTime.UtcNow.Ticks;
             lock (_wheelLock)
