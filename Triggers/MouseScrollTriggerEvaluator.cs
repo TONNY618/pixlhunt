@@ -25,8 +25,9 @@ namespace PixelMacroEngine.Triggers
 
         public bool Evaluate(FrameBuffer buffer)
         {
-            int windowMs = AppConfigService.Instance.WhellTrigerReadIntervalMs;
-            return RawInputService.ConsumeWheelTicks(ScrollUp, RequiredSteps, windowMs);
+            // windowMs = 0 => окно берётся из AppConfigService.Instance.WhellTrigerReadIntervalMs
+            // внутри RawInputService.ConsumeWheelTicks. Захардкоженных миллисекунд здесь нет.
+            return RawInputService.ConsumeWheelTicks(ScrollUp, RequiredSteps, 0);
         }
     }
 }

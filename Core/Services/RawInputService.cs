@@ -181,7 +181,7 @@ namespace PixelMacroEngine.Core.Services
         /// Размер скользящего окна в мс. Если передано значение &lt;= 0,
         /// используется значение из конфига (WhellTrigerReadIntervalMs).
         /// </param>
-        public static bool ConsumeWheelTicks(bool up, int requiredSteps, int windowMs)
+        public static bool ConsumeWheelTicks(bool up, int requiredSteps, int windowMs = 0)
         {
             if (requiredSteps < 1) requiredSteps = 1;
 
