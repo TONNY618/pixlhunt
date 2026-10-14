@@ -14,7 +14,7 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
         {
             InitializeComponent();
             comboBoxSoundList.DropDown += (s, e) => RefreshSoundList();
-            buttonSoundAddCustom.Click += ButtonSoundAddCustom_Click;
+            buttonSoundPlay.Click += ButtonSoundAddCustom_Click;
             RefreshSoundList();
         }
 
