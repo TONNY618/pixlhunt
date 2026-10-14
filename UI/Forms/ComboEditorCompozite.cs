@@ -632,6 +632,7 @@ namespace pxlhunt.UI.Forms
                 textBoxNameCOMBO.Text = profile.ComboName;
                 checkBoxOnOff.Checked = profile.IsOnOff;
                 radioButtonSkillCooldownGLOBAL.Checked = profile.IsCooldownGlobal;
+                radioButtonSkillCooldownSingleHP.Checked = !profile.IsCooldownGlobal;
                 textBoxPriorityTrigger.Text = profile.Priority;
                 checkBoxWASDpauseTrigger.Checked = profile.PauseIfWASD;
 
