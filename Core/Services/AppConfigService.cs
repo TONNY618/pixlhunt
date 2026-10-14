@@ -38,7 +38,6 @@ public class UsbHwKeyClickerConfig
 public class AppConfig
 {
     public string PxlhuntNameMainForm { get; set; } = "pxlHunt";
-    public int InstantComboDefaultCooldownMs { get; set; } = 1500;
     public int GlobalCooldownDefaultMs { get; set; } = 1100;
     public int FrameCaptureIntervalMs { get; set; } = 33;
     public int HumanLatencyMinMs { get; set; } = 40;
