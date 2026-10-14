@@ -134,7 +134,7 @@ namespace PixelMacroEngine.Core.Services
 
         /// <summary>
         /// Возвращает человекочитаемое описание текущего физического действия мыши/клавиатуры.
-        /// Используется UI-монитором ввода (labelKey в редакторе комбо).
+        /// Используется UI-монитором ввода (заголовок groupBoxKeyMouseMonitor в редакторе комбо).
         /// </summary>
         public static string GetHumanReadableMouseAction()
         {

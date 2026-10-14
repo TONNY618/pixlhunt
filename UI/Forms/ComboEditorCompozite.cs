@@ -75,7 +75,7 @@ namespace pxlhunt.UI.Forms
         /// </summary>
         private void InputMonitorTimer_Tick(object? sender, EventArgs e)
         {
-            if (this.IsDisposed || groupBoxKeyMouseMonitor.IsDisposed || labelKey.IsDisposed)
+            if (this.IsDisposed || groupBoxKeyMouseMonitor.IsDisposed)
                 return;
 
             bool isHovered = groupBoxKeyMouseMonitor.ClientRectangle.Contains(
@@ -83,21 +83,19 @@ namespace pxlhunt.UI.Forms
 
             if (!isHovered)
             {
-                labelKey.Text = "[Наведите курсор для проверки]";
-                labelKey.ForeColor = Color.DarkGray;
+                if (groupBoxKeyMouseMonitor.Text != "Монитор ввода [Наведите курсор]")
+                    groupBoxKeyMouseMonitor.Text = "Монитор ввода [Наведите курсор]";
                 return;
             }
 
             string actionText = PixelMacroEngine.Core.Services.RawInputService.GetHumanReadableMouseAction();
             if (!string.IsNullOrEmpty(actionText))
             {
-                labelKey.Text = actionText;
-                labelKey.ForeColor = Color.Blue;
+                groupBoxKeyMouseMonitor.Text = $"Монитор: >>> {actionText} <<<";
             }
             else
             {
-                labelKey.Text = "[Нажмите кнопку или покрутите колесико]";
-                labelKey.ForeColor = Color.Gray;
+                groupBoxKeyMouseMonitor.Text = "Монитор: [Ожидание нажатия...]";
             }
         }
 
