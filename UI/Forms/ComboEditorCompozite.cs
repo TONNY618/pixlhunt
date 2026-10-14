@@ -41,6 +41,23 @@ namespace pxlhunt.UI.Forms
             // Инициализация перехвата ввода (идемпотентно) и запуск монитора labelKey
             PixelMacroEngine.Core.Services.RawInputService.Initialize();
             SetupInputMonitor();
+
+            // Освобождение таймера монитора ввода при закрытии формы
+            this.FormClosed += (s, e) => DisposeInputMonitor();
+        }
+
+        /// <summary>
+        /// Останавливает и освобождает таймер монитора ввода.
+        /// </summary>
+        private void DisposeInputMonitor()
+        {
+            if (_inputMonitorTimer != null)
+            {
+                _inputMonitorTimer.Stop();
+                _inputMonitorTimer.Tick -= InputMonitorTimer_Tick;
+                _inputMonitorTimer.Dispose();
+                _inputMonitorTimer = null;
+            }
         }
 
         /// <summary>
@@ -657,21 +674,6 @@ namespace pxlhunt.UI.Forms
         private void pixSquaControl_Load(object sender, EventArgs e)
         {
 
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-                if (_inputMonitorTimer != null)
-                {
-                    _inputMonitorTimer.Stop();
-                    _inputMonitorTimer.Tick -= InputMonitorTimer_Tick;
-                    _inputMonitorTimer.Dispose();
-                    _inputMonitorTimer = null;
-                }
-            }
-            base.Dispose(disposing);
         }
     }
 }
