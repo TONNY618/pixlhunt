@@ -18,6 +18,9 @@ namespace pxlhunt.UI.Forms
         private readonly ContextMenuStrip _itemContextMenu = new ContextMenuStrip();
         private Control? _contextTargetControl;
 
+        // Таймер опроса физического ввода для монитора labelKey
+        private System.Windows.Forms.Timer? _inputMonitorTimer;
+
         public ComboEditorCompozite()
         {
             InitializeComponent();
@@ -34,6 +37,51 @@ namespace pxlhunt.UI.Forms
 
             textBoxCDglobal.Text = PixelMacroEngine.Core.Services.AppConfigService.Instance.GlobalCooldownDefaultMs.ToString();
             textBoxCDglobal.ReadOnly = true;
+
+            // Инициализация перехвата ввода (идемпотентно) и запуск монитора labelKey
+            PixelMacroEngine.Core.Services.RawInputService.Initialize();
+            SetupInputMonitor();
+        }
+
+        /// <summary>
+        /// Настраивает таймер опроса физического ввода для отображения действий в labelKey.
+        /// </summary>
+        private void SetupInputMonitor()
+        {
+            _inputMonitorTimer = new System.Windows.Forms.Timer { Interval = 25 };
+            _inputMonitorTimer.Tick += InputMonitorTimer_Tick;
+            _inputMonitorTimer.Start();
+        }
+
+        /// <summary>
+        /// Опрашивает RawInputService и обновляет labelKey при наведении на groupBoxKeyMouseMonitor.
+        /// </summary>
+        private void InputMonitorTimer_Tick(object? sender, EventArgs e)
+        {
+            if (this.IsDisposed || groupBoxKeyMouseMonitor.IsDisposed || labelKey.IsDisposed)
+                return;
+
+            bool isHovered = groupBoxKeyMouseMonitor.ClientRectangle.Contains(
+                groupBoxKeyMouseMonitor.PointToClient(Cursor.Position));
+
+            if (!isHovered)
+            {
+                labelKey.Text = "[Наведите курсор для проверки]";
+                labelKey.ForeColor = Color.DarkGray;
+                return;
+            }
+
+            string actionText = PixelMacroEngine.Core.Services.RawInputService.GetHumanReadableMouseAction();
+            if (!string.IsNullOrEmpty(actionText))
+            {
+                labelKey.Text = actionText;
+                labelKey.ForeColor = Color.Blue;
+            }
+            else
+            {
+                labelKey.Text = "[Нажмите кнопку или покрутите колесико]";
+                labelKey.ForeColor = Color.Gray;
+            }
         }
 
         public ComboEditorCompozite(string? comboNameToLoad) : this()
@@ -609,6 +657,21 @@ namespace pxlhunt.UI.Forms
         private void pixSquaControl_Load(object sender, EventArgs e)
         {
 
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                if (_inputMonitorTimer != null)
+                {
+                    _inputMonitorTimer.Stop();
+                    _inputMonitorTimer.Tick -= InputMonitorTimer_Tick;
+                    _inputMonitorTimer.Dispose();
+                    _inputMonitorTimer = null;
+                }
+            }
+            base.Dispose(disposing);
         }
     }
 }

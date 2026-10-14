@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
+using PixelMacroEngine.Core.Input;
 
 namespace PixelMacroEngine.Core.Services
 {
@@ -58,6 +60,8 @@ namespace PixelMacroEngine.Core.Services
         private const ushort RI_MOUSE_BUTTON_4_UP   = 0x0080;
         private const ushort RI_MOUSE_BUTTON_5_DOWN = 0x0100;
         private const ushort RI_MOUSE_BUTTON_5_UP   = 0x0200;
+        private const ushort RI_MOUSE_WHEEL         = 0x0400;
+        private const ushort RI_MOUSE_HWHEEL        = 0x0800;
 
         // === Usages ===
         private const ushort HID_USAGE_PAGE_GENERIC = 0x01;
@@ -73,6 +77,14 @@ namespace PixelMacroEngine.Core.Services
         private static volatile bool _isMmbDown;
         private static volatile bool _isXButton1Down;
         private static volatile bool _isXButton2Down;
+
+        // Временное отображение прокрутки колесика (для UI-монитора ввода).
+        // Время храним в тиках UTC (long), чтобы корректно работать с Volatile.
+        private static volatile string _lastWheelAction = string.Empty;
+        private static long _lastWheelTicks = DateTime.MinValue.Ticks;
+
+        /// <summary>Окно (в мс), в течение которого показывается последнее действие колесика.</summary>
+        private const int WheelDisplayWindowMs = 350;
 
         // Постоянный буфер для чтения Raw Input (избегаем AllocHGlobal/FreeHGlobal на каждое событие).
         // 128 байт с запасом покрывает RAWINPUT (48 байт на x64).
@@ -118,6 +130,63 @@ namespace PixelMacroEngine.Core.Services
                 5 => _isXButton2Down,
                 _ => _isLmbDown
             };
+        }
+
+        /// <summary>
+        /// Возвращает человекочитаемое описание текущего физического действия мыши/клавиатуры.
+        /// Используется UI-монитором ввода (labelKey в редакторе комбо).
+        /// </summary>
+        public static string GetHumanReadableMouseAction()
+        {
+            // 1. Приоритет — недавняя прокрутка колесика (в пределах окна отображения)
+            long lastTicks = Volatile.Read(ref _lastWheelTicks);
+            if (lastTicks != DateTime.MinValue.Ticks)
+            {
+                double elapsedMs = (DateTime.UtcNow - new DateTime(lastTicks, DateTimeKind.Utc)).TotalMilliseconds;
+                if (elapsedMs >= 0 && elapsedMs < WheelDisplayWindowMs)
+                {
+                    return _lastWheelAction;
+                }
+            }
+
+            // 2. Зажатые кнопки мыши — собираем в список
+            var parts = new List<string>(5);
+            if (_isLmbDown) parts.Add("Левая кнопка (ЛКМ)");
+            if (_isRmbDown) parts.Add("Правая кнопка (ПКМ)");
+            if (_isMmbDown) parts.Add("Колесико (Клик / СКМ)");
+            if (_isXButton1Down) parts.Add("Боковая кнопка (Назад)");
+            if (_isXButton2Down) parts.Add("Боковая кнопка (Вперед)");
+
+            if (parts.Count > 0)
+                return string.Join(" + ", parts);
+
+            // 3. Клавиатурные клавиши (многие мыши шлют макро-кнопки как клавиши).
+            //    Переиспользуем таблицу ArduinoKeyMap.WindowsVkMap для перевода VK -> имя.
+            foreach (var kvp in _keyStates)
+            {
+                if (kvp.Value)
+                {
+                    string name = ResolveKeyName(kvp.Key);
+                    return $"Кнопка мыши / Клавиша: {name}";
+                }
+            }
+
+            // 4. Ничего не нажато
+            return string.Empty;
+        }
+
+        /// <summary>
+        /// Переводит Windows Virtual Key в человекочитаемое имя через ArduinoKeyMap.
+        /// Если соответствие не найдено — возвращает строку с кодом.
+        /// </summary>
+        private static string ResolveKeyName(ushort vKey)
+        {
+            foreach (var kvp in ArduinoKeyMap.WindowsVkMap)
+            {
+                if (kvp.Value == vKey)
+                    return kvp.Key;
+            }
+            return $"[Код {vKey}]";
         }
 
         // =====================================================================
@@ -217,6 +286,19 @@ namespace PixelMacroEngine.Core.Services
                 if ((flags & RI_MOUSE_BUTTON_4_UP) != 0)   _isXButton1Down = false;
                 if ((flags & RI_MOUSE_BUTTON_5_DOWN) != 0) _isXButton2Down = true;
                 if ((flags & RI_MOUSE_BUTTON_5_UP) != 0)   _isXButton2Down = false;
+
+                if ((flags & RI_MOUSE_WHEEL) != 0)
+                {
+                    short wheelDelta = (short)raw.data.mouse.usButtonData;
+                    _lastWheelAction = wheelDelta > 0 ? "Колесико: Прокрутка вверх" : "Колесико: Прокрутка вниз";
+                    Volatile.Write(ref _lastWheelTicks, DateTime.UtcNow.Ticks);
+                }
+                else if ((flags & RI_MOUSE_HWHEEL) != 0)
+                {
+                    short hWheelDelta = (short)raw.data.mouse.usButtonData;
+                    _lastWheelAction = hWheelDelta > 0 ? "Колесико: Наклон вправо" : "Колесико: Наклон влево";
+                    Volatile.Write(ref _lastWheelTicks, DateTime.UtcNow.Ticks);
+                }
             }
             else if (raw.header.dwType == RIM_TYPEKEYBOARD)
             {
