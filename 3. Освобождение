@@ -1,0 +1,9 @@
+DxgiScreenCapture.Dispose()
+ ├─ Dispose(true)
+ │   ├─ if (_disposed) return
+ │   ├─ _disposed = true
+ │   └─ Cleanup()
+ └─ GC.SuppressFinalize(this)
+
+DxgiScreenCapture.~DxgiScreenCapture()
+ └─ Dispose(false)   // финализатор

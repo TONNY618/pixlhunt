@@ -1,0 +1,13 @@
+DxgiScreenCapture.TryCaptureFrame(timeoutMs)
+ ├─ ThrowIfDisposed()
+ ├─ (если _duplication/_stagingTexture/_context == null) → Initialize(_outputIndex)
+ ├─ result = _duplication.AcquireNextFrame(timeoutMs, out _, out desktopResource)
+ │   ├─ WaitTimeout → return false
+ │   └─ AccessLost/E_ACCESSDENIED → Cleanup() → Initialize(_outputIndex) → return false
+ ├─ desktopResource?.QueryInterface<ID3D11Texture2D>() → frameTexture
+ ├─ _context.CopyResource(_stagingTexture, frameTexture)
+ ├─ mapped = _context.Map(_stagingTexture, 0, MapMode.Read, MapFlags.None)
+ ├─ unsafe memcpy row‑by‑row → _buffer
+ ├─ _context.Unmap(_stagingTexture, 0)
+ ├─ _duplication.ReleaseFrame()
+ └─ return true
