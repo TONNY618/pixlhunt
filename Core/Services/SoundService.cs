@@ -43,14 +43,20 @@ namespace PixelMacroEngine.Core.Services
             string alias = "snd_" + Guid.NewGuid().ToString("N");
             string ext = Path.GetExtension(basePath).ToLowerInvariant();
 
-            string openCmd = ext == ".mp3"
-                ? $"open \"{basePath}\" type mpegvideo alias {alias}"
-                : $"open \"{basePath}\" alias {alias}";
-
+            // type mpegvideo используется и для mp3, и для wav для поддержки setaudio volume
+            string openCmd = $"open \"{basePath}\" type mpegvideo alias {alias}";
             mciSendString(openCmd, null, 0, IntPtr.Zero);
 
             int mciVolume = Math.Clamp(volume * 10, 0, 1000);
-            mciSendString($"setaudio {alias} volume to {mciVolume}", null, 0, IntPtr.Zero);
+            if (mciVolume <= 0)
+            {
+                mciSendString($"setaudio {alias} off", null, 0, IntPtr.Zero);
+            }
+            else
+            {
+                mciSendString($"setaudio {alias} on", null, 0, IntPtr.Zero);
+                mciSendString($"setaudio {alias} volume to {mciVolume}", null, 0, IntPtr.Zero);
+            }
 
             mciSendString($"play {alias}", null, 0, IntPtr.Zero);
 
