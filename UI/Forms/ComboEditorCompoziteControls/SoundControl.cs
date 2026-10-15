@@ -88,16 +88,6 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
             }
             return dir;
         }
-
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-                _debounceTimer?.Stop();
-                _debounceTimer?.Dispose();
-            }
-            base.Dispose(disposing);
-        }
     }
 
     /// <summary>DTO звукового шага.</summary>
