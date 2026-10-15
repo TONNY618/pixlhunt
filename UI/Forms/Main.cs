@@ -490,7 +490,8 @@ namespace pxlhunt.FORMS
         private void RebuildComboList()
         {
             var sorted = _orchestrator.Combos
-                .OrderByDescending(c => c.Priority)
+                .OrderByDescending(c => c.IsExtra)
+                .ThenByDescending(c => c.Priority)
                 .ToList();
 
             _orchestrator.Combos.Clear();
@@ -502,7 +503,8 @@ namespace pxlhunt.FORMS
                 checkedListBoxCombo.Items.Clear();
                 foreach (var combo in _orchestrator.Combos)
                 {
-                    int i = checkedListBoxCombo.Items.Add(combo.Name);
+                    string displayName = combo.IsExtra ? $"⚡ {combo.Name}" : combo.Name;
+                    int i = checkedListBoxCombo.Items.Add(displayName);
                     checkedListBoxCombo.SetItemChecked(i, combo.IsEnabled);
                 }
             }
@@ -536,9 +538,13 @@ namespace pxlhunt.FORMS
         /// </summary>
         private void OpenSelectedComboInEditor()
         {
-            string? selectedCombo = checkedListBoxCombo.SelectedItem as string;
+            int index = checkedListBoxCombo.SelectedIndex;
+            if (index < 0 || index >= _orchestrator.Combos.Count)
+                return;
 
-            ComboEditorCompozite editor = new ComboEditorCompozite(selectedCombo);
+            var combo = _orchestrator.Combos[index];
+
+            ComboEditorCompozite editor = new ComboEditorCompozite(combo.Name);
             editor.FormClosed += (s, args) => LoadCombosFromConfig();
             CenterFormOnMain(editor);
             editor.ShowDialog(this);
@@ -630,14 +636,18 @@ namespace pxlhunt.FORMS
                         }
                     }
 
-                    // Сортируем по приоритету (от большего к меньшему) и регистрируем
-                    var sorted = loaded.OrderByDescending(c => c.Priority).ToList();
+                    // Сортируем: сначала Extra-комбо, затем по приоритету (от большего к меньшему)
+                    var sorted = loaded
+                        .OrderByDescending(c => c.IsExtra)
+                        .ThenByDescending(c => c.Priority)
+                        .ToList();
 
                     foreach (var combo in sorted)
                     {
                         _orchestrator.RegisterCombo(combo);
 
-                        int index = checkedListBoxCombo.Items.Add(combo.Name);
+                        string displayName = combo.IsExtra ? $"⚡ {combo.Name}" : combo.Name;
+                        int index = checkedListBoxCombo.Items.Add(displayName);
                         checkedListBoxCombo.SetItemChecked(index, combo.IsEnabled);
                     }
                 }
