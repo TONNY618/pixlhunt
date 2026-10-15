@@ -52,9 +52,6 @@
             radioButtonIMAGENotEqu = new RadioButton();
             radioButtonIMAGEEqu = new RadioButton();
             groupBoxTextTo = new GroupBox();
-            radioButtonTextToTelegtamm = new RadioButton();
-            radioButtonTextToContext = new RadioButton();
-            textBoxTextToTeleNameUser = new TextBox();
             textBoxTextToEdit = new TextBox();
             soundControl = new pxlhunt.UI.Forms.ComboEditorCompoziteControls.SoundControl();
             mouseScrollControl = new pxlhunt.UI.Forms.ComboEditorCompoziteControls.MouseScrollControl();
@@ -79,6 +76,9 @@
             buttonSave = new Button();
             textBoxHelp = new TextBox();
             groupBoxKeyMouseMonitor = new GroupBox();
+            groupBoxTelegram = new GroupBox();
+            textBox2 = new TextBox();
+            comboBox1 = new ComboBox();
             GroupActionPreset.SuspendLayout();
             groupBoxIMAGE.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)pictureBoxIMAGESample).BeginInit();
@@ -89,11 +89,13 @@
             groupBoxPauseIfMooved.SuspendLayout();
             groupBoxPriority.SuspendLayout();
             groupBoxCDtrigger.SuspendLayout();
+            groupBoxTelegram.SuspendLayout();
             SuspendLayout();
             // 
             // GroupActionPreset
             // 
             GroupActionPreset.BackColor = Color.LightSkyBlue;
+            GroupActionPreset.Controls.Add(groupBoxTelegram);
             GroupActionPreset.Controls.Add(triggerOrAnd);
             GroupActionPreset.Controls.Add(triggerTimer);
             GroupActionPreset.Controls.Add(pixSquaControl);
@@ -343,54 +345,19 @@
             // groupBoxTextTo
             // 
             groupBoxTextTo.BackColor = Color.Gainsboro;
-            groupBoxTextTo.Controls.Add(radioButtonTextToTelegtamm);
-            groupBoxTextTo.Controls.Add(radioButtonTextToContext);
-            groupBoxTextTo.Controls.Add(textBoxTextToTeleNameUser);
             groupBoxTextTo.Controls.Add(textBoxTextToEdit);
             groupBoxTextTo.ForeColor = Color.DarkOliveGreen;
-            groupBoxTextTo.Location = new Point(8, 586);
+            groupBoxTextTo.Location = new Point(8, 608);
             groupBoxTextTo.Name = "groupBoxTextTo";
-            groupBoxTextTo.Size = new Size(318, 85);
+            groupBoxTextTo.Size = new Size(318, 65);
             groupBoxTextTo.TabIndex = 46;
             groupBoxTextTo.TabStop = false;
             groupBoxTextTo.Text = "Фраза";
             // 
-            // radioButtonTextToTelegtamm
-            // 
-            radioButtonTextToTelegtamm.AutoSize = true;
-            radioButtonTextToTelegtamm.Location = new Point(80, 17);
-            radioButtonTextToTelegtamm.Name = "radioButtonTextToTelegtamm";
-            radioButtonTextToTelegtamm.Size = new Size(74, 19);
-            radioButtonTextToTelegtamm.TabIndex = 5;
-            radioButtonTextToTelegtamm.Tag = "";
-            radioButtonTextToTelegtamm.Text = "Telegram";
-            radioButtonTextToTelegtamm.UseVisualStyleBackColor = true;
-            // 
-            // radioButtonTextToContext
-            // 
-            radioButtonTextToContext.AutoSize = true;
-            radioButtonTextToContext.Checked = true;
-            radioButtonTextToContext.Location = new Point(6, 17);
-            radioButtonTextToContext.Name = "radioButtonTextToContext";
-            radioButtonTextToContext.Size = new Size(66, 19);
-            radioButtonTextToContext.TabIndex = 4;
-            radioButtonTextToContext.TabStop = true;
-            radioButtonTextToContext.Tag = "";
-            radioButtonTextToContext.Text = "Context";
-            radioButtonTextToContext.UseVisualStyleBackColor = true;
-            // 
-            // textBoxTextToTeleNameUser
-            // 
-            textBoxTextToTeleNameUser.Location = new Point(170, 16);
-            textBoxTextToTeleNameUser.Name = "textBoxTextToTeleNameUser";
-            textBoxTextToTeleNameUser.Size = new Size(140, 23);
-            textBoxTextToTeleNameUser.TabIndex = 3;
-            textBoxTextToTeleNameUser.Text = "@Slavik_ori";
-            // 
             // textBoxTextToEdit
             // 
             textBoxTextToEdit.AcceptsReturn = true;
-            textBoxTextToEdit.Location = new Point(6, 43);
+            textBoxTextToEdit.Location = new Point(6, 22);
             textBoxTextToEdit.MaxLength = 500;
             textBoxTextToEdit.Multiline = true;
             textBoxTextToEdit.Name = "textBoxTextToEdit";
@@ -401,7 +368,7 @@
             // soundControl
             // 
             soundControl.BackColor = Color.Transparent;
-            soundControl.Location = new Point(8, 552);
+            soundControl.Location = new Point(8, 500);
             soundControl.Name = "soundControl";
             soundControl.Size = new Size(318, 28);
             soundControl.TabIndex = 45;
@@ -628,6 +595,38 @@
             groupBoxKeyMouseMonitor.TabStop = false;
             groupBoxKeyMouseMonitor.Text = "KeyMouseMonitor";
             // 
+            // groupBoxTelegram
+            // 
+            groupBoxTelegram.BackColor = Color.Gainsboro;
+            groupBoxTelegram.Controls.Add(comboBox1);
+            groupBoxTelegram.Controls.Add(textBox2);
+            groupBoxTelegram.ForeColor = Color.DarkOliveGreen;
+            groupBoxTelegram.Location = new Point(8, 534);
+            groupBoxTelegram.Name = "groupBoxTelegram";
+            groupBoxTelegram.Size = new Size(318, 68);
+            groupBoxTelegram.TabIndex = 64;
+            groupBoxTelegram.TabStop = false;
+            groupBoxTelegram.Text = "Telegram";
+            // 
+            // textBox2
+            // 
+            textBox2.AcceptsReturn = true;
+            textBox2.Location = new Point(10, 33);
+            textBox2.MaxLength = 500;
+            textBox2.Multiline = true;
+            textBox2.Name = "textBox2";
+            textBox2.Size = new Size(300, 28);
+            textBox2.TabIndex = 2;
+            textBox2.Text = "Текст (Enter работает)";
+            // 
+            // comboBox1
+            // 
+            comboBox1.FormattingEnabled = true;
+            comboBox1.Location = new Point(68, 6);
+            comboBox1.Name = "comboBox1";
+            comboBox1.Size = new Size(242, 23);
+            comboBox1.TabIndex = 3;
+            // 
             // ComboEditorCompozite
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -668,6 +667,8 @@
             groupBoxPriority.PerformLayout();
             groupBoxCDtrigger.ResumeLayout(false);
             groupBoxCDtrigger.PerformLayout();
+            groupBoxTelegram.ResumeLayout(false);
+            groupBoxTelegram.PerformLayout();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -700,9 +701,6 @@
         private pxlhunt.UI.Forms.ComboEditorCompoziteControls.SoundControl soundControl;
         private GroupBox groupBoxTextTo;
         private TextBox textBoxTextToEdit;
-        private RadioButton radioButtonTextToTelegtamm;
-        private RadioButton radioButtonTextToContext;
-        private TextBox textBoxTextToTeleNameUser;
         private GroupBox groupBoxIMAGE;
         private PictureBox pictureBoxIMAGEExample;
         private RadioButton radioButtonIMAGENotEqu;
@@ -725,5 +723,8 @@
         private Button buttonIMAGEView;
         private CheckBox checkBoxTakeXY;
         private GroupBox groupBoxKeyMouseMonitor;
+        private GroupBox groupBoxTelegram;
+        private ComboBox comboBox1;
+        private TextBox textBox2;
     }
 }
