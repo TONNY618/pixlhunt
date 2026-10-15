@@ -17,5 +17,8 @@ namespace PixelMacroEngine.Core.Models
 
         /// <summary>Максимальная задержка "человеческой" реакции, мс.</summary>
         public int HumanLatencyMaxMs { get; set; } = 120;
+
+        /// <summary>Глобальная горячая клавиша включения/выключения программы.</summary>
+        public string hotKeyONOFF { get; set; } = "F12";
     }
 }

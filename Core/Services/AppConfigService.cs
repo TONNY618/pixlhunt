@@ -49,6 +49,9 @@ public class AppConfig
     /// </summary>
     public int WhellTrigerReadIntervalMs { get; set; }
 
+    /// <summary>Глобальная горячая клавиша включения/выключения программы.</summary>
+    public string hotKeyONOFF { get; set; } = "F12";
+
     public UsbHwKeyClickerConfig Usb_hwKeyClicker { get; set; } = new();
 }
 
@@ -88,6 +91,29 @@ public static class AppConfigService
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"[AppConfigService] Ошибка загрузки конфига: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Сохраняет текущие настройки в Config/appsettings.cfg.
+    /// </summary>
+    public static void Save()
+    {
+        try
+        {
+            string cfgPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Config", "appsettings.cfg");
+            if (!File.Exists(cfgPath))
+            {
+                string fallback = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "Config", "appsettings.cfg");
+                if (File.Exists(fallback)) cfgPath = Path.GetFullPath(fallback);
+            }
+
+            string json = JsonSerializer.Serialize(Instance, new JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(cfgPath, json);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[AppConfigService] Ошибка сохранения: {ex.Message}");
         }
     }
 }

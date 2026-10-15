@@ -112,6 +112,12 @@ namespace PixelMacroEngine.Core.Services
         /// <summary>Успешно ли зарегистрирован низкоуровневый перехват ввода.</summary>
         public static bool IsRegisteredSuccessfully { get; private set; }
 
+        /// <summary>
+        /// Событие смены мастер-состояния по глобальному хоткею (hotKeyONOFF).
+        /// Аргумент: новое состояние (true — программа включена).
+        /// </summary>
+        public static event Action<bool>? OnMasterHotkeyPressed;
+
         /// <summary>Запускает глобальный перехват ввода. Идемпотентно.</summary>
         public static void Initialize()
         {
@@ -129,6 +135,50 @@ namespace PixelMacroEngine.Core.Services
             _isXButton1Down = false;
             _isXButton2Down = false;
             _keyStates.Clear();
+        }
+
+        /// <summary>
+        /// Проверяет, соответствует ли физически нажатая клавиша назначенному хоткею.
+        /// Учитывает, что "Enter" и "NumPad Enter" имеют одинаковый VK (0x0D)
+        /// и различаются только расширенным флагом E0.
+        /// </summary>
+        /// <param name="vKey">Virtual Key нажатой клавиши.</param>
+        /// <param name="isExtended">Был ли установлен флаг RI_KEY_E0.</param>
+        private static bool IsMasterHotkeyMatch(ushort vKey, bool isExtended)
+        {
+            string hotkey = AppConfigService.Instance.hotKeyONOFF?.Trim() ?? string.Empty;
+            if (hotkey.Length == 0)
+                return false;
+
+            // Особая пара: Enter / NumPad Enter (общий VK_RETURN = 0x0D).
+            if (vKey == 0x0D)
+            {
+                if (string.Equals(hotkey, "NumPad Enter", StringComparison.OrdinalIgnoreCase))
+                    return isExtended;
+                if (string.Equals(hotkey, "Enter", StringComparison.OrdinalIgnoreCase))
+                    return !isExtended;
+                return false;
+            }
+
+            int targetVk = ArduinoKeyMap.GetWindowsVk(hotkey);
+            return targetVk != 0 && vKey == targetVk;
+        }
+
+        /// <summary>
+        /// Инвертирует мастер-состояние программы при нажатии глобального хоткея.
+        /// Мгновенно фиксирует флаг (защита от дребезга/двойного нажатия на входном потоке)
+        /// и уведомляет главную форму. Всю тяжёлую логику старта/останова (Abort, сбросы,
+        /// EmergencyReset, клик-сквозь) выполняет существующий обработчик
+        /// checkBoxStatus.CheckedChanged в главном окне — не дублируем здесь.
+        /// </summary>
+        private static void ToggleMasterState()
+        {
+            bool newState = !BotStateController.IsMasterEnabled;
+            BotStateController.IsMasterEnabled = newState;
+
+            ActionLogger.Log($"[MASTER] Состояние программы: {(newState ? "ВКЛЮЧЕНА (СТАРТ)" : "ВЫКЛЮЧЕНА (СТОП)")} [Клавиша: {AppConfigService.Instance.hotKeyONOFF}]");
+
+            OnMasterHotkeyPressed?.Invoke(newState);
         }
 
         public static bool IsKeyDown(ushort vKey)
@@ -513,7 +563,16 @@ namespace PixelMacroEngine.Core.Services
                     vKey = (flags & RI_KEY_E0) != 0 ? VK_RMENU : VK_LMENU;
                 }
 
+                // Фронт нажатия (клавиша ещё не была зажата) — проверяем глобальный хоткей.
+                bool wasDown = _keyStates.TryGetValue(vKey, out bool down) && down;
                 _keyStates[vKey] = !isUp;
+
+                if (!isUp && !wasDown)
+                {
+                    bool isExtended = (flags & RI_KEY_E0) != 0;
+                    if (IsMasterHotkeyMatch(vKey, isExtended))
+                        ToggleMasterState();
+                }
             }
         }
 

@@ -44,6 +44,9 @@ namespace pxlhunt.FORMS
             // Запускаем глобальный перехват физического ввода (Raw Input)
             PixelMacroEngine.Core.Services.RawInputService.Initialize();
 
+            // Глобальный хоткей включения/выключения программы (hotKeyONOFF из Config/appsettings.cfg)
+            RawInputService.OnMasterHotkeyPressed += OnMasterHotkeyPressedHandler;
+
             // Заголовок окна из централизованного конфига
             if (!string.IsNullOrWhiteSpace(AppConfigService.Instance.PxlhuntNameMainForm))
             {
@@ -204,6 +207,25 @@ namespace pxlhunt.FORMS
             Color targetColor = isActive ? Color.Red : Color.White;
             groupBoxStatus.BackColor = targetColor;
             checkBoxStatus.BackColor = targetColor;
+        }
+
+        /// <summary>
+        /// Обработчик глобального хоткея вкл/выкл (RawInputService).
+        /// Синхронизирует галочку главного окна; вся логика старта/останова
+        /// выполняется в CheckBoxStatus_CheckedChanged.
+        /// </summary>
+        private void OnMasterHotkeyPressedHandler(bool enabled)
+        {
+            if (this.IsDisposed || checkBoxStatus.IsDisposed)
+                return;
+
+            if (this.InvokeRequired)
+            {
+                this.BeginInvoke((Action)(() => OnMasterHotkeyPressedHandler(enabled)));
+                return;
+            }
+
+            checkBoxStatus.Checked = enabled;
         }
 
         /// <summary>
@@ -948,6 +970,7 @@ namespace pxlhunt.FORMS
             {
                 ActionLogger.OnLog -= AppendLogMessage;
                 ScreenCaptureService.OnFrameCaptured -= OnFrameCapturedHandler;
+                RawInputService.OnMasterHotkeyPressed -= OnMasterHotkeyPressedHandler;
                 _sessionTimer?.Stop();
                 _sessionTimer?.Dispose();
                 _sessionTimer = null;

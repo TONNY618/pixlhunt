@@ -117,6 +117,8 @@ public static class ArduinoKeyMap
         ["Left Win"] = 0x5B, ["Right Win"] = 0x5C,
 
         // Служебные
+        // ВНИМАНИЕ: VK_RETURN (0x0D) у "Enter" и "NumPad Enter" совпадает.
+        // Различаются только расширенным флагом RI_KEY_E0 (RawInputService.IsMasterHotkeyMatch).
         ["Space"] = 0x20, ["Enter"] = 0x0D, ["Tab"] = 0x09, ["Escape"] = 0x1B, ["Backspace"] = 0x08,
         ["Insert"] = 0x2D, ["Delete"] = 0x2E, ["Home"] = 0x24, ["End"] = 0x23,
         ["Page Up"] = 0x21, ["Page Down"] = 0x22,
