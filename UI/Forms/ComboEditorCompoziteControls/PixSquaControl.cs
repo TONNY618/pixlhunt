@@ -316,7 +316,7 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
             textBoxPixSquaColor.Text = dto.ColorHex;
             radioButtonPixSquaEqu.Checked = dto.IsEqualLogic;
             radioButtonPixSquaNotEqu.Checked = !dto.IsEqualLogic;
-            trackBarPixSqua.Value = Math.Clamp(dto.Accuracy, 75, 100);
+            trackBarPixSqua.Value = Math.Clamp(dto.Accuracy, 5, 100);
             textBoxPixSquaVolNumber.Text = trackBarPixSqua.Value.ToString();
             checkBoxPixSquaOverlay.Checked = dto.IsOverlayEnabled;
 

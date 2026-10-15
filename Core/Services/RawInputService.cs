@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Windows.Forms;
 using PixelMacroEngine.Core.Input;
 
@@ -79,9 +80,10 @@ namespace PixelMacroEngine.Core.Services
         private static volatile bool _isXButton2Down;
 
         // Временное отображение прокрутки колесика (для UI-монитора ввода).
-        // Время храним в тиках UTC (long), чтобы корректно работать с Volatile.
+        // Время храним как аппаратный таймстамп (long) и читаем/пишем через Interlocked,
+        // так как 64-битное поле доступно из нескольких потоков.
         private static volatile string _lastWheelAction = string.Empty;
-        private static long _lastWheelTicks = DateTime.MinValue.Ticks;
+        private static long _lastWheelTimestamp = 0;
 
         /// <summary>Окно (в мс), в течение которого показывается последнее действие колесика.</summary>
         private const int WheelDisplayWindowMs = 350;
@@ -92,13 +94,13 @@ namespace PixelMacroEngine.Core.Services
         // WhellTrigerReadIntervalMs (пользователь "тупил" дольше лимита).
         // Используем lock, так как операции "прочитать-очистить" должны быть атомарными.
         private static readonly object _wheelLock = new();
-        private static DateTime _lastHWheelLeftTime = DateTime.MinValue;
-        private static DateTime _lastHWheelRightTime = DateTime.MinValue;
+        private static long _lastHWheelLeftTimestamp = 0;
+        private static long _lastHWheelRightTimestamp = 0;
 
         private static int _wheelUpCount = 0;
-        private static DateTime _lastWheelUpTime = DateTime.MinValue;
+        private static long _lastWheelUpTimestamp = 0;
         private static int _wheelDownCount = 0;
-        private static DateTime _lastWheelDownTime = DateTime.MinValue;
+        private static long _lastWheelDownTimestamp = 0;
 
         // Постоянный буфер для чтения Raw Input (избегаем AllocHGlobal/FreeHGlobal на каждое событие).
         // 128 байт с запасом покрывает RAWINPUT (48 байт на x64).
@@ -168,32 +170,32 @@ namespace PixelMacroEngine.Core.Services
             if (steps < 1) steps = 1;
 
             int timeoutMs = GetWheelInactivityTimeoutMs();
-            DateTime now = DateTime.UtcNow;
+            long now = TimeService.GetTimestamp();
 
             lock (_wheelLock)
             {
                 if (up)
                 {
                     // Если пауза между щелчками превысила лимит — начинаем серию заново.
-                    if (_lastWheelUpTime != DateTime.MinValue &&
-                        (now - _lastWheelUpTime).TotalMilliseconds > timeoutMs)
+                    if (_lastWheelUpTimestamp != 0 &&
+                        TimeService.GetElapsedMilliseconds(_lastWheelUpTimestamp, now) > timeoutMs)
                     {
                         _wheelUpCount = 0;
                     }
 
                     _wheelUpCount += steps;
-                    _lastWheelUpTime = now; // перезапуск таймера ожидания следующего шага
+                    _lastWheelUpTimestamp = now; // перезапуск таймера ожидания следующего шага
                 }
                 else
                 {
-                    if (_lastWheelDownTime != DateTime.MinValue &&
-                        (now - _lastWheelDownTime).TotalMilliseconds > timeoutMs)
+                    if (_lastWheelDownTimestamp != 0 &&
+                        TimeService.GetElapsedMilliseconds(_lastWheelDownTimestamp, now) > timeoutMs)
                     {
                         _wheelDownCount = 0;
                     }
 
                     _wheelDownCount += steps;
-                    _lastWheelDownTime = now;
+                    _lastWheelDownTimestamp = now;
                 }
             }
         }
@@ -214,15 +216,15 @@ namespace PixelMacroEngine.Core.Services
             if (requiredSteps < 1) requiredSteps = 1;
 
             int timeoutMs = GetWheelInactivityTimeoutMs();
-            DateTime now = DateTime.UtcNow;
+            long now = TimeService.GetTimestamp();
 
             lock (_wheelLock)
             {
                 if (up)
                 {
                     // Серия "остыла" — сбрасываем накопленное и не срабатываем.
-                    if (_lastWheelUpTime != DateTime.MinValue &&
-                        (now - _lastWheelUpTime).TotalMilliseconds > timeoutMs)
+                    if (_lastWheelUpTimestamp != 0 &&
+                        TimeService.GetElapsedMilliseconds(_lastWheelUpTimestamp, now) > timeoutMs)
                     {
                         _wheelUpCount = 0;
                         return false;
@@ -237,8 +239,8 @@ namespace PixelMacroEngine.Core.Services
                 }
                 else
                 {
-                    if (_lastWheelDownTime != DateTime.MinValue &&
-                        (now - _lastWheelDownTime).TotalMilliseconds > timeoutMs)
+                    if (_lastWheelDownTimestamp != 0 &&
+                        TimeService.GetElapsedMilliseconds(_lastWheelDownTimestamp, now) > timeoutMs)
                     {
                         _wheelDownCount = 0;
                         return false;
@@ -265,22 +267,21 @@ namespace PixelMacroEngine.Core.Services
         {
             lock (_wheelLock)
             {
-                var now = DateTime.UtcNow;
                 if (right)
                 {
-                    if (_lastHWheelRightTime != DateTime.MinValue &&
-                        (now - _lastHWheelRightTime).TotalMilliseconds <= windowMs)
+                    if (_lastHWheelRightTimestamp != 0 &&
+                        TimeService.GetElapsedMilliseconds(_lastHWheelRightTimestamp) <= windowMs)
                     {
-                        _lastHWheelRightTime = DateTime.MinValue;
+                        _lastHWheelRightTimestamp = 0;
                         return true;
                     }
                 }
                 else
                 {
-                    if (_lastHWheelLeftTime != DateTime.MinValue &&
-                        (now - _lastHWheelLeftTime).TotalMilliseconds <= windowMs)
+                    if (_lastHWheelLeftTimestamp != 0 &&
+                        TimeService.GetElapsedMilliseconds(_lastHWheelLeftTimestamp) <= windowMs)
                     {
-                        _lastHWheelLeftTime = DateTime.MinValue;
+                        _lastHWheelLeftTimestamp = 0;
                         return true;
                     }
                 }
@@ -295,11 +296,11 @@ namespace PixelMacroEngine.Core.Services
         public static string GetHumanReadableMouseAction()
         {
             // 1. Приоритет — недавняя прокрутка колесика (в пределах окна отображения)
-            long lastTicks = Volatile.Read(ref _lastWheelTicks);
-            if (lastTicks != DateTime.MinValue.Ticks)
+            long lastTs = Interlocked.Read(ref _lastWheelTimestamp);
+            if (lastTs != 0)
             {
-                double elapsedMs = (DateTime.UtcNow - new DateTime(lastTicks, DateTimeKind.Utc)).TotalMilliseconds;
-                if (elapsedMs >= 0 && elapsedMs < WheelDisplayWindowMs)
+                double elapsedMs = TimeService.GetElapsedMilliseconds(lastTs);
+                if (elapsedMs < WheelDisplayWindowMs)
                 {
                     return _lastWheelAction;
                 }
@@ -351,15 +352,15 @@ namespace PixelMacroEngine.Core.Services
         /// </summary>
         public static bool ConsumeWheelAction(string actionKey, int windowMs = 350)
         {
-            long lastTicks = Volatile.Read(ref _lastWheelTicks);
-            if (lastTicks == DateTime.MinValue.Ticks) return false;
+            long lastTs = Interlocked.Read(ref _lastWheelTimestamp);
+            if (lastTs == 0) return false;
 
-            double elapsedMs = (DateTime.UtcNow - new DateTime(lastTicks, DateTimeKind.Utc)).TotalMilliseconds;
-            if (elapsedMs >= 0 && elapsedMs <= windowMs)
+            double elapsedMs = TimeService.GetElapsedMilliseconds(lastTs);
+            if (elapsedMs <= windowMs)
             {
                 if (_lastWheelAction.Contains(actionKey, StringComparison.OrdinalIgnoreCase))
                 {
-                    Volatile.Write(ref _lastWheelTicks, DateTime.MinValue.Ticks);
+                    Interlocked.Exchange(ref _lastWheelTimestamp, 0);
                     return true;
                 }
             }
@@ -468,7 +469,7 @@ namespace PixelMacroEngine.Core.Services
                 {
                     short wheelDelta = (short)raw.data.mouse.usButtonData;
                     _lastWheelAction = wheelDelta > 0 ? "Колесико: Прокрутка вверх" : "Колесико: Прокрутка вниз";
-                    Volatile.Write(ref _lastWheelTicks, DateTime.UtcNow.Ticks);
+                    Interlocked.Exchange(ref _lastWheelTimestamp, TimeService.GetTimestamp());
 
                     // Накопление шагов для триггеров (по направлению).
                     // delta/120 — число шагов в одном событии (обычно 1, но бывает и больше).
@@ -480,12 +481,13 @@ namespace PixelMacroEngine.Core.Services
                 {
                     short hWheelDelta = (short)raw.data.mouse.usButtonData;
                     _lastWheelAction = hWheelDelta > 0 ? "Колесико: WR" : "Колесико: WL";
-                    Volatile.Write(ref _lastWheelTicks, DateTime.UtcNow.Ticks);
+                    Interlocked.Exchange(ref _lastWheelTimestamp, TimeService.GetTimestamp());
 
                     lock (_wheelLock)
                     {
-                        if (hWheelDelta > 0) _lastHWheelRightTime = DateTime.UtcNow;
-                        else if (hWheelDelta < 0) _lastHWheelLeftTime = DateTime.UtcNow;
+                        long nowTs = TimeService.GetTimestamp();
+                        if (hWheelDelta > 0) _lastHWheelRightTimestamp = nowTs;
+                        else if (hWheelDelta < 0) _lastHWheelLeftTimestamp = nowTs;
                     }
                 }
             }

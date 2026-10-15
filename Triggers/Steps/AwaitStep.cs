@@ -25,30 +25,29 @@ public class AwaitStep : IComboStep
     {
         if (_evaluator == null) return;
 
-        // Ждём максимум 5 секунд
-        using var timeoutCts = new CancellationTokenSource(5000);
-        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
+        // Ждём максимум 5 секунд. Отсчёт ведём по аппаратному таймстампу TimeService,
+        // чтобы таймаут не зависел от коррекции системных часов.
+        const int timeoutMs = 5000;
+        long startTs = TimeService.GetTimestamp();
 
-        try
+        while (!cancellationToken.IsCancellationRequested)
         {
-            while (!linkedCts.Token.IsCancellationRequested)
+            // Используем актуальный кадр из контекста
+            if (_evaluator.Evaluate(context.Frame))
             {
-                // Используем актуальный кадр из контекста
-                if (_evaluator.Evaluate(context.Frame))
-                {
-                    return; // Цвет найден, идём дальше
-                }
-                await Task.Delay(33, linkedCts.Token).ConfigureAwait(false);
+                return; // Цвет найден, идём дальше
             }
-        }
-        catch (OperationCanceledException)
-        {
-            if (timeoutCts.Token.IsCancellationRequested)
+
+            if (TimeService.GetElapsedMilliseconds(startTs) >= timeoutMs)
             {
                 ActionLogger.Log($"[AWAIT TIMEOUT] Цвет не найден за 5 сек. Прерывание комбо {context.ComboName}.");
                 throw new OperationCanceledException("Await timeout");
             }
-            throw;
+
+            await Task.Delay(33, cancellationToken).ConfigureAwait(false);
         }
+
+        // Внешняя отмена — пробрасываем наверх.
+        cancellationToken.ThrowIfCancellationRequested();
     }
 }

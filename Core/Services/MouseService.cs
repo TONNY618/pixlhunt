@@ -18,7 +18,7 @@ public static class MouseService
     private static readonly Random _random = new();
 
     // Состояние для авто-распознавания двойных кликов
-    private static DateTime _lastClickTime = DateTime.MinValue;
+    private static long _lastClickTimestamp = 0;
     private static byte _lastClickButton = 0;
     private static readonly object _stateLock = new();
 
@@ -36,12 +36,13 @@ public static class MouseService
         bool isDoubleClick = false;
         lock (_stateLock)
         {
-            var now = DateTime.UtcNow;
-            if (_lastClickButton == button && (now - _lastClickTime).TotalMilliseconds < 380)
+            long now = TimeService.GetTimestamp();
+            if (_lastClickButton == button && _lastClickTimestamp != 0 &&
+                TimeService.GetElapsedMilliseconds(_lastClickTimestamp, now) < 380)
             {
                 isDoubleClick = true;
             }
-            _lastClickTime = now;
+            _lastClickTimestamp = now;
             _lastClickButton = button;
         }
 
@@ -290,11 +291,11 @@ public static class MouseService
         double remainderX = 0.0;
         double remainderY = 0.0;
 
-        var sw = Stopwatch.StartNew();
+        long startTs = TimeService.GetTimestamp();
 
         while (!ct.IsCancellationRequested)
         {
-            double elapsed = sw.Elapsed.TotalMilliseconds;
+            double elapsed = TimeService.GetElapsedMilliseconds(startTs);
             double t = Math.Clamp(elapsed / durationMs, 0.0, 1.0);
 
             // Замеряем физическое расстояние до цели на экране
@@ -389,12 +390,12 @@ public static class MouseService
         double brownianJitterX = 0.0;
         double brownianJitterY = 0.0;
 
-        var sw = Stopwatch.StartNew();
+        long startTs = TimeService.GetTimestamp();
         double elapsed = 0.0;
 
         while (elapsed < durationMs && !ct.IsCancellationRequested)
         {
-            elapsed = sw.Elapsed.TotalMilliseconds;
+            elapsed = TimeService.GetElapsedMilliseconds(startTs);
             double t = elapsed / durationMs;
             if (t > 1.0) t = 1.0;
 
@@ -448,12 +449,12 @@ public static class MouseService
         double brownianJitterX = 0.0;
         double brownianJitterY = 0.0;
 
-        var sw = Stopwatch.StartNew();
+        long startTs = TimeService.GetTimestamp();
         double elapsed = 0.0;
 
         while (elapsed < durationMs && !ct.IsCancellationRequested)
         {
-            elapsed = sw.Elapsed.TotalMilliseconds;
+            elapsed = TimeService.GetElapsedMilliseconds(startTs);
             double t = elapsed / durationMs;
             if (t > 1.0) t = 1.0;
 

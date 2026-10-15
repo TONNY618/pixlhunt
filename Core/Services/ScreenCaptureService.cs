@@ -74,6 +74,8 @@ public static class ScreenCaptureService
     {
         while (!ct.IsCancellationRequested)
         {
+            long frameStartTs = TimeService.GetTimestamp();
+
             try
             {
                 // Захват кадра и обновление буфера держим под одним локом,
@@ -93,9 +95,13 @@ public static class ScreenCaptureService
                     await handler.Invoke(_buffer).ConfigureAwait(false);
                 }
 
-                // Динамическая пауза под нужный FPS (при 30 FPS = ~33 мс)
-                int delay = 1000 / Math.Max(1, TargetFps);
-                await Task.Delay(delay, ct).ConfigureAwait(false);
+                // Динамическая пауза под нужный FPS с компенсацией фактического времени
+                // обработки кадра (при 30 FPS бюджет = ~33 мс). Замер — по аппаратному
+                // таймстампу TimeService, чтобы NTP-коррекция системных часов не «рвала» кадры.
+                int frameBudgetMs = 1000 / Math.Max(1, TargetFps);
+                double elapsedMs = TimeService.GetElapsedMilliseconds(frameStartTs);
+                int delay = frameBudgetMs - (int)Math.Round(elapsedMs);
+                await Task.Delay(delay > 0 ? delay : 1, ct).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {

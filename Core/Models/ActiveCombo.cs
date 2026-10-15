@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using PixelMacroEngine.Core.Abstractions;
+using PixelMacroEngine.Core.Services;
 
 namespace PixelMacroEngine.Core.Models;
 
@@ -35,8 +36,11 @@ public class ActiveCombo
     /// <summary>Включено ли комбо (управляется галочкой в UI).</summary>
     public bool IsEnabled { get; set; } = true;
 
-    /// <summary>Время последнего успешного выполнения комбо (для расчёта кулдауна).</summary>
-    public DateTime LastExecuted { get; set; } = DateTime.MinValue;
+    /// <summary>
+    /// Аппаратный таймстамп последнего успешного выполнения комбо (для расчёта кулдауна).
+    /// Значение 0 означает «комбо ещё ни разу не выполнялось».
+    /// </summary>
+    public long LastExecutedTimestamp { get; set; } = 0;
 
     /// <summary>Признак того, что комбо в данный момент выполняет свои шаги.</summary>
     public bool IsRunning { get; set; } = false;
@@ -61,6 +65,9 @@ public class ActiveCombo
         if (CooldownMs <= 0)
             return true;
 
-        return (DateTime.UtcNow - LastExecuted).TotalMilliseconds >= CooldownMs;
+        if (LastExecutedTimestamp == 0)
+            return true;
+
+        return TimeService.GetElapsedMilliseconds(LastExecutedTimestamp) >= CooldownMs;
     }
 }

@@ -15,12 +15,12 @@ public class Orchestrator
     /// <summary>Коллекция активных комбо, управляемых оркестратором.</summary>
     public List<ActiveCombo> Combos { get; } = new();
 
-    // Часы для расчёта DeltaTime между кадрами (независимо от частоты вызовов).
-    private readonly Stopwatch _frameClock = Stopwatch.StartNew();
-    private TimeSpan _lastFrameTime = TimeSpan.Zero;
+    // Аппаратный таймстамп последнего обработанного кадра (для расчёта DeltaTime).
+    // Через TimeService интервал не зависит от NTP-коррекции системных часов.
+    private long _lastFrameTimestamp = 0;
 
-    // Время последнего выполнения боевого комбо, делящего общий кулдаун (ГКД).
-    private DateTime _globalLastExecuted = DateTime.MinValue;
+    // Аппаратный таймстамп последнего выполнения боевого комбо, делящего общий кулдаун (ГКД).
+    private long _globalLastExecutedTimestamp = 0;
 
     /// <summary>Регистрирует комбо в оркестраторе.</summary>
     public void RegisterCombo(ActiveCombo combo) => Combos.Add(combo);
@@ -39,7 +39,7 @@ public class Orchestrator
     {
         foreach (var combo in Combos)
         {
-            combo.LastExecuted = DateTime.MinValue;
+            combo.LastExecutedTimestamp = 0;
         }
     }
 
@@ -50,9 +50,11 @@ public class Orchestrator
     public async Task ProcessFrameAsync(FrameBuffer frame, CancellationToken ct = default)
     {
         // === Расчёт DeltaTime между кадрами (реальное время, не тики) ===
-        var now = _frameClock.Elapsed;
-        double deltaSeconds = (now - _lastFrameTime).TotalSeconds;
-        _lastFrameTime = now;
+        long nowTs = TimeService.GetTimestamp();
+        double deltaSeconds = _lastFrameTimestamp == 0
+            ? 0.0
+            : TimeService.GetElapsedMilliseconds(_lastFrameTimestamp, nowTs) / 1000.0;
+        _lastFrameTimestamp = nowTs;
 
         // Сортируем комбо по убыванию приоритета
         var ordered = Combos.OrderByDescending(c => c.Priority).ToList();
@@ -73,7 +75,8 @@ public class Orchestrator
             // Если комбо делит ГКД и не является фоновым сервисным действием
             if (combo.IsGlobalCooldown && !combo.IsNonBlocking && combo.CooldownMs > 0)
             {
-                if ((DateTime.UtcNow - _globalLastExecuted).TotalMilliseconds < combo.CooldownMs)
+                if (_globalLastExecutedTimestamp != 0 &&
+                    TimeService.GetElapsedMilliseconds(_globalLastExecutedTimestamp) < combo.CooldownMs)
                     continue;
             }
 
@@ -108,10 +111,11 @@ public class Orchestrator
             try
             {
                 // Обновляем время последнего выполнения
-                combo.LastExecuted = DateTime.UtcNow;
+                long execTs = TimeService.GetTimestamp();
+                combo.LastExecutedTimestamp = execTs;
                 if (combo.IsGlobalCooldown && !combo.IsNonBlocking && combo.CooldownMs > 0)
                 {
-                    _globalLastExecuted = DateTime.UtcNow;
+                    _globalLastExecutedTimestamp = execTs;
                 }
 
                 // Последовательно выполняем шаги комбо

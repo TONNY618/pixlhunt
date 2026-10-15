@@ -38,7 +38,8 @@ public class PressKeyStep : IComboStep
         bool isModifier = code >= 0x80 && code <= 0x87;
 
         // Замер реального времени удержания между DOWN и UP (включая время на Send).
-        var holdWatch = Stopwatch.StartNew();
+        // Аппаратный таймстамп TimeService — монотонный, не зависит от NTP-коррекции часов.
+        long holdStartTs = TimeService.GetTimestamp();
         bool holdMeasured = false;
 
         // 1. Атомарное нажатие (DOWN) - отдельный пакет
@@ -73,7 +74,7 @@ public class PressKeyStep : IComboStep
             PixelMacroEngine.Core.Services.ArduinoHidService.Send(batchUp);
 
             // Показываем длительность удержания только для полного клика (DOWN+UP)
-            int? holdMs = holdMeasured ? (int)holdWatch.ElapsedMilliseconds : null;
+            int? holdMs = holdMeasured ? (int)TimeService.GetElapsedMilliseconds(holdStartTs) : null;
             PixelMacroEngine.Core.Services.ActionLogger.LogKey(key, code, false, context.ComboName, holdMs);
         }
 

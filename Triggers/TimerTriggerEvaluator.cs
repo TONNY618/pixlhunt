@@ -1,6 +1,7 @@
 using System;
 using PixelMacroEngine.Core.Abstractions;
 using PixelMacroEngine.Core.Models;
+using PixelMacroEngine.Core.Services;
 
 namespace PixelMacroEngine.Triggers;
 
@@ -18,7 +19,7 @@ public class TimerTriggerEvaluator : ITriggerEvaluator
     private readonly Random _rnd = new Random();
 
     private int _currentIntervalMs;
-    private DateTime _lastTriggerTime = DateTime.MinValue;
+    private long _lastTriggerTimestamp = 0;
 
     /// <summary>
     /// Конструктор с диапазоном интервалов.
@@ -39,9 +40,13 @@ public class TimerTriggerEvaluator : ITriggerEvaluator
 
     public bool Evaluate(FrameBuffer buffer)
     {
-        if ((DateTime.UtcNow - _lastTriggerTime).TotalMilliseconds >= _currentIntervalMs)
+        long now = TimeService.GetTimestamp();
+
+        // Первый вызов (нет метки) трактуем как "интервал уже прошёл".
+        if (_lastTriggerTimestamp == 0 ||
+            TimeService.GetElapsedMilliseconds(_lastTriggerTimestamp, now) >= _currentIntervalMs)
         {
-            _lastTriggerTime = DateTime.UtcNow;
+            _lastTriggerTimestamp = now;
             _currentIntervalMs = CalculateGaussianDelay(_minMs, _maxMs);
             return true;
         }
