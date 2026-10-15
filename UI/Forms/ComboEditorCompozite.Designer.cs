@@ -80,6 +80,7 @@
             buttonSave = new Button();
             textBoxHelp = new TextBox();
             groupBoxKeyMouseMonitor = new GroupBox();
+            colorDialog1 = new ColorDialog();
             GroupActionPreset.SuspendLayout();
             groupBoxTelegram.SuspendLayout();
             groupBoxIMAGE.SuspendLayout();
@@ -738,5 +739,6 @@
         private ComboBox comboBox1;
         private TextBox textBox2;
         private CheckBox checkBoxEXTRA;
+        private ColorDialog colorDialog1;
     }
 }
