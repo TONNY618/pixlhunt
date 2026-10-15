@@ -73,13 +73,13 @@
             groupBoxPriority = new GroupBox();
             textBoxPriorityTrigger = new TextBox();
             groupBoxCDtrigger = new GroupBox();
+            checkBoxEXTRA = new CheckBox();
             textBoxCDglobal = new TextBox();
             radioButtonSkillCooldownSingleHP = new RadioButton();
             radioButtonSkillCooldownGLOBAL = new RadioButton();
             buttonSave = new Button();
             textBoxHelp = new TextBox();
             groupBoxKeyMouseMonitor = new GroupBox();
-            checkBoxEXTRA = new CheckBox();
             GroupActionPreset.SuspendLayout();
             groupBoxTelegram.SuspendLayout();
             groupBoxIMAGE.SuspendLayout();
@@ -177,7 +177,7 @@
             mouseKeyControl.BackColor = Color.Transparent;
             mouseKeyControl.Location = new Point(6, 352);
             mouseKeyControl.Name = "mouseKeyControl";
-            mouseKeyControl.Size = new Size(238, 28);
+            mouseKeyControl.Size = new Size(320, 28);
             mouseKeyControl.TabIndex = 62;
             // 
             // cursorMoveControl
@@ -568,6 +568,16 @@
             groupBoxCDtrigger.TabIndex = 34;
             groupBoxCDtrigger.TabStop = false;
             // 
+            // checkBoxEXTRA
+            // 
+            checkBoxEXTRA.AutoSize = true;
+            checkBoxEXTRA.Location = new Point(288, 1);
+            checkBoxEXTRA.Name = "checkBoxEXTRA";
+            checkBoxEXTRA.Size = new Size(59, 19);
+            checkBoxEXTRA.TabIndex = 17;
+            checkBoxEXTRA.Text = "EXTRA";
+            checkBoxEXTRA.UseVisualStyleBackColor = true;
+            // 
             // textBoxCDglobal
             // 
             textBoxCDglobal.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
@@ -627,16 +637,6 @@
             groupBoxKeyMouseMonitor.TabIndex = 64;
             groupBoxKeyMouseMonitor.TabStop = false;
             groupBoxKeyMouseMonitor.Text = "KeyMouseMonitor";
-            // 
-            // checkBoxEXTRA
-            // 
-            checkBoxEXTRA.AutoSize = true;
-            checkBoxEXTRA.Location = new Point(288, 1);
-            checkBoxEXTRA.Name = "checkBoxEXTRA";
-            checkBoxEXTRA.Size = new Size(59, 19);
-            checkBoxEXTRA.TabIndex = 17;
-            checkBoxEXTRA.Text = "EXTRA";
-            checkBoxEXTRA.UseVisualStyleBackColor = true;
             // 
             // ComboEditorCompozite
             // 
