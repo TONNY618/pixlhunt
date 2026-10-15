@@ -10,6 +10,7 @@ namespace PixelMacroEngine.Core.Models
         public bool IsCooldownGlobal { get; set; } = true;
         public string Priority { get; set; } = "50";
         public bool PauseIfWASD { get; set; } = true;
+        public bool IsExtra { get; set; } = false;
 
         public List<ComboElementDto> Triggers { get; set; } = new();
         public List<ComboElementDto> Actions { get; set; } = new();

@@ -171,7 +171,8 @@ public static class ComboFactory
             CooldownMs = cooldownMs,
             IsGlobalCooldown = profile.IsCooldownGlobal,
             PauseIfWasd = profile.PauseIfWASD,
-            IsEnabled = profile.IsOnOff
+            IsEnabled = profile.IsOnOff,
+            IsExtra = profile.IsExtra
         };
 
         BuildTriggers(profile.Triggers, combo);

@@ -569,6 +569,7 @@ namespace pxlhunt.UI.Forms
                 IsCooldownGlobal = radioButtonSkillCooldownGLOBAL.Checked,
                 Priority = textBoxPriorityTrigger.Text,
                 PauseIfWASD = checkBoxWASDpauseTrigger.Checked,
+                IsExtra = checkBoxEXTRA.Checked,
                 Triggers = CollectElements(flowLayoutPanelTrigger),
                 Actions = CollectElements(flowLayoutPanelActions)
             };
@@ -639,6 +640,7 @@ namespace pxlhunt.UI.Forms
                 radioButtonSkillCooldownSingleHP.Checked = !profile.IsCooldownGlobal;
                 textBoxPriorityTrigger.Text = profile.Priority;
                 checkBoxWASDpauseTrigger.Checked = profile.PauseIfWASD;
+                checkBoxEXTRA.Checked = profile.IsExtra;
 
                 // Очистка панелей
                 flowLayoutPanelTrigger.Controls.Clear();

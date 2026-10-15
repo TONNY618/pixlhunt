@@ -21,6 +21,14 @@ public class Orchestrator
     // Аппаратный таймстамп последнего выполнения боевого комбо, делящего общий кулдаун (ГКД).
     private long _globalLastExecutedTimestamp = 0;
 
+    // --- Preemptive Scheduling (Extra-комбо) ---
+    // Поля текущего фонового выполнения: шаги комбо крутятся в Task,
+    // а очистка состояния происходит из потока пула — доступ синхронизирован _comboLock.
+    private readonly object _comboLock = new object();
+    private Task? _runningComboTask;
+    private CancellationTokenSource? _comboCts;
+    private ActiveCombo? _runningCombo;
+
     /// <summary>Регистрирует комбо в оркестраторе.</summary>
     public void RegisterCombo(ActiveCombo combo) => Combos.Add(combo);
 
@@ -55,108 +63,67 @@ public class Orchestrator
             : TimeService.GetElapsedMilliseconds(_lastFrameTimestamp, nowTs) / 1000.0;
         _lastFrameTimestamp = nowTs;
 
-        // Сортируем комбо по убыванию приоритета
-        var ordered = Combos.OrderByDescending(c => c.Priority).ToList();
-
-        // Флаги для маппинга физиологического состояния кадра.
-        bool anyComboRan = false;
+        // Флаг физического движения игрока нужен и для PauseIfWasd, и для маппинга состояния.
         bool wasdHeld = IsWasdPressed();
 
-        foreach (var combo in ordered)
+        // Снимок текущего фонового выполнения. Читаем под _comboLock,
+        // т.к. очистка полей идёт из потока Task (ExecuteComboAsync / finally).
+        ActiveCombo? running;
+        Task? runningTask;
+        lock (_comboLock)
         {
-            // Если комбо уже выполняет свои шаги — пропускаем его на этом кадре
-            if (combo.IsRunning)
-                continue;
+            running = _runningCombo;
+            runningTask = _runningComboTask;
+        }
+        bool isRunning = running != null && runningTask != null && !runningTask.IsCompleted;
 
-            if (!combo.IsEnabled || !combo.CanExecute())
-                continue;
+        bool startedNewCombo = false;
 
-            // Если комбо делит ГКД и не является фоновым сервисным действием
-            if (combo.IsGlobalCooldown && !combo.IsNonBlocking && combo.CooldownMs > 0)
-            {
-                if (_globalLastExecutedTimestamp != 0 &&
-                    TimeService.GetElapsedMilliseconds(_globalLastExecutedTimestamp) < combo.CooldownMs)
-                    continue;
-            }
+        // 1. Extra-комбо обрабатываются первыми и имеют безусловный приоритет.
+        var extraCombos = Combos.Where(c => c.IsExtra)
+                                .OrderByDescending(c => c.Priority)
+                                .ToList();
+        ActiveCombo? triggeredExtra = FindFirstTriggered(extraCombos, frame, wasdHeld);
 
-            // Если включён PauseIfWasd и игрок двигается — пропускаем комбо.
-            // Состояние (Navigation) будет выставлено после цикла.
-            if (combo.PauseIfWasd && wasdHeld)
-            {
-                continue;
-            }
+        if (triggeredExtra != null)
+        {
+            bool sameCombo = ReferenceEquals(running, triggeredExtra);
+            bool shouldPreempt = !sameCombo &&
+                (running == null || !running.IsExtra || running.Priority < triggeredExtra.Priority);
 
-            // Проверяем триггеры с учётом логики И/ИЛИ
-            bool triggersPassed;
-            if (combo.Triggers.Count == 0)
+            if (shouldPreempt)
             {
-                // Комбо без триггеров не должно спамить на каждом кадре
-                triggersPassed = false;
-            }
-            else if (combo.IsOrTriggerLogic)
-            {
-                triggersPassed = combo.Triggers.Any(t => t.Evaluate(frame));
-            }
-            else
-            {
-                triggersPassed = combo.Triggers.All(t => t.Evaluate(frame));
-            }
-
-            if (!triggersPassed)
-                continue;
-
-            combo.IsRunning = true;
-            anyComboRan = true;
-            try
-            {
-                // Обновляем время последнего выполнения
-                long execTs = TimeService.GetTimestamp();
-                combo.LastExecutedTimestamp = execTs;
-                if (combo.IsGlobalCooldown && !combo.IsNonBlocking && combo.CooldownMs > 0)
+                if (running != null)
                 {
-                    _globalLastExecutedTimestamp = execTs;
+                    await CancelRunningComboAsync().ConfigureAwait(false);
+
+                    // Перед запуском Extra-комбо аппаратно отпускаем всё, что могло
+                    // остаться физически зажатым на плате Arduino.
+                    ArduinoHidService.EmergencyReset();
                 }
 
-                // Последовательно выполняем шаги комбо
-                var context = new TriggerExecutionContext
-                {
-                    Frame = frame,
-                    ComboName = combo.Name
-                };
-
-                try
-                {
-                    foreach (var step in combo.Steps)
-                    {
-                        if (step is INonBlockingStep)
-                        {
-                            // Фоновый шаг (звук/уведомление): запускаем без ожидания
-                            // и мгновенно переходим к следующему шагу!
-                            _ = step.ExecuteAsync(context, ct);
-                            continue;
-                        }
-
-                        // Ожидаем, пока игрок отпустит клавиши движения (если включён PauseIfWasd)
-                        while (combo.PauseIfWasd && IsWasdPressed())
-                        {
-                            ct.ThrowIfCancellationRequested();
-                            await Task.Delay(25, ct).ConfigureAwait(false);
-                        }
-
-                        ct.ThrowIfCancellationRequested();
-                        await step.ExecuteAsync(context, ct).ConfigureAwait(false);
-                    }
-                }
-                catch (OperationCanceledException)
-                {
-                    // Прервано (таймаут или WASD)
-                }
+                StartCombo(triggeredExtra, frame, ct);
+                startedNewCombo = true;
             }
-            finally
+            // Иначе: это то же самое комбо, либо уже выполняется Extra
+            // с равным/большим приоритетом — не трогаем его.
+        }
+        else if (!isRunning)
+        {
+            // 2. Normal-комбо стартуют только когда в фоне ничего не выполняется.
+            var normalCombos = Combos.Where(c => !c.IsExtra)
+                                     .OrderByDescending(c => c.Priority)
+                                     .ToList();
+            ActiveCombo? triggeredNormal = FindFirstTriggered(normalCombos, frame, wasdHeld);
+            if (triggeredNormal != null)
             {
-                combo.IsRunning = false;
+                StartCombo(triggeredNormal, frame, ct);
+                startedNewCombo = true;
             }
         }
+
+        // Флаг нагрузки на кадр для маппинга физиологического состояния.
+        bool anyComboRan = isRunning || startedNewCombo;
 
         // === Маппинг действий оркестратора на физиологические состояния ===
         // Action     — выполнялось боевое комбо (максимальная нагрузка).
@@ -172,5 +139,174 @@ public class Orchestrator
 
         // Передаём реальный DeltaTime — усталость не зависит от частоты кадров.
         BotStateController.Update(state, deltaSeconds);
+    }
+
+    /// <summary>
+    /// Возвращает первое комбо из списка (уже отсортированного по убыванию приоритета),
+    /// прошедшее проверку кулдауна, ГКД, PauseIfWasd и триггеров.
+    /// </summary>
+    private ActiveCombo? FindFirstTriggered(List<ActiveCombo> candidates, FrameBuffer frame, bool wasdHeld)
+    {
+        foreach (var combo in candidates)
+        {
+            if (!combo.IsEnabled || !combo.CanExecute())
+                continue;
+
+            // Если включён PauseIfWasd и игрок двигается — пропускаем комбо.
+            if (combo.PauseIfWasd && wasdHeld)
+                continue;
+
+            // Если комбо делит ГКД и не является фоновым сервисным действием
+            if (combo.IsGlobalCooldown && !combo.IsNonBlocking && combo.CooldownMs > 0)
+            {
+                if (_globalLastExecutedTimestamp != 0 &&
+                    TimeService.GetElapsedMilliseconds(_globalLastExecutedTimestamp) < combo.CooldownMs)
+                    continue;
+            }
+
+            if (TriggersPassed(combo, frame))
+                return combo;
+        }
+
+        return null;
+    }
+
+    /// <summary>Проверяет триггеры комбо с учётом логики И/ИЛИ.</summary>
+    private static bool TriggersPassed(ActiveCombo combo, FrameBuffer frame)
+    {
+        if (combo.Triggers.Count == 0)
+        {
+            // Комбо без триггеров не должно спамить на каждом кадре
+            return false;
+        }
+
+        return combo.IsOrTriggerLogic
+            ? combo.Triggers.Any(t => t.Evaluate(frame))
+            : combo.Triggers.All(t => t.Evaluate(frame));
+    }
+
+    /// <summary>
+    /// Запускает комбо в фоне, не блокируя игровой цикл.
+    /// Таймстампы кулдауна (в т.ч. общий ГКД) фиксируются ДО фактического старта,
+    /// чтобы уже следующий кадр видел актуальное время.
+    /// </summary>
+    private void StartCombo(ActiveCombo combo, FrameBuffer frame, CancellationToken externalCt)
+    {
+        var cts = CancellationTokenSource.CreateLinkedTokenSource(externalCt);
+
+        long execTs = TimeService.GetTimestamp();
+        combo.LastExecutedTimestamp = execTs;
+        if (combo.IsGlobalCooldown && !combo.IsNonBlocking && combo.CooldownMs > 0)
+        {
+            _globalLastExecutedTimestamp = execTs;
+        }
+
+        combo.IsRunning = true;
+
+        lock (_comboLock)
+        {
+            _comboCts = cts;
+            _runningCombo = combo;
+            _runningComboTask = Task.Run(() => ExecuteComboAsync(combo, frame, cts.Token));
+        }
+    }
+
+    /// <summary>
+    /// Отменяет текущее фоновое комбо и дожидается его завершения.
+    /// Безопасно вызывается, даже если комбо успело завершиться само.
+    /// </summary>
+    private async Task CancelRunningComboAsync()
+    {
+        Task? task;
+        CancellationTokenSource? cts;
+        lock (_comboLock)
+        {
+            task = _runningComboTask;
+            cts = _comboCts;
+        }
+
+        if (cts != null)
+        {
+            try { cts.Cancel(); }
+            catch (ObjectDisposedException) { /* комбо уже завершилось и освободило CTS */ }
+        }
+
+        if (task != null)
+        {
+            try
+            {
+                await task.ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                // Ожидаемая отмена (preemption / shutdown)
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Combo await error: {ex.Message}");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Тело фонового выполнения шагов комбо. При отмене немедленно прекращает работу,
+    /// а в finally гарантированно очищает поля текущего выполнения (только если они
+    /// всё ещё принадлежат этому комбо — Extra-комбо могло уже стартовать новое).
+    /// </summary>
+    private async Task ExecuteComboAsync(ActiveCombo combo, FrameBuffer frame, CancellationToken ct)
+    {
+        try
+        {
+            var context = new TriggerExecutionContext
+            {
+                Frame = frame,
+                ComboName = combo.Name
+            };
+
+            foreach (var step in combo.Steps)
+            {
+                ct.ThrowIfCancellationRequested();
+
+                if (step is INonBlockingStep)
+                {
+                    // Фоновый шаг (звук/уведомление): запускаем без ожидания
+                    // и мгновенно переходим к следующему шагу!
+                    _ = step.ExecuteAsync(context, ct);
+                    continue;
+                }
+
+                // Ожидаем, пока игрок отпустит клавиши движения (если включён PauseIfWasd)
+                while (combo.PauseIfWasd && IsWasdPressed())
+                {
+                    ct.ThrowIfCancellationRequested();
+                    await Task.Delay(25, ct).ConfigureAwait(false);
+                }
+
+                ct.ThrowIfCancellationRequested();
+                await step.ExecuteAsync(context, ct).ConfigureAwait(false);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Прервано: preemption, таймаут или WASD
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Combo '{combo.Name}' failed: {ex.Message}");
+        }
+        finally
+        {
+            combo.IsRunning = false;
+            lock (_comboLock)
+            {
+                if (ReferenceEquals(_runningCombo, combo))
+                {
+                    _runningCombo = null;
+                    _runningComboTask = null;
+                    _comboCts?.Dispose();
+                    _comboCts = null;
+                }
+            }
+        }
     }
 }

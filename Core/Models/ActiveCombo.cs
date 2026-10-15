@@ -51,6 +51,13 @@ public class ActiveCombo
     /// </summary>
     public bool IsNonBlocking { get; set; } = false;
 
+    /// <summary>
+    /// Признак «Extra»-комбо (Preemptive Scheduling).
+    /// Такое комбо мгновенно прерывает любое текущее Normal-комбо
+    /// либо Extra-комбо с меньшим приоритетом (см. Orchestrator).
+    /// </summary>
+    public bool IsExtra { get; set; } = false;
+
     /// <summary>Список триггеров, определяющих срабатывание комбо.</summary>
     public List<ITriggerEvaluator> Triggers { get; set; } = new List<ITriggerEvaluator>();
 
