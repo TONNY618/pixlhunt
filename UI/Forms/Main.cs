@@ -840,7 +840,7 @@ namespace pxlhunt.FORMS
 
                 if (data == null) return;
 
-                double minutesAway = (DateTime.UtcNow - data.LastExitUtc).TotalMinutes;
+                double minutesAway = (TimeService.UtcNow - data.LastExitUtc).TotalMinutes;
                 double seconds = data.ActiveSeconds;
 
                 if (minutesAway <= 10)
@@ -895,7 +895,7 @@ namespace pxlhunt.FORMS
 
                 var data = new SessionData
                 {
-                    LastExitUtc = DateTime.UtcNow,
+                    LastExitUtc = TimeService.UtcNow,
                     ActiveSeconds = BotStateController.ActiveSessionTime.TotalSeconds,
                     TransparencyPercent = trackBarTransparency.Value,
                     WindowX = loc.X,

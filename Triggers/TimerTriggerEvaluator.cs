@@ -16,7 +16,6 @@ public class TimerTriggerEvaluator : ITriggerEvaluator
 {
     private readonly int _minMs;
     private readonly int _maxMs;
-    private readonly Random _rnd = new Random();
 
     private int _currentIntervalMs;
     private long _lastTriggerTimestamp = 0;
@@ -28,7 +27,7 @@ public class TimerTriggerEvaluator : ITriggerEvaluator
     {
         _minMs = Math.Max(1, minMs);
         _maxMs = Math.Max(_minMs, maxMs);
-        _currentIntervalMs = CalculateGaussianDelay(_minMs, _maxMs);
+        _currentIntervalMs = HumanizerEngine.CalculateGaussianDelay(_minMs, _maxMs);
     }
 
     /// <summary>
@@ -47,29 +46,9 @@ public class TimerTriggerEvaluator : ITriggerEvaluator
             TimeService.GetElapsedMilliseconds(_lastTriggerTimestamp, now) >= _currentIntervalMs)
         {
             _lastTriggerTimestamp = now;
-            _currentIntervalMs = CalculateGaussianDelay(_minMs, _maxMs);
+            _currentIntervalMs = HumanizerEngine.CalculateGaussianDelay(_minMs, _maxMs);
             return true;
         }
         return false;
-    }
-
-    /// <summary>
-    /// Расчёт задержки по нормальному распределению (Box-Muller).
-    /// Среднее — середина диапазона, stdDev = (max - min) / 6,
-    /// что укладывает ~99.7% значений в [min, max] до клампа.
-    /// </summary>
-    private int CalculateGaussianDelay(int min, int max)
-    {
-        if (min >= max) return min;
-
-        double u1 = 1.0 - _rnd.NextDouble();
-        double u2 = 1.0 - _rnd.NextDouble();
-        double randStdNormal = Math.Sqrt(-2.0 * Math.Log(u1)) * Math.Sin(2.0 * Math.PI * u2);
-
-        double mean = (min + max) / 2.0;
-        double stdDev = (max - min) / 6.0;
-        double val = mean + randStdNormal * stdDev;
-
-        return (int)Math.Clamp(Math.Round(val), min, max);
     }
 }

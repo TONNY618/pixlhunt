@@ -43,6 +43,27 @@ public static class HumanizerEngine
     }
 
     /// <summary>
+    /// Расчёт задержки по нормальному распределению (Box-Muller) в диапазоне [min, max].
+    /// Среднее — середина диапазона, stdDev = (max - min) / 6, что укладывает
+    /// ~99.7% значений в [min, max] до клампа.
+    /// Потокобезопасен за счёт System.Random.Shared.
+    /// </summary>
+    public static int CalculateGaussianDelay(int min, int max)
+    {
+        if (min >= max) return min;
+
+        double u1 = 1.0 - Random.Shared.NextDouble();
+        double u2 = 1.0 - Random.Shared.NextDouble();
+        double randStdNormal = Math.Sqrt(-2.0 * Math.Log(u1)) * Math.Sin(2.0 * Math.PI * u2);
+
+        double mean = (min + max) / 2.0;
+        double stdDev = (max - min) / 6.0;
+        double val = mean + randStdNormal * stdDev;
+
+        return (int)Math.Clamp(Math.Round(val), min, max);
+    }
+
+    /// <summary>
     /// Генерирует значение по логнормальному распределению.
     /// Параметры mu и sigma задаются в логарифмическом пространстве (натуральный логарифм миллисекунд).
     /// Усталость применяется и к mu (сдвиг среднего), и к sigma (удлинение хвоста).
