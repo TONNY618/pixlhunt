@@ -29,6 +29,9 @@
         private void InitializeComponent()
         {
             GroupActionPreset = new GroupBox();
+            groupBoxTelegram = new GroupBox();
+            comboBox1 = new ComboBox();
+            textBox2 = new TextBox();
             triggerOrAnd = new pxlhunt.UI.Forms.ComboEditorCompoziteControls.TriggerOrAnd();
             triggerTimer = new pxlhunt.UI.Forms.ComboEditorCompoziteControls.TriggerTimer();
             pixSquaControl = new pxlhunt.UI.Forms.ComboEditorCompoziteControls.PixSquaControl();
@@ -76,10 +79,9 @@
             buttonSave = new Button();
             textBoxHelp = new TextBox();
             groupBoxKeyMouseMonitor = new GroupBox();
-            groupBoxTelegram = new GroupBox();
-            textBox2 = new TextBox();
-            comboBox1 = new ComboBox();
+            checkBoxEXTRA = new CheckBox();
             GroupActionPreset.SuspendLayout();
+            groupBoxTelegram.SuspendLayout();
             groupBoxIMAGE.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)pictureBoxIMAGESample).BeginInit();
             groupBoxIMAGEVol.SuspendLayout();
@@ -89,7 +91,6 @@
             groupBoxPauseIfMooved.SuspendLayout();
             groupBoxPriority.SuspendLayout();
             groupBoxCDtrigger.SuspendLayout();
-            groupBoxTelegram.SuspendLayout();
             SuspendLayout();
             // 
             // GroupActionPreset
@@ -114,6 +115,38 @@
             GroupActionPreset.TabIndex = 10;
             GroupActionPreset.TabStop = false;
             GroupActionPreset.Text = "КОНТРОЛЫ";
+            // 
+            // groupBoxTelegram
+            // 
+            groupBoxTelegram.BackColor = Color.Gainsboro;
+            groupBoxTelegram.Controls.Add(comboBox1);
+            groupBoxTelegram.Controls.Add(textBox2);
+            groupBoxTelegram.ForeColor = Color.DarkOliveGreen;
+            groupBoxTelegram.Location = new Point(8, 534);
+            groupBoxTelegram.Name = "groupBoxTelegram";
+            groupBoxTelegram.Size = new Size(318, 68);
+            groupBoxTelegram.TabIndex = 64;
+            groupBoxTelegram.TabStop = false;
+            groupBoxTelegram.Text = "Telegram";
+            // 
+            // comboBox1
+            // 
+            comboBox1.FormattingEnabled = true;
+            comboBox1.Location = new Point(68, 6);
+            comboBox1.Name = "comboBox1";
+            comboBox1.Size = new Size(242, 23);
+            comboBox1.TabIndex = 3;
+            // 
+            // textBox2
+            // 
+            textBox2.AcceptsReturn = true;
+            textBox2.Location = new Point(10, 33);
+            textBox2.MaxLength = 500;
+            textBox2.Multiline = true;
+            textBox2.Name = "textBox2";
+            textBox2.Size = new Size(300, 28);
+            textBox2.TabIndex = 2;
+            textBox2.Text = "Текст (Enter работает)";
             // 
             // triggerOrAnd
             // 
@@ -525,20 +558,20 @@
             // 
             // groupBoxCDtrigger
             // 
+            groupBoxCDtrigger.Controls.Add(checkBoxEXTRA);
             groupBoxCDtrigger.Controls.Add(textBoxCDglobal);
             groupBoxCDtrigger.Controls.Add(radioButtonSkillCooldownSingleHP);
             groupBoxCDtrigger.Controls.Add(radioButtonSkillCooldownGLOBAL);
             groupBoxCDtrigger.Location = new Point(8, 64);
             groupBoxCDtrigger.Name = "groupBoxCDtrigger";
-            groupBoxCDtrigger.Size = new Size(325, 23);
+            groupBoxCDtrigger.Size = new Size(353, 23);
             groupBoxCDtrigger.TabIndex = 34;
             groupBoxCDtrigger.TabStop = false;
-            groupBoxCDtrigger.Text = "CD триг.";
             // 
             // textBoxCDglobal
             // 
             textBoxCDglobal.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            textBoxCDglobal.Location = new Point(160, 0);
+            textBoxCDglobal.Location = new Point(115, -1);
             textBoxCDglobal.MaxLength = 4;
             textBoxCDglobal.Name = "textBoxCDglobal";
             textBoxCDglobal.Size = new Size(34, 23);
@@ -548,7 +581,7 @@
             // radioButtonSkillCooldownSingleHP
             // 
             radioButtonSkillCooldownSingleHP.AutoSize = true;
-            radioButtonSkillCooldownSingleHP.Location = new Point(200, 1);
+            radioButtonSkillCooldownSingleHP.Location = new Point(157, 0);
             radioButtonSkillCooldownSingleHP.Name = "radioButtonSkillCooldownSingleHP";
             radioButtonSkillCooldownSingleHP.Size = new Size(123, 19);
             radioButtonSkillCooldownSingleHP.TabIndex = 15;
@@ -559,7 +592,7 @@
             // 
             radioButtonSkillCooldownGLOBAL.AutoSize = true;
             radioButtonSkillCooldownGLOBAL.Checked = true;
-            radioButtonSkillCooldownGLOBAL.Location = new Point(62, 0);
+            radioButtonSkillCooldownGLOBAL.Location = new Point(13, 0);
             radioButtonSkillCooldownGLOBAL.Name = "radioButtonSkillCooldownGLOBAL";
             radioButtonSkillCooldownGLOBAL.Size = new Size(100, 19);
             radioButtonSkillCooldownGLOBAL.TabIndex = 14;
@@ -595,37 +628,15 @@
             groupBoxKeyMouseMonitor.TabStop = false;
             groupBoxKeyMouseMonitor.Text = "KeyMouseMonitor";
             // 
-            // groupBoxTelegram
+            // checkBoxEXTRA
             // 
-            groupBoxTelegram.BackColor = Color.Gainsboro;
-            groupBoxTelegram.Controls.Add(comboBox1);
-            groupBoxTelegram.Controls.Add(textBox2);
-            groupBoxTelegram.ForeColor = Color.DarkOliveGreen;
-            groupBoxTelegram.Location = new Point(8, 534);
-            groupBoxTelegram.Name = "groupBoxTelegram";
-            groupBoxTelegram.Size = new Size(318, 68);
-            groupBoxTelegram.TabIndex = 64;
-            groupBoxTelegram.TabStop = false;
-            groupBoxTelegram.Text = "Telegram";
-            // 
-            // textBox2
-            // 
-            textBox2.AcceptsReturn = true;
-            textBox2.Location = new Point(10, 33);
-            textBox2.MaxLength = 500;
-            textBox2.Multiline = true;
-            textBox2.Name = "textBox2";
-            textBox2.Size = new Size(300, 28);
-            textBox2.TabIndex = 2;
-            textBox2.Text = "Текст (Enter работает)";
-            // 
-            // comboBox1
-            // 
-            comboBox1.FormattingEnabled = true;
-            comboBox1.Location = new Point(68, 6);
-            comboBox1.Name = "comboBox1";
-            comboBox1.Size = new Size(242, 23);
-            comboBox1.TabIndex = 3;
+            checkBoxEXTRA.AutoSize = true;
+            checkBoxEXTRA.Location = new Point(288, 1);
+            checkBoxEXTRA.Name = "checkBoxEXTRA";
+            checkBoxEXTRA.Size = new Size(59, 19);
+            checkBoxEXTRA.TabIndex = 17;
+            checkBoxEXTRA.Text = "EXTRA";
+            checkBoxEXTRA.UseVisualStyleBackColor = true;
             // 
             // ComboEditorCompozite
             // 
@@ -652,6 +663,8 @@
             Text = "ComboEditorCompozite";
             GroupActionPreset.ResumeLayout(false);
             GroupActionPreset.PerformLayout();
+            groupBoxTelegram.ResumeLayout(false);
+            groupBoxTelegram.PerformLayout();
             groupBoxIMAGE.ResumeLayout(false);
             groupBoxIMAGE.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)pictureBoxIMAGESample).EndInit();
@@ -667,8 +680,6 @@
             groupBoxPriority.PerformLayout();
             groupBoxCDtrigger.ResumeLayout(false);
             groupBoxCDtrigger.PerformLayout();
-            groupBoxTelegram.ResumeLayout(false);
-            groupBoxTelegram.PerformLayout();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -726,5 +737,6 @@
         private GroupBox groupBoxTelegram;
         private ComboBox comboBox1;
         private TextBox textBox2;
+        private CheckBox checkBoxEXTRA;
     }
 }

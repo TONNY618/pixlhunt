@@ -521,16 +521,29 @@ namespace pxlhunt.FORMS
         {
             if (child == null) return;
 
-            // Если главное окно свёрнуто — используем его RestoreBounds
+            // 1. Получаем границы родительского окна
             Rectangle mainBounds = (this.WindowState == FormWindowState.Normal)
                 ? this.Bounds
                 : this.RestoreBounds;
 
+            // 2. Вычисляем желаемую позицию по центру родителя
             int centerX = mainBounds.X + (mainBounds.Width - child.Width) / 2;
             int centerY = mainBounds.Y + (mainBounds.Height - child.Height) / 2;
 
+            // 3. Определяем монитор, на котором окажется центр дочернего окна
+            //    (а не просто монитор родителя — на случай, если родитель на границе)
+            Screen targetScreen = Screen.FromPoint(new Point(centerX, centerY));
+            Rectangle workArea = targetScreen.WorkingArea;
+
+            // 4. Ограничиваем (clamp) координаты рамками рабочей области монитора
+            //    Math.Max гарантирует, что левый/верхний край не уйдёт за минус
+            //    Math.Min — что правый/нижний край не выйдет за пределы рабочей области
+            int finalX = Math.Max(workArea.Left, Math.Min(centerX, workArea.Right - child.Width));
+            int finalY = Math.Max(workArea.Top, Math.Min(centerY, workArea.Bottom - child.Height));
+
+            // 5. Применяем позицию
             child.StartPosition = FormStartPosition.Manual;
-            child.Location = new Point(centerX, centerY);
+            child.Location = new Point(finalX, finalY);
         }
 
         /// <summary>
@@ -959,7 +972,10 @@ namespace pxlhunt.FORMS
 
         private void buttonSettings_Click(object sender, EventArgs e)
         {
-            testArduino settingsForm = new testArduino();
+            //testArduino settingsForm = new testArduino();
+            //CenterFormOnMain(settingsForm);
+            //settingsForm.Show(this);
+            Settings settingsForm = new Settings();
             CenterFormOnMain(settingsForm);
             settingsForm.Show(this);
         }
