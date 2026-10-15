@@ -41,9 +41,30 @@ public class Orchestrator
             || PixelMacroEngine.Core.Services.RawInputService.IsKeyDown(0x44); // D
     }
 
+    /// <summary>
+    /// Принудительно и немедленно прерывает фоновое комбо (Hard Abort при выключении мастера).
+    /// </summary>
+    public void AbortRunningCombo()
+    {
+        lock (_comboLock)
+        {
+            try
+            {
+                _comboCts?.Cancel();
+            }
+            catch (ObjectDisposedException) { /* комбо уже завершилось и освободило CTS */ }
+        }
+
+        // Аппаратно отпускаем всё, что могло остаться физически зажатым на плате Arduino.
+        PixelMacroEngine.Core.Services.ArduinoHidService.EmergencyReset();
+    }
+
     /// <summary>Сбрасывает состояние кулдауна у всех комбо.</summary>
     public void ResetAllStates()
     {
+        // Сброс состояния всегда должен убивать активное выполнение.
+        AbortRunningCombo();
+
         foreach (var combo in Combos)
         {
             combo.LastExecutedTimestamp = 0;
@@ -273,6 +294,18 @@ public class Orchestrator
                     // и мгновенно переходим к следующему шагу!
                     _ = step.ExecuteAsync(context, ct);
                     continue;
+                }
+
+                // Мягкая пауза: главное окно активно (потеря фокуса игры), но мастер-флаг включён.
+                // Комбо замирает между шагами и продолжит с текущего шага, когда игра вернёт фокус.
+                while (BotStateController.IsMasterEnabled && !BotStateController.CanExecuteCombos)
+                {
+                    ct.ThrowIfCancellationRequested();
+
+                    // Сбрасываем возможные залипания, чтобы не слать ввод в наши окна.
+                    PixelMacroEngine.Core.Services.ArduinoHidService.EmergencyReset();
+
+                    await Task.Delay(50, ct).ConfigureAwait(false);
                 }
 
                 // Ожидаем, пока игрок отпустит клавиши движения (если включён PauseIfWasd)

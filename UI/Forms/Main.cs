@@ -738,6 +738,9 @@ namespace pxlhunt.FORMS
                 _lastVisualActiveState = false;
                 UpdateStatusVisuals(false);
 
+                // Hard Abort: мгновенно прерываем активное фоновое комбо
+                _orchestrator.AbortRunningCombo();
+
                 // При явном выключении — сбрасываем кулдауны всех комбо
                 _orchestrator.ResetAllStates();
 
