@@ -1,60 +1,26 @@
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using PixelMacroEngine.Core.Abstractions;
+using PixelMacroEngine.Core.Input;
 using PixelMacroEngine.Core.Models;
 using PixelMacroEngine.Core.Services;
 
 namespace PixelMacroEngine.Triggers.Steps;
 
 /// <summary>
-/// Шаг комбо: клик, зажатие или отпускание кнопки мыши (ЛКМ, ПКМ, СКМ).
+/// Шаг комбо: клик, зажатие или отпускание кнопки мыши (ЛКМ, ПКМ, СКМ)
+/// либо расширенной клавиши F13-F24 (отправляется через Arduino RawHID).
+/// Наклоны колесика (WL/WR) в шагах игнорируются — они доступны только как триггеры.
 /// </summary>
 public class MouseClickStep : IComboStep
 {
-    public byte Button { get; }
+    public string ButtonName { get; }
     public bool PressDown { get; }
     public bool PressUp { get; }
 
-    public MouseClickStep(byte button, Dictionary<string, string>? p, string suffix)
-    {
-        Button = button;
-
-        if (p == null)
-        {
-            // По умолчанию полный клик (нажал + отпустил)
-            PressDown = true;
-            PressUp = true;
-            return;
-        }
-
-        string downKey = $"checkBoxUpDownMouseKey{suffix}_1";
-        string upKey = $"checkBoxUpDownMouseKey{suffix}_2";
-
-        bool hasDown = p.ContainsKey(downKey);
-        bool hasUp = p.ContainsKey(upKey);
-
-        // Если в параметрах нет явных ключей, считаем полным кликом
-        if (!hasDown && !hasUp)
-        {
-            PressDown = true;
-            PressUp = true;
-        }
-        else
-        {
-            PressDown = p.GetValueOrDefault(downKey) == "True";
-            PressUp = p.GetValueOrDefault(upKey) == "True";
-        }
-    }
-
     public MouseClickStep(pxlhunt.UI.Forms.ComboEditorCompoziteControls.MouseKeyDto dto)
     {
-        Button = dto.Button switch
-        {
-            "R key" or "2" => 2,
-            "M key" or "3" => 3,
-            _ => 1
-        };
+        ButtonName = dto.Button ?? "L key";
         PressDown = dto.PressDown;
         PressUp = dto.PressUp;
     }
@@ -63,7 +29,33 @@ public class MouseClickStep : IComboStep
     {
         if (!PressDown && !PressUp) return;
 
-        await MouseService.ClickButtonAsync(Button, PressDown, PressUp, context.ComboName ?? "Unknown", ct)
+        // Расширенные клавиши F13-F24: отправляем через Arduino RawHID.
+        if (ButtonName.StartsWith("F") && ButtonName.Length > 1)
+        {
+            byte hidByte = ArduinoKeyMap.GetByte(ButtonName);
+            if (hidByte == 0) return;
+
+            var batch = new PacketBatch();
+            if (PressDown) batch.AddKey(hidByte, true);
+
+            if (PressDown && PressUp)
+            {
+                ArduinoHidService.Send(batch);
+                batch = new PacketBatch();
+                await Task.Delay(HumanizerEngine.GetKeyPressDuration(), ct).ConfigureAwait(false);
+            }
+
+            if (PressUp) batch.AddKey(hidByte, false);
+            ArduinoHidService.Send(batch);
+            return;
+        }
+
+        // Наклоны колесика (WL/WR) в шагах комбо не эмулируются — только как триггеры.
+        if (ButtonName == "WL" || ButtonName == "WR")
+            return;
+
+        byte btnCode = (byte)(ButtonName == "R key" ? 2 : (ButtonName == "M key" ? 3 : 1));
+        await MouseService.ClickButtonAsync(btnCode, PressDown, PressUp, context.ComboName ?? "Unknown", ct)
                           .ConfigureAwait(false);
     }
 }

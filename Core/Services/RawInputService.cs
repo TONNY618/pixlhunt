@@ -92,6 +92,9 @@ namespace PixelMacroEngine.Core.Services
         // WhellTrigerReadIntervalMs (пользователь "тупил" дольше лимита).
         // Используем lock, так как операции "прочитать-очистить" должны быть атомарными.
         private static readonly object _wheelLock = new();
+        private static DateTime _lastHWheelLeftTime = DateTime.MinValue;
+        private static DateTime _lastHWheelRightTime = DateTime.MinValue;
+
         private static int _wheelUpCount = 0;
         private static DateTime _lastWheelUpTime = DateTime.MinValue;
         private static int _wheelDownCount = 0;
@@ -248,6 +251,40 @@ namespace PixelMacroEngine.Core.Services
                     }
                     return false;
                 }
+            }
+        }
+
+        /// <summary>
+        /// Проверяет, был ли зафиксирован наклон горизонтального колесика (HWHEEL)
+        /// в заданном направлении за последние <paramref name="windowMs"/> миллисекунд.
+        /// При успехе метка времени сбрасывается (edge-trigger: одно событие — одно срабатывание).
+        /// </summary>
+        /// <param name="right">Направление: true — вправо (WR), false — влево (WL).</param>
+        /// <param name="windowMs">Окно актуальности события в миллисекундах.</param>
+        public static bool ConsumeHWheel(bool right, int windowMs = 350)
+        {
+            lock (_wheelLock)
+            {
+                var now = DateTime.UtcNow;
+                if (right)
+                {
+                    if (_lastHWheelRightTime != DateTime.MinValue &&
+                        (now - _lastHWheelRightTime).TotalMilliseconds <= windowMs)
+                    {
+                        _lastHWheelRightTime = DateTime.MinValue;
+                        return true;
+                    }
+                }
+                else
+                {
+                    if (_lastHWheelLeftTime != DateTime.MinValue &&
+                        (now - _lastHWheelLeftTime).TotalMilliseconds <= windowMs)
+                    {
+                        _lastHWheelLeftTime = DateTime.MinValue;
+                        return true;
+                    }
+                }
+                return false;
             }
         }
 
@@ -423,6 +460,12 @@ namespace PixelMacroEngine.Core.Services
                     short hWheelDelta = (short)raw.data.mouse.usButtonData;
                     _lastWheelAction = hWheelDelta > 0 ? "Колесико: WR" : "Колесико: WL";
                     Volatile.Write(ref _lastWheelTicks, DateTime.UtcNow.Ticks);
+
+                    lock (_wheelLock)
+                    {
+                        if (hWheelDelta > 0) _lastHWheelRightTime = DateTime.UtcNow;
+                        else if (hWheelDelta < 0) _lastHWheelLeftTime = DateTime.UtcNow;
+                    }
                 }
             }
             else if (raw.header.dwType == RIM_TYPEKEYBOARD)

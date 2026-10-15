@@ -36,7 +36,7 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
             // comboBoxMouseKeyList
             // 
             comboBoxMouseKeyList.FormattingEnabled = true;
-            comboBoxMouseKeyList.Items.AddRange(new object[] { "L key", "R key", "M key" });
+            comboBoxMouseKeyList.Items.AddRange(new object[] { "L key", "R key", "M key", "WL", "WR", "F13", "F14", "F15", "F16", "F17", "F18", "F19", "F20", "F21", "F22", "F23", "F24" });
             comboBoxMouseKeyList.Location = new Point(180, 3);
             comboBoxMouseKeyList.Name = "comboBoxMouseKeyList";
             comboBoxMouseKeyList.Size = new Size(54, 23);
