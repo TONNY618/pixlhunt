@@ -31,7 +31,11 @@
             checkBoxStatistyc = new CheckBox();
             groupBoxKeyStartMain = new GroupBox();
             comboBoxKeyStartMain = new ComboBox();
+            groupBoxTelegram = new GroupBox();
+            comboBox1 = new ComboBox();
+            textBox2 = new TextBox();
             groupBoxKeyStartMain.SuspendLayout();
+            groupBoxTelegram.SuspendLayout();
             SuspendLayout();
             // 
             // checkBoxStatistyc
@@ -66,16 +70,51 @@
             comboBoxKeyStartMain.TabIndex = 16;
             comboBoxKeyStartMain.Text = "NumPad Enter";
             // 
+            // groupBoxTelegram
+            // 
+            groupBoxTelegram.BackColor = Color.Gainsboro;
+            groupBoxTelegram.Controls.Add(comboBox1);
+            groupBoxTelegram.Controls.Add(textBox2);
+            groupBoxTelegram.ForeColor = Color.DarkOliveGreen;
+            groupBoxTelegram.Location = new Point(241, 244);
+            groupBoxTelegram.Name = "groupBoxTelegram";
+            groupBoxTelegram.Size = new Size(318, 68);
+            groupBoxTelegram.TabIndex = 65;
+            groupBoxTelegram.TabStop = false;
+            groupBoxTelegram.Text = "Telegram";
+            // 
+            // comboBox1
+            // 
+            comboBox1.FormattingEnabled = true;
+            comboBox1.Location = new Point(68, 6);
+            comboBox1.Name = "comboBox1";
+            comboBox1.Size = new Size(242, 23);
+            comboBox1.TabIndex = 3;
+            // 
+            // textBox2
+            // 
+            textBox2.AcceptsReturn = true;
+            textBox2.Location = new Point(10, 33);
+            textBox2.MaxLength = 500;
+            textBox2.Multiline = true;
+            textBox2.Name = "textBox2";
+            textBox2.Size = new Size(300, 28);
+            textBox2.TabIndex = 2;
+            textBox2.Text = "Текст (Enter работает)";
+            // 
             // Settings
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 556);
+            Controls.Add(groupBoxTelegram);
             Controls.Add(groupBoxKeyStartMain);
             Controls.Add(checkBoxStatistyc);
             Name = "Settings";
             Text = "Settings";
             groupBoxKeyStartMain.ResumeLayout(false);
+            groupBoxTelegram.ResumeLayout(false);
+            groupBoxTelegram.PerformLayout();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -85,5 +124,8 @@
         private CheckBox checkBoxStatistyc;
         private GroupBox groupBoxKeyStartMain;
         private ComboBox comboBoxKeyStartMain;
+        private GroupBox groupBoxTelegram;
+        private ComboBox comboBox1;
+        private TextBox textBox2;
     }
 }

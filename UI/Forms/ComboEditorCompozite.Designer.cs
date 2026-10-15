@@ -29,9 +29,6 @@
         private void InitializeComponent()
         {
             GroupActionPreset = new GroupBox();
-            groupBoxTelegram = new GroupBox();
-            comboBox1 = new ComboBox();
-            textBox2 = new TextBox();
             triggerOrAnd = new pxlhunt.UI.Forms.ComboEditorCompoziteControls.TriggerOrAnd();
             triggerTimer = new pxlhunt.UI.Forms.ComboEditorCompoziteControls.TriggerTimer();
             pixSquaControl = new pxlhunt.UI.Forms.ComboEditorCompoziteControls.PixSquaControl();
@@ -54,6 +51,7 @@
             pictureBoxIMAGEExample = new PictureBox();
             radioButtonIMAGENotEqu = new RadioButton();
             radioButtonIMAGEEqu = new RadioButton();
+            textToControl = new pxlhunt.UI.Forms.ComboEditorCompoziteControls.TextToControl();
             soundControl = new pxlhunt.UI.Forms.ComboEditorCompoziteControls.SoundControl();
             mouseScrollControl = new pxlhunt.UI.Forms.ComboEditorCompoziteControls.MouseScrollControl();
             boxKeyControl = new pxlhunt.UI.Forms.ComboEditorCompoziteControls.BoxKeyControl();
@@ -80,7 +78,6 @@
             groupBoxKeyMouseMonitor = new GroupBox();
             colorDialog1 = new ColorDialog();
             GroupActionPreset.SuspendLayout();
-            groupBoxTelegram.SuspendLayout();
             groupBoxIMAGE.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)pictureBoxIMAGESample).BeginInit();
             groupBoxIMAGEVol.SuspendLayout();
@@ -94,7 +91,6 @@
             // GroupActionPreset
             // 
             GroupActionPreset.BackColor = Color.LightSkyBlue;
-            GroupActionPreset.Controls.Add(groupBoxTelegram);
             GroupActionPreset.Controls.Add(triggerOrAnd);
             GroupActionPreset.Controls.Add(triggerTimer);
             GroupActionPreset.Controls.Add(pixSquaControl);
@@ -113,38 +109,6 @@
             GroupActionPreset.TabIndex = 10;
             GroupActionPreset.TabStop = false;
             GroupActionPreset.Text = "КОНТРОЛЫ";
-            // 
-            // groupBoxTelegram
-            // 
-            groupBoxTelegram.BackColor = Color.Gainsboro;
-            groupBoxTelegram.Controls.Add(comboBox1);
-            groupBoxTelegram.Controls.Add(textBox2);
-            groupBoxTelegram.ForeColor = Color.DarkOliveGreen;
-            groupBoxTelegram.Location = new Point(8, 534);
-            groupBoxTelegram.Name = "groupBoxTelegram";
-            groupBoxTelegram.Size = new Size(318, 68);
-            groupBoxTelegram.TabIndex = 64;
-            groupBoxTelegram.TabStop = false;
-            groupBoxTelegram.Text = "Telegram";
-            // 
-            // comboBox1
-            // 
-            comboBox1.FormattingEnabled = true;
-            comboBox1.Location = new Point(68, 6);
-            comboBox1.Name = "comboBox1";
-            comboBox1.Size = new Size(242, 23);
-            comboBox1.TabIndex = 3;
-            // 
-            // textBox2
-            // 
-            textBox2.AcceptsReturn = true;
-            textBox2.Location = new Point(10, 33);
-            textBox2.MaxLength = 500;
-            textBox2.Multiline = true;
-            textBox2.Name = "textBox2";
-            textBox2.Size = new Size(300, 28);
-            textBox2.TabIndex = 2;
-            textBox2.Text = "Текст (Enter работает)";
             // 
             // triggerOrAnd
             // 
@@ -375,7 +339,6 @@
             // 
             // textToControl
             // 
-            textToControl = new pxlhunt.UI.Forms.ComboEditorCompoziteControls.TextToControl();
             textToControl.BackColor = Color.Transparent;
             textToControl.Location = new Point(8, 586);
             textToControl.Name = "textToControl";
@@ -647,8 +610,6 @@
             Text = "ComboEditorCompozite";
             GroupActionPreset.ResumeLayout(false);
             GroupActionPreset.PerformLayout();
-            groupBoxTelegram.ResumeLayout(false);
-            groupBoxTelegram.PerformLayout();
             groupBoxIMAGE.ResumeLayout(false);
             groupBoxIMAGE.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)pictureBoxIMAGESample).EndInit();
