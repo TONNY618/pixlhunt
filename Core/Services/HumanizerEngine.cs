@@ -147,4 +147,11 @@ public static class HumanizerEngine
     /// Самый узкий разброс — это почти рефлекторное действие.
     /// </summary>
     public static int GetModifierDelay() => GetLogNormalDelay(mu: Math.Log(65.0), sigma: 0.22);
+
+    /// <summary>
+    /// Пауза после запроса смены раскладки активного окна (WM_INPUTLANGCHANGEREQUEST).
+    /// Это системная задержка, а не моторика пальца, поэтому значение стабильное
+    /// (без логнормального разброса): ОС должна успеть применить раскладку до ввода символа.
+    /// </summary>
+    public static int GetLayoutSwitchDelay() => 85;
 }

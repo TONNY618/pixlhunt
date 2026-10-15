@@ -74,7 +74,8 @@ namespace PixelMacroEngine.Triggers.Steps
                     {
                         PostMessage(hwnd, WM_INPUTLANGCHANGEREQUEST, IntPtr.Zero, targetLayout);
                         currentLayoutId = targetLayout;
-                        await Task.Delay(20, ct).ConfigureAwait(false); // Микропауза для отработки ОС
+                        // Даём ОС время применить раскладку до ввода символа.
+                        await Task.Delay(HumanizerEngine.GetLayoutSwitchDelay(), ct).ConfigureAwait(false);
                     }
                 }
 

@@ -47,10 +47,10 @@ public static class ArduinoKeyMap
         // Служебные и навигация
         // Пробел в HID - это 0x2C (старый 0x20 перезапиши)
         ["Space"]       = 0x2C,
-        ["Enter"]       = 0xB0,
-        ["Tab"]         = 0xB3,
-        ["Escape"]      = 0xB1,
-        ["Backspace"]   = 0xB2,
+        ["Enter"]       = 0x28,
+        ["Tab"]         = 0x2B,
+        ["Escape"]      = 0x29,
+        ["Backspace"]   = 0x2A,
         ["Insert"]      = 0xD1,
         ["Delete"]      = 0xD4,
         ["Home"]        = 0xD2,
