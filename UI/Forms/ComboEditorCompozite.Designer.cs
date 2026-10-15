@@ -54,8 +54,6 @@
             pictureBoxIMAGEExample = new PictureBox();
             radioButtonIMAGENotEqu = new RadioButton();
             radioButtonIMAGEEqu = new RadioButton();
-            groupBoxTextTo = new GroupBox();
-            textBoxTextToEdit = new TextBox();
             soundControl = new pxlhunt.UI.Forms.ComboEditorCompoziteControls.SoundControl();
             mouseScrollControl = new pxlhunt.UI.Forms.ComboEditorCompoziteControls.MouseScrollControl();
             boxKeyControl = new pxlhunt.UI.Forms.ComboEditorCompoziteControls.BoxKeyControl();
@@ -88,7 +86,6 @@
             groupBoxIMAGEVol.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)trackBarIMAGE).BeginInit();
             ((System.ComponentModel.ISupportInitialize)pictureBoxIMAGEExample).BeginInit();
-            groupBoxTextTo.SuspendLayout();
             groupBoxPauseIfMooved.SuspendLayout();
             groupBoxPriority.SuspendLayout();
             groupBoxCDtrigger.SuspendLayout();
@@ -104,7 +101,7 @@
             GroupActionPreset.Controls.Add(mouseKeyControl);
             GroupActionPreset.Controls.Add(cursorMoveControl);
             GroupActionPreset.Controls.Add(groupBoxIMAGE);
-            GroupActionPreset.Controls.Add(groupBoxTextTo);
+            GroupActionPreset.Controls.Add(textToControl);
             GroupActionPreset.Controls.Add(soundControl);
             GroupActionPreset.Controls.Add(mouseScrollControl);
             GroupActionPreset.Controls.Add(boxKeyControl);
@@ -376,28 +373,14 @@
             radioButtonIMAGEEqu.Text = "=";
             radioButtonIMAGEEqu.UseVisualStyleBackColor = true;
             // 
-            // groupBoxTextTo
+            // textToControl
             // 
-            groupBoxTextTo.BackColor = Color.Gainsboro;
-            groupBoxTextTo.Controls.Add(textBoxTextToEdit);
-            groupBoxTextTo.ForeColor = Color.DarkOliveGreen;
-            groupBoxTextTo.Location = new Point(8, 608);
-            groupBoxTextTo.Name = "groupBoxTextTo";
-            groupBoxTextTo.Size = new Size(318, 65);
-            groupBoxTextTo.TabIndex = 46;
-            groupBoxTextTo.TabStop = false;
-            groupBoxTextTo.Text = "Фраза";
-            // 
-            // textBoxTextToEdit
-            // 
-            textBoxTextToEdit.AcceptsReturn = true;
-            textBoxTextToEdit.Location = new Point(6, 22);
-            textBoxTextToEdit.MaxLength = 500;
-            textBoxTextToEdit.Multiline = true;
-            textBoxTextToEdit.Name = "textBoxTextToEdit";
-            textBoxTextToEdit.Size = new Size(304, 36);
-            textBoxTextToEdit.TabIndex = 2;
-            textBoxTextToEdit.Text = "Текст (Enter работает)";
+            textToControl = new pxlhunt.UI.Forms.ComboEditorCompoziteControls.TextToControl();
+            textToControl.BackColor = Color.Transparent;
+            textToControl.Location = new Point(8, 586);
+            textToControl.Name = "textToControl";
+            textToControl.Size = new Size(318, 85);
+            textToControl.TabIndex = 46;
             // 
             // soundControl
             // 
@@ -673,8 +656,6 @@
             groupBoxIMAGEVol.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)trackBarIMAGE).EndInit();
             ((System.ComponentModel.ISupportInitialize)pictureBoxIMAGEExample).EndInit();
-            groupBoxTextTo.ResumeLayout(false);
-            groupBoxTextTo.PerformLayout();
             groupBoxPauseIfMooved.ResumeLayout(false);
             groupBoxPauseIfMooved.PerformLayout();
             groupBoxPriority.ResumeLayout(false);
@@ -711,8 +692,7 @@
         private RadioButton radioButtonSkillCooldownGLOBAL;
         private Button buttonSave;
         private pxlhunt.UI.Forms.ComboEditorCompoziteControls.SoundControl soundControl;
-        private GroupBox groupBoxTextTo;
-        private TextBox textBoxTextToEdit;
+        private pxlhunt.UI.Forms.ComboEditorCompoziteControls.TextToControl textToControl;
         private GroupBox groupBoxIMAGE;
         private PictureBox pictureBoxIMAGEExample;
         private RadioButton radioButtonIMAGENotEqu;

@@ -440,6 +440,10 @@ namespace pxlhunt.UI.Forms
             {
                 return new SoundControl();
             }
+            if (string.Equals(presetName, "textToControl", StringComparison.OrdinalIgnoreCase))
+            {
+                return new TextToControl();
+            }
 
             // 2. Временная обратная совместимость для GroupBox'ов
             Control[] found = GroupActionPreset.Controls.Find(presetName, true);

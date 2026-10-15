@@ -115,6 +115,13 @@ public static class ComboFactory
             if (dto == null) return null;
             return new PlaySoundStep(dto);
         });
+
+        RegisterStep("TextToControl", data =>
+        {
+            var dto = data.Deserialize<pxlhunt.UI.Forms.ComboEditorCompoziteControls.TextToDto>();
+            if (dto == null) return null;
+            return new PixelMacroEngine.Triggers.Steps.TypeTextStep(dto);
+        });
     }
 
     private static ColorTriggerEvaluator CreateColorEvaluator(pxlhunt.UI.Forms.ComboEditorCompoziteControls.PixSquaDto dto)
