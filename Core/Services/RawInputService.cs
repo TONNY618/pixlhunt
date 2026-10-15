@@ -345,6 +345,27 @@ namespace PixelMacroEngine.Core.Services
             return $"[Код {vKey}]";
         }
 
+        /// <summary>
+        /// Проверяет, произошло ли указанное действие колесика (например, "WL" или "WR")
+        /// за последние windowMs миллисекунд. При успехе сбрасывает метку (edge-trigger).
+        /// </summary>
+        public static bool ConsumeWheelAction(string actionKey, int windowMs = 350)
+        {
+            long lastTicks = Volatile.Read(ref _lastWheelTicks);
+            if (lastTicks == DateTime.MinValue.Ticks) return false;
+
+            double elapsedMs = (DateTime.UtcNow - new DateTime(lastTicks, DateTimeKind.Utc)).TotalMilliseconds;
+            if (elapsedMs >= 0 && elapsedMs <= windowMs)
+            {
+                if (_lastWheelAction.Contains(actionKey, StringComparison.OrdinalIgnoreCase))
+                {
+                    Volatile.Write(ref _lastWheelTicks, DateTime.MinValue.Ticks);
+                    return true;
+                }
+            }
+            return false;
+        }
+
         // =====================================================================
         // СКРЫТОЕ ОКНО-ПРИЁМНИК RAW INPUT
         // =====================================================================

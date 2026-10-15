@@ -31,8 +31,8 @@ namespace PixelMacroEngine.Triggers
             {
                 "R key" => RawInputService.IsMouseButtonDown(2),
                 "M key" => RawInputService.IsMouseButtonDown(3),
-                "WL" => RawInputService.ConsumeHWheel(false),
-                "WR" => RawInputService.ConsumeHWheel(true),
+                "WL" => RawInputService.ConsumeWheelAction("WL"),
+                "WR" => RawInputService.ConsumeWheelAction("WR"),
                 _ => RawInputService.IsMouseButtonDown(1)
             };
         }
