@@ -421,7 +421,7 @@ namespace PixelMacroEngine.Core.Services
                 else if ((flags & RI_MOUSE_HWHEEL) != 0)
                 {
                     short hWheelDelta = (short)raw.data.mouse.usButtonData;
-                    _lastWheelAction = hWheelDelta > 0 ? "Колесико: Наклон вправо" : "Колесико: Наклон влево";
+                    _lastWheelAction = hWheelDelta > 0 ? "Колесико: WR" : "Колесико: WL";
                     Volatile.Write(ref _lastWheelTicks, DateTime.UtcNow.Ticks);
                 }
             }
