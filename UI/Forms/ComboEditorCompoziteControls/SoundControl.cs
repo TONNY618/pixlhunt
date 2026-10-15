@@ -11,17 +11,32 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
     /// </summary>
     public partial class SoundControl : UserControl, IComboComponentControl
     {
+        private System.Windows.Forms.Timer _debounceTimer;
+
         public SoundControl()
         {
             InitializeComponent();
             comboBoxSoundList.DropDown += (s, e) => RefreshSoundList();
-            buttonSoundPlay.Click += ButtonSoundPlay_Click;
+
+            _debounceTimer = new System.Windows.Forms.Timer { Interval = 300 };
+            _debounceTimer.Tick += DebounceTimer_Tick;
+
+            trackBarMusicVol.ValueChanged += (s, e) =>
+            {
+                _debounceTimer.Stop();
+                _debounceTimer.Start();
+            };
+
             RefreshSoundList();
         }
 
         public string ComponentType => "SoundControl";
 
-        public object GetDto() => new SoundDto { SoundFileName = comboBoxSoundList.Text.Trim() };
+        public object GetDto() => new SoundDto
+        {
+            SoundFileName = comboBoxSoundList.Text.Trim(),
+            Volume = trackBarMusicVol.Value
+        };
 
         public void SetDtoFromElement(JsonElement element)
         {
@@ -29,6 +44,15 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
             if (dto == null) return;
             RefreshSoundList();
             comboBoxSoundList.Text = dto.SoundFileName;
+            trackBarMusicVol.Value = Math.Clamp(dto.Volume, 0, 100);
+        }
+
+        private void DebounceTimer_Tick(object? sender, EventArgs e)
+        {
+            _debounceTimer.Stop();
+            string fileName = comboBoxSoundList.Text.Trim();
+            if (string.IsNullOrWhiteSpace(fileName)) return;
+            SoundService.Play(fileName, trackBarMusicVol.Value, isPreview: true);
         }
 
         private void RefreshSoundList()
@@ -53,17 +77,6 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
             else if (comboBoxSoundList.Items.Count > 0) comboBoxSoundList.SelectedIndex = 0;
         }
 
-        /// <summary>
-        /// Проигрывает звук, выбранный в данный момент в comboBoxSoundList.
-        /// </summary>
-        private void ButtonSoundPlay_Click(object? sender, EventArgs e)
-        {
-            string fileName = comboBoxSoundList.Text.Trim();
-            if (string.IsNullOrWhiteSpace(fileName)) return;
-
-            SoundService.Play(fileName);
-        }
-
         private static string GetSoundsDirectory()
         {
             string dir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Sounds", "Favorite");
@@ -75,11 +88,22 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
             }
             return dir;
         }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                _debounceTimer?.Stop();
+                _debounceTimer?.Dispose();
+            }
+            base.Dispose(disposing);
+        }
     }
 
     /// <summary>DTO звукового шага.</summary>
     public class SoundDto
     {
         public string SoundFileName { get; set; } = string.Empty;
+        public int Volume { get; set; } = 100;
     }
 }

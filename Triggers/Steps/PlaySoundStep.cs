@@ -24,7 +24,7 @@ namespace PixelMacroEngine.Triggers.Steps
         {
             if (!string.IsNullOrWhiteSpace(Dto.SoundFileName))
             {
-                SoundService.Play(Dto.SoundFileName);
+                SoundService.Play(Dto.SoundFileName, Dto.Volume);
             }
             return Task.CompletedTask;
         }

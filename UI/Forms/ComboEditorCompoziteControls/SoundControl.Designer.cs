@@ -30,7 +30,6 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
         {
             groupBoxSound = new GroupBox();
             trackBarMusicVol = new TrackBar();
-            buttonSoundPlay = new Button();
             comboBoxSoundList = new ComboBox();
             groupBoxSound.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)trackBarMusicVol).BeginInit();
@@ -40,7 +39,6 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
             // 
             groupBoxSound.BackColor = Color.Gainsboro;
             groupBoxSound.Controls.Add(trackBarMusicVol);
-            groupBoxSound.Controls.Add(buttonSoundPlay);
             groupBoxSound.Controls.Add(comboBoxSoundList);
             groupBoxSound.Dock = DockStyle.Fill;
             groupBoxSound.ForeColor = Color.DarkOliveGreen;
@@ -53,21 +51,14 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
             // 
             // trackBarMusicVol
             // 
-            trackBarMusicVol.Location = new Point(234, 3);
+            trackBarMusicVol.Location = new Point(226, 2);
             trackBarMusicVol.Maximum = 100;
+            trackBarMusicVol.Minimum = 0;
             trackBarMusicVol.Name = "trackBarMusicVol";
-            trackBarMusicVol.Size = new Size(62, 45);
+            trackBarMusicVol.Size = new Size(86, 24);
             trackBarMusicVol.TabIndex = 18;
+            trackBarMusicVol.TickStyle = TickStyle.None;
             trackBarMusicVol.Value = 100;
-            // 
-            // buttonSoundPlay
-            // 
-            buttonSoundPlay.Location = new Point(270, 3);
-            buttonSoundPlay.Name = "buttonSoundPlay";
-            buttonSoundPlay.Size = new Size(40, 23);
-            buttonSoundPlay.TabIndex = 17;
-            buttonSoundPlay.Text = "Play";
-            buttonSoundPlay.UseVisualStyleBackColor = true;
             // 
             // comboBoxSoundList
             // 
@@ -93,7 +84,6 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
         #endregion
 
         private System.Windows.Forms.GroupBox groupBoxSound;
-        private System.Windows.Forms.Button buttonSoundPlay;
         private System.Windows.Forms.ComboBox comboBoxSoundList;
         private TrackBar trackBarMusicVol;
     }
