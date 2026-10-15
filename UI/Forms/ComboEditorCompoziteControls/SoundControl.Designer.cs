@@ -29,9 +29,9 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
         private void InitializeComponent()
         {
             groupBoxSound = new GroupBox();
+            trackBarMusicVol = new TrackBar();
             buttonSoundPlay = new Button();
             comboBoxSoundList = new ComboBox();
-            trackBarMusicVol = new TrackBar();
             groupBoxSound.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)trackBarMusicVol).BeginInit();
             SuspendLayout();
@@ -51,6 +51,15 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
             groupBoxSound.TabStop = false;
             groupBoxSound.Text = "Sound";
             // 
+            // trackBarMusicVol
+            // 
+            trackBarMusicVol.Location = new Point(234, 3);
+            trackBarMusicVol.Maximum = 100;
+            trackBarMusicVol.Name = "trackBarMusicVol";
+            trackBarMusicVol.Size = new Size(62, 45);
+            trackBarMusicVol.TabIndex = 18;
+            trackBarMusicVol.Value = 100;
+            // 
             // buttonSoundPlay
             // 
             buttonSoundPlay.Location = new Point(270, 3);
@@ -67,15 +76,6 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
             comboBoxSoundList.Name = "comboBoxSoundList";
             comboBoxSoundList.Size = new Size(168, 23);
             comboBoxSoundList.TabIndex = 16;
-            // 
-            // trackBarMusicVol
-            // 
-            trackBarMusicVol.Location = new Point(234, 3);
-            trackBarMusicVol.Maximum = 100;
-            trackBarMusicVol.Name = "trackBarMusicVol";
-            trackBarMusicVol.Size = new Size(76, 45);
-            trackBarMusicVol.TabIndex = 18;
-            trackBarMusicVol.Value = 100;
             // 
             // SoundControl
             // 
