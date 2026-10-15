@@ -13,9 +13,6 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
         private void InitializeComponent()
         {
             groupBoxTextTo = new System.Windows.Forms.GroupBox();
-            radioButtonTextToTelegtamm = new System.Windows.Forms.RadioButton();
-            radioButtonTextToContext = new System.Windows.Forms.RadioButton();
-            textBoxTextToTeleNameUser = new System.Windows.Forms.TextBox();
             textBoxTextToEdit = new System.Windows.Forms.TextBox();
             groupBoxTextTo.SuspendLayout();
             SuspendLayout();
