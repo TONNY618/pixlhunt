@@ -234,7 +234,7 @@
             AutoScaleMode = AutoScaleMode.Font;
             Controls.Add(groupBoxIMAGE);
             Name = "IMAGE";
-            Size = new Size(457, 195);
+            Size = new Size(308, 125);
             groupBoxIMAGE.ResumeLayout(false);
             groupBoxIMAGE.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)pictureBoxIMAGESample).EndInit();

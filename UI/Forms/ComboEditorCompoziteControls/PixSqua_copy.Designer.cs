@@ -231,13 +231,13 @@
             radioButtonPixSquaSqua.Text = "Square";
             radioButtonPixSquaSqua.UseVisualStyleBackColor = true;
             // 
-            // PixSqua
+            // PixSqua_copy
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             Controls.Add(groupBoxPixSqua);
-            Name = "PixSqua";
-            Size = new Size(306, 138);
+            Name = "PixSqua_copy";
+            Size = new Size(306, 111);
             groupBoxPixSqua.ResumeLayout(false);
             groupBoxPixSqua.PerformLayout();
             groupBoxPixSquaVol.ResumeLayout(false);

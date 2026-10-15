@@ -72,7 +72,7 @@ namespace pxlhunt.UI.Forms.ComboEditorCompoziteControls
             BackColor = Color.Transparent;
             Controls.Add(groupBoxMouseKey);
             Name = "MouseKeyControl";
-            Size = new Size(566, 252);
+            Size = new Size(245, 32);
             groupBoxMouseKey.ResumeLayout(false);
             groupBoxMouseKey.PerformLayout();
             ResumeLayout(false);
