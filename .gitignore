@@ -481,3 +481,9 @@ $RECYCLE.BIN/
 # Vim temporary swap files
 *.swp
 .aider*
+
+# dekko - кеш и артефакты инструмента
+.dekko/
+
+# Артефакты карты проекта (генерируются refresh.ps1)
+docs/code-map/
