@@ -461,6 +461,17 @@ namespace PixelMacroEngine.Core.Services
                         {
                             _ignoredDevicesCache.TryRemove(m.LParam, out _);
                         }
+
+                        // Защита от неограниченного роста кэша: если Windows/драйвер
+                        // по какой-то причине не прислали GIDC_REMOVAL при частых
+                        // переподключениях USB, словарь всё равно не должен пухнуть.
+                        // 100 — заведомо аномальное число HID-устройств; в этом случае
+                        // просто сбрасываем кэш, он заполнится лениво при следующем
+                        // WM_INPUT каждого реально используемого устройства.
+                        if (_ignoredDevicesCache.Count > 100)
+                        {
+                            _ignoredDevicesCache.Clear();
+                        }
                         break;
 
                     case WM_INPUT:
