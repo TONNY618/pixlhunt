@@ -676,9 +676,6 @@
         private Button buttonIMAGEView;
         private CheckBox checkBoxTakeXY;
         private GroupBox groupBoxKeyMouseMonitor;
-        private GroupBox groupBoxTelegram;
-        private ComboBox comboBox1;
-        private TextBox textBox2;
         private CheckBox checkBoxEXTRA;
         private ColorDialog colorDialog1;
     }
