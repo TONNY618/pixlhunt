@@ -79,15 +79,28 @@ public static class ArduinoHidService
         {
             if (!IsConnected) return false;
 
+            byte[] data = batch.Build();
             try
             {
-                _stream!.Write(batch.Build());
+                _stream!.Write(data);
                 return true;
             }
             catch
             {
-                Disconnect(); // Потеряли связь с платой
-                return false;
+                // Защита от transient-ошибок (буфер HID-драйвера Windows переполнен
+                // из-за слишком быстрой отправки back-to-back пакетов).
+                // Ждем 2мс (2 цикла USB-опроса) и пробуем еще раз.
+                System.Threading.Thread.Sleep(2);
+                try
+                {
+                    _stream!.Write(data);
+                    return true;
+                }
+                catch
+                {
+                    Disconnect(); // Реально потеряли физическую связь с платой
+                    return false;
+                }
             }
         }
     }
