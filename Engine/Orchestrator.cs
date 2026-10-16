@@ -129,11 +129,11 @@ public class Orchestrator
             {
                 if (running != null)
                 {
-                    // Мгновенно убиваем текущее Normal-комбо
-                    await CancelRunningComboAsync().ConfigureAwait(false);
-
-                    // Отпускаем залипшие клавиши от прерванного комбо
-                    ArduinoHidService.EmergencyReset();
+                    // FIRE-AND-FORGET: Мгновенно отменяем текущее Normal-комбо БЕЗ ожидания (await).
+                    // Это устраняет аномалию "замирания программы на секунду".
+                    // Метод AbortRunningCombo() сразу посылает сигнал отмены (Cancel) 
+                    // и аппаратно отпускает все клавиши (EmergencyReset).
+                    AbortRunningCombo();
                 }
 
                 StartCombo(triggeredExtra, frame, ct);
