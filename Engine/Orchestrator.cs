@@ -249,43 +249,6 @@ public class Orchestrator
     }
 
     /// <summary>
-    /// Отменяет текущее фоновое комбо и дожидается его завершения.
-    /// Безопасно вызывается, даже если комбо успело завершиться само.
-    /// </summary>
-    private async Task CancelRunningComboAsync()
-    {
-        Task? task;
-        CancellationTokenSource? cts;
-        lock (_comboLock)
-        {
-            task = _runningComboTask;
-            cts = _comboCts;
-        }
-
-        if (cts != null)
-        {
-            try { cts.Cancel(); }
-            catch (ObjectDisposedException) { /* комбо уже завершилось и освободило CTS */ }
-        }
-
-        if (task != null)
-        {
-            try
-            {
-                await task.ConfigureAwait(false);
-            }
-            catch (OperationCanceledException)
-            {
-                // Ожидаемая отмена (preemption / shutdown)
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Combo await error: {ex.Message}");
-            }
-        }
-    }
-
-    /// <summary>
     /// Тело фонового выполнения шагов комбо. При отмене немедленно прекращает работу,
     /// а в finally гарантированно очищает поля текущего выполнения (только если они
     /// всё ещё принадлежат этому комбо — Extra-комбо могло уже стартовать новое).
