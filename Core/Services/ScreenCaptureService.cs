@@ -60,7 +60,7 @@ public static class ScreenCaptureService
             // Запускаем независимый фоновый поток обновления буфера
             _loopTask = Task.Run(() => CaptureLoopAsync(_cts.Token));
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             IsRunning = false;
             _cts?.Dispose();
