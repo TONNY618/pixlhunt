@@ -65,6 +65,9 @@ public class Orchestrator
         // Сброс состояния всегда должен убивать активное выполнение.
         AbortRunningCombo();
 
+        // Не забываем сбрасывать общий ГКД при выключении мастера.
+        _globalLastExecutedTimestamp = 0;
+
         foreach (var combo in Combos)
         {
             combo.LastExecutedTimestamp = 0;

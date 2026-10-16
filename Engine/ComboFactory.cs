@@ -163,11 +163,12 @@ public static class ComboFactory
     {
         if (profile == null) throw new ArgumentNullException(nameof(profile));
 
-        // Если комбо глобальное - берем таймер из конфига.
+        // Если комбо глобальное - берем таймер из конфига с защитой от 0.
         // Если независимое - кулдаун 0 (опираемся на внутренние триггеры типа TriggerTimer).
-        int cooldownMs = profile.IsCooldownGlobal
-            ? PixelMacroEngine.Core.Services.AppConfigService.Instance.GlobalCooldownDefaultMs
-            : 0;
+        int globalCd = PixelMacroEngine.Core.Services.AppConfigService.Instance.GlobalCooldownDefaultMs;
+        if (globalCd <= 0) globalCd = 1000; // Страховка: ГКД для скиллов не может быть 0
+
+        int cooldownMs = profile.IsCooldownGlobal ? globalCd : 0;
 
         int priority = int.TryParse(profile.Priority, out int p) ? p : 50;
 

@@ -63,6 +63,13 @@ public static class AppConfigService
 {
     public static AppConfig Instance { get; private set; } = new();
 
+    // СТАТИЧЕСКИЙ КОНСТРУКТОР: гарантирует загрузку appsettings.cfg
+    // при первом же обращении к AppConfigService.Instance из любого места программы.
+    static AppConfigService()
+    {
+        Load();
+    }
+
     /// <summary>
     /// Загружает Config/appsettings.cfg. Если файл не найден или повреждён —
     /// остаются значения по умолчанию.
