@@ -76,7 +76,6 @@
             buttonSave = new Button();
             textBoxHelp = new TextBox();
             groupBoxKeyMouseMonitor = new GroupBox();
-            colorDialog1 = new ColorDialog();
             GroupActionPreset.SuspendLayout();
             groupBoxIMAGE.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)pictureBoxIMAGESample).BeginInit();
@@ -677,6 +676,5 @@
         private CheckBox checkBoxTakeXY;
         private GroupBox groupBoxKeyMouseMonitor;
         private CheckBox checkBoxEXTRA;
-        private ColorDialog colorDialog1;
     }
 }
