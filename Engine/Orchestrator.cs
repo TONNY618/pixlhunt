@@ -119,25 +119,26 @@ public class Orchestrator
         if (triggeredExtra != null)
         {
             bool sameCombo = ReferenceEquals(running, triggeredExtra);
-            bool shouldPreempt = !sameCombo &&
-                (running == null || !running.IsExtra || running.Priority < triggeredExtra.Priority);
+
+            // ПРАВИЛО EXTRA: Если сейчас УЖЕ работает Extra-комбо, мы НЕ прерываем его,
+            // даём ему закончить свои шаги (даже если у нового приоритет выше/ниже).
+            // Аварийно прерываем ТОЛЬКО если выполняется обычное (Normal) комбо.
+            bool shouldPreempt = !sameCombo && (running == null || !running.IsExtra);
 
             if (shouldPreempt)
             {
                 if (running != null)
                 {
+                    // Мгновенно убиваем текущее Normal-комбо
                     await CancelRunningComboAsync().ConfigureAwait(false);
 
-                    // Перед запуском Extra-комбо аппаратно отпускаем всё, что могло
-                    // остаться физически зажатым на плате Arduino.
+                    // Отпускаем залипшие клавиши от прерванного комбо
                     ArduinoHidService.EmergencyReset();
                 }
 
                 StartCombo(triggeredExtra, frame, ct);
                 startedNewCombo = true;
             }
-            // Иначе: это то же самое комбо, либо уже выполняется Extra
-            // с равным/большим приоритетом — не трогаем его.
         }
         else if (!isRunning)
         {
@@ -187,8 +188,10 @@ public class Orchestrator
             if (combo.PauseIfWasd && wasdHeld)
                 continue;
 
-            // Если комбо делит ГКД и не является фоновым сервисным действием
-            if (combo.IsGlobalCooldown && !combo.IsNonBlocking && combo.CooldownMs > 0)
+            // Normal-комбо подчиняются ГКД.
+            // Extra-комбо ПРОБИВАЮТ ГКД для старта (чтобы мгновенно прервать ротацию),
+            // но при этом сами устанавливают ГКД после запуска, чтобы Normal-комбо выждали паузу.
+            if (!combo.IsExtra && combo.IsGlobalCooldown && !combo.IsNonBlocking && combo.CooldownMs > 0)
             {
                 if (_globalLastExecutedTimestamp != 0 &&
                     TimeService.GetElapsedMilliseconds(_globalLastExecutedTimestamp) < combo.CooldownMs)
