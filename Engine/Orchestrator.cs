@@ -68,6 +68,13 @@ public class Orchestrator
         foreach (var combo in Combos)
         {
             combo.LastExecutedTimestamp = 0;
+            foreach (var trigger in combo.Triggers)
+            {
+                if (trigger is PixelMacroEngine.Triggers.TimerTriggerEvaluator timer)
+                {
+                    timer.ResetToInitial();
+                }
+            }
         }
     }
 
@@ -221,6 +228,9 @@ public class Orchestrator
         {
             _globalLastExecutedTimestamp = execTs;
         }
+
+        // Сбрасываем триггеры комбо (таймер начинает отсчёт следующего интервала)
+        combo.OnExecuted();
 
         combo.IsRunning = true;
 

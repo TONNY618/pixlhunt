@@ -37,18 +37,35 @@ public class TimerTriggerEvaluator : ITriggerEvaluator
     {
     }
 
+    /// <summary>
+    /// Чистая проверка: готов ли интервал.
+    /// Метод НЕ сбрасывает таймер, чтобы не сжигать тик, пока остальные триггеры не совпали.
+    /// </summary>
     public bool Evaluate(FrameBuffer buffer)
     {
-        long now = TimeService.GetTimestamp();
-
-        // Первый вызов (нет метки) трактуем как "интервал уже прошёл".
-        if (_lastTriggerTimestamp == 0 ||
-            TimeService.GetElapsedMilliseconds(_lastTriggerTimestamp, now) >= _currentIntervalMs)
-        {
-            _lastTriggerTimestamp = now;
-            _currentIntervalMs = HumanizerEngine.CalculateGaussianDelay(_minMs, _maxMs);
+        // Если комбо ещё ни разу не выполнялось — таймер сразу готов
+        if (_lastTriggerTimestamp == 0)
             return true;
-        }
-        return false;
+
+        long now = TimeService.GetTimestamp();
+        return TimeService.GetElapsedMilliseconds(_lastTriggerTimestamp, now) >= _currentIntervalMs;
+    }
+
+    /// <summary>
+    /// Вызывается только тогда, когда комбо реально сработало и запустилось.
+    /// </summary>
+    public void Reset()
+    {
+        _lastTriggerTimestamp = TimeService.GetTimestamp();
+        _currentIntervalMs = HumanizerEngine.CalculateGaussianDelay(_minMs, _maxMs);
+    }
+
+    /// <summary>
+    /// Полный сброс (например, при выключении мастера).
+    /// </summary>
+    public void ResetToInitial()
+    {
+        _lastTriggerTimestamp = 0;
+        _currentIntervalMs = HumanizerEngine.CalculateGaussianDelay(_minMs, _maxMs);
     }
 }

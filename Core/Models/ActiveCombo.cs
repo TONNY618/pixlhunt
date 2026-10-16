@@ -65,6 +65,20 @@ public class ActiveCombo
     public List<IComboStep> Steps { get; set; } = new List<IComboStep>();
 
     /// <summary>
+    /// Оповещает триггеры комбо (например, таймеры ограничения частоты) об успешном запуске.
+    /// </summary>
+    public void OnExecuted()
+    {
+        foreach (var trigger in Triggers)
+        {
+            if (trigger is PixelMacroEngine.Triggers.TimerTriggerEvaluator timer)
+            {
+                timer.Reset();
+            }
+        }
+    }
+
+    /// <summary>
     /// Проверяет, прошёл ли кулдаун с момента последнего выполнения.
     /// </summary>
     public bool CanExecute()
